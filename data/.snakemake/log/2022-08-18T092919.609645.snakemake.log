@@ -1,0 +1,76 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	16	combined_bam_to_combined_bw
+	16	individual_bam_to_combined_bam
+	16	run_peak_calling
+	49
+
+[Thu Aug 18 09:29:22 2022]
+Job 290: Converting bam to merged bam
+
+
+[Thu Aug 18 09:29:22 2022]
+Job 281: Converting bam to merged bam
+
+
+[Thu Aug 18 09:29:22 2022]
+Job 282: Converting bam to merged bam
+
+
+[Thu Aug 18 09:29:22 2022]
+Job 280: Converting bam to merged bam
+
+Terminating processes on user request, this might take some time.
+[Thu Aug 18 09:31:22 2022]
+Error in rule individual_bam_to_combined_bam:
+[Thu Aug 18 09:31:22 2022]
+    jobid: 280
+[Thu Aug 18 09:31:22 2022]
+Error in rule individual_bam_to_combined_bam:
+[Thu Aug 18 09:31:22 2022]
+    output: bam/dm6/atac/combined/orer_15to2_atac_combined.bam
+Error in rule individual_bam_to_combined_bam:
+    jobid: 290
+Error in rule individual_bam_to_combined_bam:
+    shell:
+        
+        samtools merge bam/dm6/atac/combined/orer_15to2_atac_combined.bam bam/dm6/atac/individual/orer_15to2_atac_4.bam bam/dm6/atac/individual/orer_15to2_atac_6.bam bam/dm6/atac/individual/orer_15to2_atac_7.bam
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+    jobid: 282
+    output: bam/dm6/atac/combined/zldrnai_25to3_atac_combined.bam
+    jobid: 281
+
+    output: bam/dm6/atac/combined/orer_25to3_atac_combined.bam
+    shell:
+        
+        samtools merge bam/dm6/atac/combined/zldrnai_25to3_atac_combined.bam bam/dm6/atac/individual/zldrnai_25to3_atac_1.bam bam/dm6/atac/individual/zldrnai_25to3_atac_2.bam bam/dm6/atac/individual/zldrnai_25to3_atac_3.bam
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+    output: bam/dm6/atac/combined/orer_2to25_atac_combined.bam
+    shell:
+        
+        samtools merge bam/dm6/atac/combined/orer_25to3_atac_combined.bam bam/dm6/atac/individual/orer_25to3_atac_4.bam bam/dm6/atac/individual/orer_25to3_atac_6.bam bam/dm6/atac/individual/orer_25to3_atac_7.bam
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+    shell:
+        
+        samtools merge bam/dm6/atac/combined/orer_2to25_atac_combined.bam bam/dm6/atac/individual/orer_2to25_atac_4.bam bam/dm6/atac/individual/orer_2to25_atac_6.bam bam/dm6/atac/individual/orer_2to25_atac_7.bam
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+
+Removing output files of failed job individual_bam_to_combined_bam since they might be corrupted:
+bam/dm6/atac/combined/orer_15to2_atac_combined.bam
+Removing output files of failed job individual_bam_to_combined_bam since they might be corrupted:
+bam/dm6/atac/combined/zldrnai_25to3_atac_combined.bam
+Removing output files of failed job individual_bam_to_combined_bam since they might be corrupted:
+bam/dm6/atac/combined/orer_25to3_atac_combined.bam
+Removing output files of failed job individual_bam_to_combined_bam since they might be corrupted:
+bam/dm6/atac/combined/orer_2to25_atac_combined.bam

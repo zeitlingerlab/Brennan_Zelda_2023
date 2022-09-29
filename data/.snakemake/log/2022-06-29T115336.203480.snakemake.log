@@ -1,0 +1,58 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 6
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	24	combined_bam_to_combined_bw
+	68	fastq_to_processed_bam
+	24	individual_bam_to_combined_bam
+	68	individual_bam_to_individual_bw
+	185
+
+[Wed Jun 29 11:53:37 2022]
+Job 160: Aligning FASTQ to BAM
+
+[Wed Jun 29 11:53:37 2022]
+Job 137: Aligning FASTQ to BAM
+
+[Wed Jun 29 11:53:37 2022]
+Job 109: Aligning FASTQ to BAM
+
+[Wed Jun 29 11:53:37 2022]
+Job 133: Aligning FASTQ to BAM
+
+[Wed Jun 29 11:53:37 2022]
+Job 99: Aligning FASTQ to BAM
+
+[Wed Jun 29 11:53:37 2022]
+Job 96: Aligning FASTQ to BAM
+
+[Wed Jun 29 12:06:28 2022]
+Finished job 160.
+1 of 185 steps (0.54%) done
+
+[Wed Jun 29 12:06:28 2022]
+Job 184: Converting bam to merged bam
+
+[Wed Jun 29 12:10:57 2022]
+Finished job 184.
+2 of 185 steps (1%) done
+
+[Wed Jun 29 12:10:57 2022]
+Job 123: Aligning FASTQ to BAM
+
+[Wed Jun 29 13:54:32 2022]
+Finished job 109.
+3 of 185 steps (2%) done
+
+[Wed Jun 29 13:54:32 2022]
+Job 139: Aligning FASTQ to BAM
+
+Will exit after finishing currently running jobs.
+Will exit after finishing currently running jobs.
+Will exit after finishing currently running jobs.
+Will exit after finishing currently running jobs.
+Shutting down, this might take some time.
+Complete log: /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/.snakemake/log/2022-06-29T115336.203480.snakemake.log

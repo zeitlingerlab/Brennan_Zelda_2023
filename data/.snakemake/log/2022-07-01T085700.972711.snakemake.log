@@ -1,0 +1,851 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	7	combined_bam_to_combined_bw
+	26	individual_bam_to_individual_bw
+	86	run_peak_calling
+	120
+
+[Fri Jul  1 08:57:02 2022]
+Job 86: Computing coverage of .bam file...
+
+[Fri Jul  1 08:57:02 2022]
+Job 85: Computing coverage of .bam file...
+
+[Fri Jul  1 08:57:02 2022]
+Job 89: Computing coverage of .bam file...
+
+[Fri Jul  1 08:57:02 2022]
+Job 84: Computing coverage of .bam file...
+
+[Fri Jul  1 09:32:59 2022]
+Finished job 89.
+1 of 120 steps (0.83%) done
+
+[Fri Jul  1 09:32:59 2022]
+Job 13: Computing coverage of .bam file...
+
+[Fri Jul  1 09:35:12 2022]
+Finished job 86.
+2 of 120 steps (2%) done
+
+[Fri Jul  1 09:35:12 2022]
+Job 65: Computing coverage of .bam file...
+
+[Fri Jul  1 09:35:29 2022]
+Finished job 84.
+3 of 120 steps (2%) done
+
+[Fri Jul  1 09:35:29 2022]
+Job 66: Computing coverage of .bam file...
+
+[Fri Jul  1 09:36:02 2022]
+Finished job 85.
+4 of 120 steps (3%) done
+
+[Fri Jul  1 09:36:02 2022]
+Job 64: Computing coverage of .bam file...
+
+[Fri Jul  1 09:56:49 2022]
+Finished job 65.
+5 of 120 steps (4%) done
+
+[Fri Jul  1 09:56:49 2022]
+Job 87: Computing coverage of .bam file...
+
+[Fri Jul  1 09:56:50 2022]
+Finished job 64.
+6 of 120 steps (5%) done
+
+[Fri Jul  1 09:56:50 2022]
+Job 88: Computing coverage of .bam file...
+
+[Fri Jul  1 09:57:13 2022]
+Finished job 66.
+7 of 120 steps (6%) done
+
+[Fri Jul  1 09:57:13 2022]
+Job 25: Computing coverage of .bam file...
+
+[Fri Jul  1 10:03:36 2022]
+Finished job 13.
+8 of 120 steps (7%) done
+
+[Fri Jul  1 10:03:36 2022]
+Job 92: Computing coverage of .bam file...
+
+[Fri Jul  1 10:19:23 2022]
+Finished job 25.
+9 of 120 steps (8%) done
+
+[Fri Jul  1 10:19:23 2022]
+Job 68: Computing coverage of .bam file...
+
+[Fri Jul  1 10:23:21 2022]
+Finished job 92.
+10 of 120 steps (8%) done
+
+[Fri Jul  1 10:23:21 2022]
+Job 67: Computing coverage of .bam file...
+
+[Fri Jul  1 10:26:37 2022]
+Finished job 87.
+11 of 120 steps (9%) done
+
+[Fri Jul  1 10:26:37 2022]
+Job 48: Computing coverage of .bam file...
+
+[Fri Jul  1 10:27:26 2022]
+Finished job 88.
+12 of 120 steps (10%) done
+
+[Fri Jul  1 10:27:26 2022]
+Job 53: Computing coverage of .bam file...
+
+[Fri Jul  1 10:39:19 2022]
+Finished job 68.
+13 of 120 steps (11%) done
+
+[Fri Jul  1 10:39:19 2022]
+Job 54: Computing coverage of .bam file...
+
+[Fri Jul  1 10:44:07 2022]
+Finished job 48.
+14 of 120 steps (12%) done
+
+[Fri Jul  1 10:44:07 2022]
+Job 51: Computing coverage of .bam file...
+
+[Fri Jul  1 10:45:18 2022]
+Finished job 67.
+15 of 120 steps (12%) done
+
+[Fri Jul  1 10:45:18 2022]
+Job 63: Computing coverage of .bam file...
+
+[Fri Jul  1 10:45:53 2022]
+Finished job 53.
+16 of 120 steps (13%) done
+
+[Fri Jul  1 10:45:53 2022]
+Job 50: Computing coverage of .bam file...
+
+[Fri Jul  1 10:54:45 2022]
+Finished job 54.
+17 of 120 steps (14%) done
+
+[Fri Jul  1 10:54:45 2022]
+Job 47: Computing coverage of .bam file...
+
+[Fri Jul  1 10:59:11 2022]
+Finished job 51.
+18 of 120 steps (15%) done
+
+[Fri Jul  1 10:59:11 2022]
+Job 60: Computing coverage of .bam file...
+
+[Fri Jul  1 10:59:33 2022]
+Finished job 63.
+19 of 120 steps (16%) done
+
+[Fri Jul  1 10:59:33 2022]
+Job 57: Computing coverage of .bam file...
+
+[Fri Jul  1 11:00:42 2022]
+Finished job 50.
+20 of 120 steps (17%) done
+
+[Fri Jul  1 11:00:42 2022]
+Job 62: Computing coverage of .bam file...
+
+[Fri Jul  1 11:09:04 2022]
+Finished job 47.
+21 of 120 steps (18%) done
+
+[Fri Jul  1 11:09:04 2022]
+Job 61: Computing coverage of .bam file...
+
+[Fri Jul  1 11:13:27 2022]
+Finished job 57.
+22 of 120 steps (18%) done
+
+[Fri Jul  1 11:13:27 2022]
+Job 49: Computing coverage of .bam file...
+
+[Fri Jul  1 11:14:00 2022]
+Finished job 62.
+23 of 120 steps (19%) done
+
+[Fri Jul  1 11:14:00 2022]
+Job 46: Computing coverage of .bam file...
+
+[Fri Jul  1 11:14:51 2022]
+Finished job 60.
+24 of 120 steps (20%) done
+
+[Fri Jul  1 11:14:51 2022]
+Job 33: Computing coverage of .bam file...
+
+[Fri Jul  1 11:21:28 2022]
+Finished job 33.
+25 of 120 steps (21%) done
+
+[Fri Jul  1 11:21:28 2022]
+Job 52: Computing coverage of .bam file...
+
+[Fri Jul  1 11:22:56 2022]
+Finished job 61.
+26 of 120 steps (22%) done
+
+[Fri Jul  1 11:22:56 2022]
+Job 55: Computing coverage of .bam file...
+
+[Fri Jul  1 11:26:36 2022]
+Finished job 49.
+27 of 120 steps (22%) done
+
+[Fri Jul  1 11:26:36 2022]
+Job 59: Computing coverage of .bam file...
+
+[Fri Jul  1 11:27:54 2022]
+Finished job 46.
+28 of 120 steps (23%) done
+
+[Fri Jul  1 11:27:54 2022]
+Job 56: Computing coverage of .bam file...
+
+[Fri Jul  1 11:32:39 2022]
+Finished job 52.
+29 of 120 steps (24%) done
+
+[Fri Jul  1 11:32:39 2022]
+Job 58: Computing coverage of .bam file...
+
+[Fri Jul  1 11:32:42 2022]
+Finished job 55.
+30 of 120 steps (25%) done
+
+[Fri Jul  1 11:32:42 2022]
+Job 158: Running MACS2...
+
+[Fri Jul  1 11:35:30 2022]
+Finished job 59.
+31 of 120 steps (26%) done
+
+[Fri Jul  1 11:35:30 2022]
+Job 168: Running MACS2...
+
+[Fri Jul  1 11:36:19 2022]
+Finished job 56.
+32 of 120 steps (27%) done
+
+[Fri Jul  1 11:36:19 2022]
+Job 160: Running MACS2...
+
+[Fri Jul  1 11:41:03 2022]
+Finished job 58.
+33 of 120 steps (28%) done
+
+[Fri Jul  1 11:41:03 2022]
+Job 159: Running MACS2...
+
+[Fri Jul  1 12:10:44 2022]
+Finished job 168.
+34 of 120 steps (28%) done
+
+[Fri Jul  1 12:10:44 2022]
+Job 162: Running MACS2...
+
+[Fri Jul  1 12:13:23 2022]
+Finished job 158.
+35 of 120 steps (29%) done
+
+[Fri Jul  1 12:13:23 2022]
+Job 166: Running MACS2...
+
+[Fri Jul  1 12:17:05 2022]
+Finished job 160.
+36 of 120 steps (30%) done
+
+[Fri Jul  1 12:17:05 2022]
+Job 163: Running MACS2...
+
+[Fri Jul  1 12:19:31 2022]
+Finished job 159.
+37 of 120 steps (31%) done
+
+[Fri Jul  1 12:19:31 2022]
+Job 164: Running MACS2...
+
+[Fri Jul  1 12:42:44 2022]
+Finished job 166.
+38 of 120 steps (32%) done
+
+[Fri Jul  1 12:42:44 2022]
+Job 170: Running MACS2...
+
+[Fri Jul  1 12:43:51 2022]
+Finished job 162.
+39 of 120 steps (32%) done
+
+[Fri Jul  1 12:43:51 2022]
+Job 167: Running MACS2...
+
+[Fri Jul  1 12:51:21 2022]
+Finished job 163.
+40 of 120 steps (33%) done
+
+[Fri Jul  1 12:51:21 2022]
+Job 157: Running MACS2...
+
+[Fri Jul  1 12:54:12 2022]
+Finished job 164.
+41 of 120 steps (34%) done
+
+[Fri Jul  1 12:54:12 2022]
+Job 169: Running MACS2...
+
+[Fri Jul  1 13:13:58 2022]
+Finished job 167.
+42 of 120 steps (35%) done
+
+[Fri Jul  1 13:13:58 2022]
+Job 161: Running MACS2...
+
+[Fri Jul  1 13:17:14 2022]
+Finished job 170.
+43 of 120 steps (36%) done
+
+[Fri Jul  1 13:17:15 2022]
+Job 96: Running MACS2...
+
+[Fri Jul  1 13:19:09 2022]
+Finished job 169.
+44 of 120 steps (37%) done
+
+[Fri Jul  1 13:19:09 2022]
+Job 120: Running MACS2...
+
+[Fri Jul  1 13:21:33 2022]
+Finished job 157.
+45 of 120 steps (38%) done
+
+[Fri Jul  1 13:21:33 2022]
+Job 98: Running MACS2...
+
+[Fri Jul  1 13:34:22 2022]
+Finished job 96.
+46 of 120 steps (38%) done
+
+[Fri Jul  1 13:34:22 2022]
+Job 165: Running MACS2...
+
+[Fri Jul  1 13:34:59 2022]
+Finished job 161.
+47 of 120 steps (39%) done
+
+[Fri Jul  1 13:34:59 2022]
+Job 103: Running MACS2...
+
+[Fri Jul  1 13:35:21 2022]
+Finished job 120.
+48 of 120 steps (40%) done
+
+[Fri Jul  1 13:35:21 2022]
+Job 122: Running MACS2...
+
+[Fri Jul  1 13:36:09 2022]
+Finished job 98.
+49 of 120 steps (41%) done
+
+[Fri Jul  1 13:36:09 2022]
+Job 101: Running MACS2...
+
+[Fri Jul  1 13:47:00 2022]
+Finished job 165.
+50 of 120 steps (42%) done
+
+[Fri Jul  1 13:47:00 2022]
+Job 133: Running MACS2...
+
+[Fri Jul  1 13:50:11 2022]
+Finished job 122.
+51 of 120 steps (42%) done
+
+[Fri Jul  1 13:50:11 2022]
+Job 108: Running MACS2...
+
+[Fri Jul  1 13:50:29 2022]
+Finished job 101.
+52 of 120 steps (43%) done
+
+[Fri Jul  1 13:50:29 2022]
+Job 113: Running MACS2...
+
+[Fri Jul  1 13:50:32 2022]
+Finished job 103.
+53 of 120 steps (44%) done
+
+[Fri Jul  1 13:50:32 2022]
+Job 104: Running MACS2...
+
+[Fri Jul  1 14:03:00 2022]
+Finished job 133.
+54 of 120 steps (45%) done
+
+[Fri Jul  1 14:03:00 2022]
+Job 118: Running MACS2...
+
+[Fri Jul  1 14:05:53 2022]
+Finished job 104.
+55 of 120 steps (46%) done
+
+[Fri Jul  1 14:05:53 2022]
+Job 97: Running MACS2...
+
+[Fri Jul  1 14:06:07 2022]
+Finished job 113.
+56 of 120 steps (47%) done
+
+[Fri Jul  1 14:06:07 2022]
+Job 132: Running MACS2...
+
+[Fri Jul  1 14:06:22 2022]
+Finished job 108.
+57 of 120 steps (48%) done
+
+[Fri Jul  1 14:06:22 2022]
+Job 100: Running MACS2...
+
+[Fri Jul  1 14:17:30 2022]
+Finished job 118.
+58 of 120 steps (48%) done
+
+[Fri Jul  1 14:17:30 2022]
+Job 119: Running MACS2...
+
+[Fri Jul  1 14:20:14 2022]
+Finished job 97.
+59 of 120 steps (49%) done
+
+[Fri Jul  1 14:20:14 2022]
+Job 131: Running MACS2...
+
+[Fri Jul  1 14:20:34 2022]
+Finished job 132.
+60 of 120 steps (50%) done
+
+[Fri Jul  1 14:20:34 2022]
+Job 110: Running MACS2...
+
+[Fri Jul  1 14:20:35 2022]
+Finished job 100.
+61 of 120 steps (51%) done
+
+[Fri Jul  1 14:20:35 2022]
+Job 115: Running MACS2...
+
+[Fri Jul  1 14:31:47 2022]
+Finished job 119.
+62 of 120 steps (52%) done
+
+[Fri Jul  1 14:31:47 2022]
+Job 95: Running MACS2...
+
+[Fri Jul  1 14:32:26 2022]
+Finished job 131.
+63 of 120 steps (52%) done
+
+[Fri Jul  1 14:32:26 2022]
+Job 116: Running MACS2...
+
+[Fri Jul  1 14:34:15 2022]
+Finished job 110.
+64 of 120 steps (53%) done
+
+[Fri Jul  1 14:34:15 2022]
+Job 99: Running MACS2...
+
+[Fri Jul  1 14:35:49 2022]
+Finished job 115.
+65 of 120 steps (54%) done
+
+[Fri Jul  1 14:35:49 2022]
+Job 128: Running MACS2...
+
+[Fri Jul  1 14:43:50 2022]
+Finished job 95.
+66 of 120 steps (55%) done
+
+[Fri Jul  1 14:43:50 2022]
+Job 102: Running MACS2...
+
+[Fri Jul  1 14:43:54 2022]
+Finished job 128.
+67 of 120 steps (56%) done
+
+[Fri Jul  1 14:43:54 2022]
+Job 130: Running MACS2...
+
+[Fri Jul  1 14:45:39 2022]
+Finished job 116.
+68 of 120 steps (57%) done
+
+[Fri Jul  1 14:45:39 2022]
+Job 111: Running MACS2...
+
+[Fri Jul  1 14:47:21 2022]
+Finished job 99.
+69 of 120 steps (57%) done
+
+[Fri Jul  1 14:47:21 2022]
+Job 124: Running MACS2...
+
+[Fri Jul  1 14:54:00 2022]
+Finished job 130.
+70 of 120 steps (58%) done
+
+[Fri Jul  1 14:54:00 2022]
+Job 94: Running MACS2...
+
+[Fri Jul  1 14:56:05 2022]
+Finished job 111.
+71 of 120 steps (59%) done
+
+[Fri Jul  1 14:56:05 2022]
+Job 123: Running MACS2...
+
+[Fri Jul  1 14:57:10 2022]
+Finished job 102.
+72 of 120 steps (60%) done
+
+[Fri Jul  1 14:57:10 2022]
+Job 109: Running MACS2...
+
+[Fri Jul  1 14:57:37 2022]
+Finished job 124.
+73 of 120 steps (61%) done
+
+[Fri Jul  1 14:57:37 2022]
+Job 112: Running MACS2...
+
+[Fri Jul  1 15:04:12 2022]
+Finished job 94.
+74 of 120 steps (62%) done
+
+[Fri Jul  1 15:04:12 2022]
+Job 114: Running MACS2...
+
+[Fri Jul  1 15:07:00 2022]
+Finished job 123.
+75 of 120 steps (62%) done
+
+[Fri Jul  1 15:07:00 2022]
+Job 93: Running MACS2...
+
+[Fri Jul  1 15:07:30 2022]
+Finished job 109.
+76 of 120 steps (63%) done
+
+[Fri Jul  1 15:07:30 2022]
+Job 107: Running MACS2...
+
+[Fri Jul  1 15:07:57 2022]
+Finished job 112.
+77 of 120 steps (64%) done
+
+[Fri Jul  1 15:07:57 2022]
+Job 121: Running MACS2...
+
+[Fri Jul  1 15:14:59 2022]
+Finished job 93.
+78 of 120 steps (65%) done
+
+[Fri Jul  1 15:14:59 2022]
+Job 177: Running MACS2...
+
+[Fri Jul  1 15:16:09 2022]
+Finished job 114.
+79 of 120 steps (66%) done
+
+[Fri Jul  1 15:16:09 2022]
+Job 127: Running MACS2...
+
+[Fri Jul  1 15:16:13 2022]
+Finished job 121.
+80 of 120 steps (67%) done
+
+[Fri Jul  1 15:16:13 2022]
+Job 178: Running MACS2...
+
+[Fri Jul  1 15:17:17 2022]
+Finished job 107.
+81 of 120 steps (68%) done
+
+[Fri Jul  1 15:17:17 2022]
+Job 106: Running MACS2...
+
+[Fri Jul  1 15:21:47 2022]
+Finished job 127.
+82 of 120 steps (68%) done
+
+[Fri Jul  1 15:21:47 2022]
+Job 134: Running MACS2...
+
+[Fri Jul  1 15:22:38 2022]
+Finished job 177.
+83 of 120 steps (69%) done
+
+[Fri Jul  1 15:22:38 2022]
+Job 126: Running MACS2...
+
+[Fri Jul  1 15:23:25 2022]
+Finished job 178.
+84 of 120 steps (70%) done
+
+[Fri Jul  1 15:23:25 2022]
+Job 129: Running MACS2...
+
+[Fri Jul  1 15:24:41 2022]
+Finished job 106.
+85 of 120 steps (71%) done
+
+[Fri Jul  1 15:24:41 2022]
+Job 171: Running MACS2...
+
+[Fri Jul  1 15:29:08 2022]
+Finished job 126.
+86 of 120 steps (72%) done
+
+[Fri Jul  1 15:29:08 2022]
+Job 172: Running MACS2...
+
+[Fri Jul  1 15:29:32 2022]
+Finished job 134.
+87 of 120 steps (72%) done
+
+[Fri Jul  1 15:29:32 2022]
+Job 173: Running MACS2...
+
+[Fri Jul  1 15:30:42 2022]
+Finished job 129.
+88 of 120 steps (73%) done
+
+[Fri Jul  1 15:30:42 2022]
+Job 176: Running MACS2...
+
+[Fri Jul  1 15:55:36 2022]
+Finished job 173.
+89 of 120 steps (74%) done
+
+[Fri Jul  1 15:55:36 2022]
+Job 105: Running MACS2...
+
+[Fri Jul  1 15:56:25 2022]
+Finished job 171.
+90 of 120 steps (75%) done
+
+[Fri Jul  1 15:56:25 2022]
+Job 154: Running MACS2...
+
+[Fri Jul  1 15:58:17 2022]
+Finished job 172.
+91 of 120 steps (76%) done
+
+[Fri Jul  1 15:58:17 2022]
+Job 155: Running MACS2...
+
+[Fri Jul  1 16:01:43 2022]
+Finished job 105.
+92 of 120 steps (77%) done
+
+[Fri Jul  1 16:01:43 2022]
+Job 153: Running MACS2...
+
+[Fri Jul  1 16:03:18 2022]
+Finished job 154.
+93 of 120 steps (78%) done
+
+[Fri Jul  1 16:03:18 2022]
+Job 174: Running MACS2...
+
+[Fri Jul  1 16:04:54 2022]
+Finished job 155.
+94 of 120 steps (78%) done
+
+[Fri Jul  1 16:04:54 2022]
+Job 175: Running MACS2...
+
+[Fri Jul  1 16:08:39 2022]
+Finished job 153.
+95 of 120 steps (79%) done
+
+[Fri Jul  1 16:08:39 2022]
+Job 117: Running MACS2...
+
+[Fri Jul  1 16:12:50 2022]
+Finished job 117.
+96 of 120 steps (80%) done
+
+[Fri Jul  1 16:12:50 2022]
+Job 156: Running MACS2...
+
+[Fri Jul  1 16:18:29 2022]
+Finished job 156.
+97 of 120 steps (81%) done
+
+[Fri Jul  1 16:18:29 2022]
+Job 137: Running MACS2...
+
+[Fri Jul  1 16:19:49 2022]
+Finished job 174.
+98 of 120 steps (82%) done
+
+[Fri Jul  1 16:19:49 2022]
+Job 142: Running MACS2...
+
+[Fri Jul  1 16:25:20 2022]
+Finished job 176.
+99 of 120 steps (82%) done
+
+[Fri Jul  1 16:25:20 2022]
+Job 143: Running MACS2...
+
+[Fri Jul  1 16:27:17 2022]
+Finished job 137.
+100 of 120 steps (83%) done
+
+[Fri Jul  1 16:27:17 2022]
+Job 140: Running MACS2...
+
+[Fri Jul  1 16:27:55 2022]
+Finished job 142.
+101 of 120 steps (84%) done
+
+[Fri Jul  1 16:27:55 2022]
+Job 152: Running MACS2...
+
+[Fri Jul  1 16:32:01 2022]
+Finished job 143.
+102 of 120 steps (85%) done
+
+[Fri Jul  1 16:32:01 2022]
+Job 139: Running MACS2...
+
+[Fri Jul  1 16:34:08 2022]
+Finished job 175.
+103 of 120 steps (86%) done
+
+[Fri Jul  1 16:34:08 2022]
+Job 136: Running MACS2...
+
+[Fri Jul  1 16:34:57 2022]
+Finished job 140.
+104 of 120 steps (87%) done
+
+[Fri Jul  1 16:34:57 2022]
+Job 149: Running MACS2...
+
+[Fri Jul  1 16:42:46 2022]
+Finished job 136.
+105 of 120 steps (88%) done
+
+[Fri Jul  1 16:42:46 2022]
+Job 146: Running MACS2...
+
+[Fri Jul  1 16:42:55 2022]
+Finished job 139.
+106 of 120 steps (88%) done
+
+[Fri Jul  1 16:42:55 2022]
+Job 151: Running MACS2...
+
+[Fri Jul  1 16:44:11 2022]
+Finished job 152.
+107 of 120 steps (89%) done
+
+[Fri Jul  1 16:44:11 2022]
+Job 150: Running MACS2...
+
+[Fri Jul  1 16:47:27 2022]
+Finished job 149.
+108 of 120 steps (90%) done
+
+[Fri Jul  1 16:47:27 2022]
+Job 138: Running MACS2...
+
+[Fri Jul  1 16:50:29 2022]
+Finished job 146.
+109 of 120 steps (91%) done
+
+[Fri Jul  1 16:50:29 2022]
+Job 135: Running MACS2...
+
+[Fri Jul  1 16:56:18 2022]
+Finished job 150.
+110 of 120 steps (92%) done
+
+[Fri Jul  1 16:56:18 2022]
+Job 125: Running MACS2...
+
+[Fri Jul  1 16:56:18 2022]
+Finished job 151.
+111 of 120 steps (92%) done
+
+[Fri Jul  1 16:56:18 2022]
+Job 141: Running MACS2...
+
+[Fri Jul  1 16:56:38 2022]
+Finished job 138.
+112 of 120 steps (93%) done
+
+[Fri Jul  1 16:56:38 2022]
+Job 144: Running MACS2...
+
+[Fri Jul  1 16:57:18 2022]
+Finished job 125.
+113 of 120 steps (94%) done
+
+[Fri Jul  1 16:57:18 2022]
+Job 148: Running MACS2...
+
+[Fri Jul  1 16:58:47 2022]
+Finished job 135.
+114 of 120 steps (95%) done
+
+[Fri Jul  1 16:58:47 2022]
+Job 145: Running MACS2...
+
+[Fri Jul  1 17:01:23 2022]
+Finished job 141.
+115 of 120 steps (96%) done
+
+[Fri Jul  1 17:01:23 2022]
+Job 147: Running MACS2...
+
+[Fri Jul  1 17:01:31 2022]
+Finished job 144.
+116 of 120 steps (97%) done
+[Fri Jul  1 17:02:07 2022]
+Finished job 145.
+117 of 120 steps (98%) done
+[Fri Jul  1 17:03:11 2022]
+Finished job 148.
+118 of 120 steps (98%) done
+[Fri Jul  1 17:05:24 2022]
+Finished job 147.
+119 of 120 steps (99%) done
+
+[Fri Jul  1 17:05:24 2022]
+localrule all:
+    input: bw/dm6/atac/individual/orer_1to15_atac_4.bw, bw/dm6/atac/individual/orer_1to15_atac_6.bw, bw/dm6/atac/individual/orer_1to15_atac_7.bw, bw/dm6/atac/individual/orer_15to2_atac_4.bw, bw/dm6/atac/individual/orer_15to2_atac_6.bw, bw/dm6/atac/individual/orer_15to2_atac_7.bw, bw/dm6/atac/individual/orer_2to25_atac_4.bw, bw/dm6/atac/individual/orer_2to25_atac_6.bw, bw/dm6/atac/individual/orer_2to25_atac_7.bw, bw/dm6/atac/individual/orer_25to3_atac_4.bw, bw/dm6/atac/individual/orer_25to3_atac_6.bw, bw/dm6/atac/individual/orer_25to3_atac_7.bw, bw/dm6/atac/individual/gd7_1to15_atac_3.bw, bw/dm6/atac/individual/gd7_1to15_atac_5.bw, bw/dm6/atac/individual/gd7_1to15_atac_6.bw, bw/dm6/atac/individual/gd7_15to2_atac_3.bw, bw/dm6/atac/individual/gd7_15to2_atac_5.bw, bw/dm6/atac/individual/gd7_15to2_atac_6.bw, bw/dm6/atac/individual/gd7_2to25_atac_3.bw, bw/dm6/atac/individual/gd7_2to25_atac_5.bw, bw/dm6/atac/individual/gd7_2to25_atac_6.bw, bw/dm6/atac/individual/gd7_25to3_atac_3.bw, bw/dm6/atac/individual/gd7_25to3_atac_5.bw, bw/dm6/atac/individual/gd7_25to3_atac_6.bw, bw/dm6/atac/individual/zldrnai_1to15_atac_1.bw, bw/dm6/atac/individual/zldrnai_15to2_atac_1.bw, bw/dm6/atac/individual/zldrnai_2to25_atac_1.bw, bw/dm6/atac/individual/zldrnai_25to3_atac_1.bw, bw/dm6/atac/individual/zldrnai_1to15_atac_2.bw, bw/dm6/atac/individual/zldrnai_15to2_atac_2.bw, bw/dm6/atac/individual/zldrnai_2to25_atac_2.bw, bw/dm6/atac/individual/zldrnai_25to3_atac_2.bw, bw/dm6/atac/individual/zldrnai_1to15_atac_3.bw, bw/dm6/atac/individual/zldrnai_15to2_atac_3.bw, bw/dm6/atac/individual/zldrnai_2to25_atac_3.bw, bw/dm6/atac/individual/zldrnai_25to3_atac_3.bw, bw/dm6/atac/individual/cic6_2to25_atac_1.bw, bw/dm6/atac/individual/cic6_2to25_atac_2.bw, bw/dm6/atac/individual/cic6_2to25_atac_3.bw, bw/dm6/atac/individual/cic6_25to3_atac_1.bw, bw/dm6/atac/individual/cic6_25to3_atac_2.bw, bw/dm6/atac/individual/cic6_25to3_atac_3.bw, bw/dm6/mnase/individual/orer_mbt_100u_mnase_1.bw, bw/dm6/mnase/individual/orer_mbt_100u_mnase_2.bw, bw/dm6/mnase/individual/orer_mbt_100u_mnase_3.bw, bw/dm6/nexus/individual/orer_zld_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_zld_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_zld_mbt_nexus_4_positive.bw, bw/dm6/nexus/individual/orer_bcd_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_bcd_mbt_nexus_2_positive.bw, bw/dm6/nexus/individual/orer_bcd_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_cad_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_cad_mbt_nexus_2_positive.bw, bw/dm6/nexus/individual/orer_cad_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_dl_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_dl_mbt_nexus_2_positive.bw, bw/dm6/nexus/individual/orer_dl_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_twi_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_twi_mbt_nexus_2_positive.bw, bw/dm6/nexus/individual/orer_twi_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_gaf_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_gaf_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_gaf_mbt_nexus_4_positive.bw, bw/dm6/seq/individual/orer_h3k27ac_mbt_seq_1.bw, bw/dm6/seq/individual/orer_h3k27ac_mbt_seq_2.bw, bw/dm6/seq/individual/orer_h3k4me1_mbt_seq_1.bw, bw/dm6/seq/individual/orer_h3k4me1_mbt_seq_2.bw, bw/dm6/seq/individual/orer_wce_mbt_seq_1.bw, bw/dm6/atac/combined/orer_1to15_atac_combined.bw, bw/dm6/atac/combined/orer_15to2_atac_combined.bw, bw/dm6/atac/combined/orer_2to25_atac_combined.bw, bw/dm6/atac/combined/orer_25to3_atac_combined.bw, bw/dm6/atac/combined/gd7_1to15_atac_combined.bw, bw/dm6/atac/combined/gd7_15to2_atac_combined.bw, bw/dm6/atac/combined/gd7_2to25_atac_combined.bw, bw/dm6/atac/combined/gd7_25to3_atac_combined.bw, bw/dm6/atac/combined/zldrnai_1to15_atac_combined.bw, bw/dm6/atac/combined/zldrnai_15to2_atac_combined.bw, bw/dm6/atac/combined/zldrnai_2to25_atac_combined.bw, bw/dm6/atac/combined/zldrnai_25to3_atac_combined.bw, bw/dm6/atac/combined/cic6_2to25_atac_combined.bw, bw/dm6/atac/combined/cic6_25to3_atac_combined.bw, bw/dm6/mnase/combined/orer_mbt_100u_mnase_combined.bw, bw/dm6/nexus/combined/orer_zld_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_cad_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_dl_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_twi_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_positive.bw, bw/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined.bw, bw/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined.bw, bw/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined.bw, bw/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined.bw, bw/dm6/seq/combined/orer_wce_mbt_seq_combined.bw, peaks/dm6/atac/individual/orer_1to15_atac_4_peaks.narrowPeak, peaks/dm6/atac/individual/orer_1to15_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/orer_1to15_atac_7_peaks.narrowPeak, peaks/dm6/atac/individual/orer_15to2_atac_4_peaks.narrowPeak, peaks/dm6/atac/individual/orer_15to2_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/orer_15to2_atac_7_peaks.narrowPeak, peaks/dm6/atac/individual/orer_2to25_atac_4_peaks.narrowPeak, peaks/dm6/atac/individual/orer_2to25_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/orer_2to25_atac_7_peaks.narrowPeak, peaks/dm6/atac/individual/orer_25to3_atac_4_peaks.narrowPeak, peaks/dm6/atac/individual/orer_25to3_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/orer_25to3_atac_7_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_1to15_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_1to15_atac_5_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_1to15_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_15to2_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_15to2_atac_5_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_15to2_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_2to25_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_2to25_atac_5_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_2to25_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_25to3_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_25to3_atac_5_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_25to3_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_1to15_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_15to2_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_2to25_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_25to3_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_1to15_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_15to2_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_2to25_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_25to3_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_1to15_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_15to2_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_2to25_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_25to3_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_2to25_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_2to25_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_2to25_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_25to3_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_25to3_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_25to3_atac_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_zld_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_zld_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_zld_mbt_nexus_4_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_bcd_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_bcd_mbt_nexus_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_bcd_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_cad_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_cad_mbt_nexus_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_cad_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_dl_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_dl_mbt_nexus_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_dl_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_twi_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_twi_mbt_nexus_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_twi_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_gaf_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_gaf_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_gaf_mbt_nexus_4_peaks.narrowPeak, peaks/dm6/seq/individual/orer_h3k27ac_mbt_seq_1_peaks.narrowPeak, peaks/dm6/seq/individual/orer_h3k27ac_mbt_seq_2_peaks.narrowPeak, peaks/dm6/seq/individual/orer_h3k4me1_mbt_seq_1_peaks.narrowPeak, peaks/dm6/seq/individual/orer_h3k4me1_mbt_seq_2_peaks.narrowPeak, peaks/dm6/atac/combined/orer_1to15_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/orer_15to2_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/orer_2to25_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/orer_25to3_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_1to15_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_15to2_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_2to25_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_25to3_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/zldrnai_1to15_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/zldrnai_15to2_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/zldrnai_2to25_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/zldrnai_25to3_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/cic6_2to25_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/cic6_25to3_atac_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_zld_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_cad_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_dl_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_twi_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined_peaks.narrowPeak, peaks/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined_peaks.narrowPeak, peaks/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined_peaks.narrowPeak, peaks/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined_peaks.narrowPeak
+    jobid: 0
+
+[Fri Jul  1 17:05:24 2022]
+Finished job 0.
+120 of 120 steps (100%) done
+Complete log: /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/.snakemake/log/2022-07-01T085700.972711.snakemake.log

@@ -1,0 +1,194 @@
+---
+title: 'ZDTBCG BPNet in silico injection summaries'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to show summaries for the in silico injections using the motifs for our TFs of interest from the ZDTBCG model. In the previous .ipynb, we injected the Zelda and GAF motifs at variable distances from patterning TF motifs and predicted the binding of all TFs. This addresses the question "if motifX is moved away from Zelda, does that motif bind worse than if it is closer to Zelda?" Here, we will summarize these results into line plots. This analysis encompasses Figure 1f. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/6a_plot_insilico_distances/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# Import in silico injections
+
+Here, in `6_*.ipynb` we measured the pairwise differences when putting every motif at a distances within 400bp of each other. We measured the central window between 400-600 for every comparison, so the central motif is the feature that is measured each time.
+
+Note that we get negative counts predictions because we "correct for shoulder effects", which is: AB - (B - 0).
+
+Where:
+- AB: contains both, central and side_motif
+- B : contains only side_motif
+- 0 : doesn't contain any motif
+
+A short glossary of column terms from the BPNet code base. Keep in mind `alt` is the sequence with the central and side motif injected. `Ref` is the sequence is the central motif only.
+
+```{python, eval= F}
+def profile_sim_metrics(ref, alt, pc=0):
+    d = {}
+    d['simmetric_kl'] = simmetric_kl(ref, alt).mean() - simmetric_kl(ref, ref).mean()
+    d['counts'] = alt.sum()
+    d['counts_frac'] = (alt.sum() + pc) / (ref.sum() + pc)
+    d['max'] = alt.max()
+    d['max_frac'] = (alt.max() + pc) / (ref.max() + pc)
+
+    max_idx = np.argmax(ref, axis=0)
+    d['counts_max_ref'] = alt[max_idx, [0, 1]].sum()
+    d['counts_max_ref_frac'] = (d['counts_max_ref'] + pc) / (ref[max_idx, [0, 1]].sum() + pc)
+    return d
+```
+
+Here, we will import the predictions and define variables
+
+```{r}
+
+preds.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/binding/insilico/insilico_summaries.tsv.gz') %>% as.data.frame()
+preds.df %>% head
+
+ZDTBCG.tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+ZDTBCG.color.vec<-c('#059AB1','#B90088','#5EB105','#500EB1','#B17A0E','#9E1C1F')
+names(ZDTBCG.color.vec)<-ZDTBCG.tasks
+
+```
+
+# Filter predictions to focus on Zelda
+
+Here, our goal is to see how other motifs react when moving further from Zelda. This means we need to (1) filter out all pairs that don't involve Zelda and the pairs that don't measure across the other motifs and (2) make sure each task is being measured that matches its own motif. Additionally, add some columns to log-scale your results.
+
+```{r}
+preds_depending_on_zld.df<-preds.df %>%
+  dplyr::filter(side_motif=='Zld', central_motif==task, distance >=20) %>%
+  dplyr::group_by(central_motif) %>%
+  dplyr::arrange(distance) %>% 
+  dplyr::mutate(log2_fc_max = log2(`profile/counts_max_ref_frac`),
+                log2_fc_sum = log2(`profile/counts_frac`))
+
+```
+
+# Plot results to see how TFs react to Zelda distance
+
+```{r}
+preds_depending_on_zld.df$central_motif<-factor(preds_depending_on_zld.df$central_motif, levels = ZDTBCG.tasks)
+
+sum_log2fc.plot<-ggplot(preds_depending_on_zld.df, aes(x = distance, y = log2_fc_sum, color = central_motif))+
+  geom_hline(yintercept = 0, linetype = 'dashed', color = 'gray30')+
+  geom_line(size = 1)+
+  scale_x_continuous(name = 'Distance from distal Zelda motif (bp)')+
+  scale_y_continuous(name = 'Predicted synergy of central motifs')+
+  scale_color_manual(values = ZDTBCG.color.vec, name = 'Central motif')+
+  facet_grid(central_motif ~ .) +
+  ggtitle('In silico motif synergy with distal Zelda', subtitle = 'Sum across 200bp window')+
+  theme_classic()
+sum_log2fc.plot
+ggsave('figures/6a_plot_insilico_distances/in_silico_zelda_partner_synergy.png', sum_log2fc.plot, height = 8, width = 6)
+ggsave('figures/6a_plot_insilico_distances/in_silico_zelda_partner_synergy.pdf', sum_log2fc.plot, height = 8, width = 6)
+
+```
+
+# Filter predictions to focus on Gaf
+
+This acts as a control to show contrast of pioneers being cooperative or independent.
+
+```{r}
+preds_depending_on_gaf.df<-preds.df %>%
+  dplyr::filter(side_motif=='GAF', central_motif==task, distance >=20) %>%
+  dplyr::group_by(central_motif) %>%
+  dplyr::arrange(distance) %>% 
+  dplyr::mutate(log2_fc_max = log2(`profile/counts_max_ref_frac`),
+                log2_fc_sum = log2(`profile/counts_frac`))
+
+```
+
+# Plot results to see how TFs react to Zelda distance
+
+```{r}
+preds_depending_on_gaf.df$central_motif<-factor(preds_depending_on_gaf.df$central_motif, levels = ZDTBCG.tasks)
+
+sum_log2fc_gaf.plot<-ggplot(preds_depending_on_gaf.df, aes(x = distance, y = log2_fc_sum, color = central_motif))+
+  geom_hline(yintercept = 0, linetype = 'dashed', color = 'gray30')+
+  geom_line(size = 1)+
+  scale_x_continuous(name = 'Distance from distal Gaf motif (bp)')+
+  scale_y_continuous(name = 'Predicted synergy of central motifs')+
+  scale_color_manual(values = ZDTBCG.color.vec, name = 'Central motif')+
+  facet_grid(central_motif ~ .) +
+  ggtitle('In silico motif synergy with distal Gaf', subtitle = 'Sum across 200bp window')+
+  theme_classic()
+sum_log2fc_gaf.plot
+ggsave('figures/6a_plot_insilico_distances/in_silico_gaf_partner_synergy.png', sum_log2fc_gaf.plot, height = 8, width = 6)
+ggsave('figures/6a_plot_insilico_distances/in_silico_gaf_partner_synergy.pdf', sum_log2fc_gaf.plot, height = 8, width = 6)
+
+```
+
+# Conclusions
+
+Here we can see that all TFs depend on Zelda, but only Twi and Gaf depend on Gaf. This shows the directional and cooperative relationship that Zelda has with other TFs, as predicted by the in silico injections. 
+
+# Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+

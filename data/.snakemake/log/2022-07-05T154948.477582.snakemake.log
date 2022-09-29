@@ -1,0 +1,650 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	19	combined_bam_to_combined_bw
+	8	fastq_to_processed_bam
+	4	individual_bam_to_combined_bam
+	53	individual_bam_to_individual_bw
+	6	run_peak_calling
+	91
+
+[Tue Jul  5 15:49:50 2022]
+Job 252: Aligning FASTQ to BAM
+
+[Tue Jul  5 15:49:50 2022]
+Job 253: Aligning FASTQ to BAM
+
+[Tue Jul  5 15:49:50 2022]
+Job 246: Aligning FASTQ to BAM
+
+[Tue Jul  5 15:49:50 2022]
+Job 254: Aligning FASTQ to BAM
+
+[Tue Jul  5 16:06:14 2022]
+Finished job 253.
+1 of 91 steps (1%) done
+
+[Tue Jul  5 16:06:14 2022]
+Job 248: Aligning FASTQ to BAM
+
+[Tue Jul  5 16:35:53 2022]
+Finished job 246.
+2 of 91 steps (2%) done
+
+[Tue Jul  5 16:35:53 2022]
+Job 245: Aligning FASTQ to BAM
+
+[Tue Jul  5 16:45:44 2022]
+Finished job 248.
+3 of 91 steps (3%) done
+
+[Tue Jul  5 16:45:44 2022]
+Job 255: Aligning FASTQ to BAM
+
+[Tue Jul  5 16:51:46 2022]
+Finished job 252.
+4 of 91 steps (4%) done
+
+[Tue Jul  5 16:51:46 2022]
+Job 296: Converting bam to merged bam
+
+[Tue Jul  5 16:59:29 2022]
+Finished job 254.
+5 of 91 steps (5%) done
+
+[Tue Jul  5 16:59:29 2022]
+Job 247: Aligning FASTQ to BAM
+
+[Tue Jul  5 17:08:10 2022]
+Finished job 296.
+6 of 91 steps (7%) done
+
+[Tue Jul  5 17:08:10 2022]
+Job 93: Computing coverage of .bam file...
+
+[Tue Jul  5 17:21:46 2022]
+Finished job 245.
+7 of 91 steps (8%) done
+
+[Tue Jul  5 17:21:46 2022]
+Job 293: Converting bam to merged bam
+
+[Tue Jul  5 17:34:12 2022]
+Finished job 293.
+8 of 91 steps (9%) done
+
+[Tue Jul  5 17:34:12 2022]
+Job 78: Computing coverage of .bam file...
+
+[Tue Jul  5 17:44:52 2022]
+Finished job 255.
+9 of 91 steps (10%) done
+
+[Tue Jul  5 17:44:52 2022]
+Job 297: Converting bam to merged bam
+
+[Tue Jul  5 17:53:15 2022]
+Finished job 247.
+10 of 91 steps (11%) done
+
+[Tue Jul  5 17:53:15 2022]
+Job 294: Converting bam to merged bam
+
+[Tue Jul  5 18:04:58 2022]
+Finished job 294.
+11 of 91 steps (12%) done
+
+[Tue Jul  5 18:04:58 2022]
+Job 88: Computing coverage of .bam file...
+
+[Tue Jul  5 18:09:30 2022]
+Finished job 297.
+12 of 91 steps (13%) done
+
+[Tue Jul  5 18:09:30 2022]
+Job 80: Computing coverage of .bam file...
+
+[Tue Jul  5 18:28:08 2022]
+Finished job 93.
+13 of 91 steps (14%) done
+
+[Tue Jul  5 18:28:08 2022]
+Job 79: Computing coverage of .bam file...
+
+[Tue Jul  5 20:46:51 2022]
+Finished job 88.
+14 of 91 steps (15%) done
+
+[Tue Jul  5 20:46:51 2022]
+Job 82: Computing coverage of .bam file...
+
+[Tue Jul  5 21:08:42 2022]
+Finished job 80.
+15 of 91 steps (16%) done
+
+[Tue Jul  5 21:08:42 2022]
+Job 86: Computing coverage of .bam file...
+
+[Tue Jul  5 21:17:02 2022]
+Finished job 78.
+16 of 91 steps (18%) done
+
+[Tue Jul  5 21:17:02 2022]
+Job 83: Computing coverage of .bam file...
+
+[Tue Jul  5 21:31:51 2022]
+Finished job 79.
+17 of 91 steps (19%) done
+
+[Tue Jul  5 21:31:51 2022]
+Job 84: Computing coverage of .bam file...
+
+[Tue Jul  5 23:28:29 2022]
+Finished job 82.
+18 of 91 steps (20%) done
+
+[Tue Jul  5 23:28:29 2022]
+Job 90: Computing coverage of .bam file...
+
+[Tue Jul  5 23:32:29 2022]
+Finished job 86.
+19 of 91 steps (21%) done
+
+[Tue Jul  5 23:32:29 2022]
+Job 87: Computing coverage of .bam file...
+
+[Tue Jul  5 23:48:32 2022]
+Finished job 83.
+20 of 91 steps (22%) done
+
+[Tue Jul  5 23:48:32 2022]
+Job 77: Computing coverage of .bam file...
+
+[Wed Jul  6 00:05:39 2022]
+Finished job 84.
+21 of 91 steps (23%) done
+
+[Wed Jul  6 00:05:39 2022]
+Job 89: Computing coverage of .bam file...
+
+[Wed Jul  6 01:47:02 2022]
+Finished job 87.
+22 of 91 steps (24%) done
+
+[Wed Jul  6 01:47:02 2022]
+Job 49: Computing coverage of .bam file...
+
+[Wed Jul  6 01:49:52 2022]
+Finished job 90.
+23 of 91 steps (25%) done
+
+[Wed Jul  6 01:49:52 2022]
+Job 81: Computing coverage of .bam file...
+
+[Wed Jul  6 02:09:57 2022]
+Finished job 89.
+24 of 91 steps (26%) done
+
+[Wed Jul  6 02:09:57 2022]
+Job 48: Computing coverage of .bam file...
+
+[Wed Jul  6 02:15:42 2022]
+Finished job 49.
+25 of 91 steps (27%) done
+
+[Wed Jul  6 02:15:42 2022]
+Job 95: Computing coverage of .bam file...
+
+[Wed Jul  6 02:16:33 2022]
+Finished job 77.
+26 of 91 steps (29%) done
+
+[Wed Jul  6 02:16:33 2022]
+Job 47: Computing coverage of .bam file...
+
+[Wed Jul  6 02:36:22 2022]
+Finished job 48.
+27 of 91 steps (30%) done
+
+[Wed Jul  6 02:36:22 2022]
+Job 4: Computing coverage of .bam file...
+
+[Wed Jul  6 02:40:36 2022]
+Finished job 47.
+28 of 91 steps (31%) done
+
+[Wed Jul  6 02:40:37 2022]
+Job 28: Computing coverage of .bam file...
+
+[Wed Jul  6 02:49:36 2022]
+Finished job 95.
+29 of 91 steps (32%) done
+
+[Wed Jul  6 02:49:36 2022]
+Job 6: Computing coverage of .bam file...
+
+[Wed Jul  6 03:33:02 2022]
+Finished job 81.
+30 of 91 steps (33%) done
+
+[Wed Jul  6 03:33:02 2022]
+Job 85: Computing coverage of .bam file...
+
+[Wed Jul  6 03:48:26 2022]
+Finished job 28.
+31 of 91 steps (34%) done
+
+[Wed Jul  6 03:48:26 2022]
+Job 11: Computing coverage of .bam file...
+
+[Wed Jul  6 03:54:03 2022]
+Finished job 4.
+32 of 91 steps (35%) done
+
+[Wed Jul  6 03:54:03 2022]
+Job 30: Computing coverage of .bam file...
+
+[Wed Jul  6 03:58:19 2022]
+Finished job 6.
+33 of 91 steps (36%) done
+
+[Wed Jul  6 03:58:19 2022]
+Job 9: Computing coverage of .bam file...
+
+[Wed Jul  6 04:39:27 2022]
+Finished job 85.
+34 of 91 steps (37%) done
+
+[Wed Jul  6 04:39:27 2022]
+Job 41: Computing coverage of .bam file...
+
+[Wed Jul  6 04:52:39 2022]
+Finished job 11.
+35 of 91 steps (38%) done
+
+[Wed Jul  6 04:52:39 2022]
+Job 94: Computing coverage of .bam file...
+
+[Wed Jul  6 05:00:57 2022]
+Finished job 9.
+36 of 91 steps (40%) done
+
+[Wed Jul  6 05:00:57 2022]
+Job 16: Computing coverage of .bam file...
+
+[Wed Jul  6 05:01:17 2022]
+Finished job 30.
+37 of 91 steps (41%) done
+
+[Wed Jul  6 05:01:17 2022]
+Job 21: Computing coverage of .bam file...
+
+[Wed Jul  6 05:14:34 2022]
+Finished job 94.
+38 of 91 steps (42%) done
+
+[Wed Jul  6 05:14:34 2022]
+Job 12: Computing coverage of .bam file...
+
+[Wed Jul  6 05:37:48 2022]
+Finished job 41.
+39 of 91 steps (43%) done
+
+[Wed Jul  6 05:37:48 2022]
+Job 26: Computing coverage of .bam file...
+
+[Wed Jul  6 05:59:47 2022]
+Finished job 21.
+40 of 91 steps (44%) done
+
+[Wed Jul  6 05:59:48 2022]
+Job 5: Computing coverage of .bam file...
+
+[Wed Jul  6 06:08:42 2022]
+Finished job 12.
+41 of 91 steps (45%) done
+
+[Wed Jul  6 06:08:42 2022]
+Job 40: Computing coverage of .bam file...
+
+[Wed Jul  6 06:22:42 2022]
+Finished job 16.
+42 of 91 steps (46%) done
+
+[Wed Jul  6 06:22:42 2022]
+Job 8: Computing coverage of .bam file...
+
+[Wed Jul  6 06:37:57 2022]
+Finished job 26.
+43 of 91 steps (47%) done
+
+[Wed Jul  6 06:37:57 2022]
+Job 27: Computing coverage of .bam file...
+
+[Wed Jul  6 07:04:43 2022]
+Finished job 40.
+44 of 91 steps (48%) done
+
+[Wed Jul  6 07:04:43 2022]
+Job 39: Computing coverage of .bam file...
+
+[Wed Jul  6 07:18:25 2022]
+Finished job 5.
+45 of 91 steps (49%) done
+
+[Wed Jul  6 07:18:25 2022]
+Job 18: Computing coverage of .bam file...
+
+[Wed Jul  6 07:30:17 2022]
+Finished job 27.
+46 of 91 steps (51%) done
+
+[Wed Jul  6 07:30:17 2022]
+Job 23: Computing coverage of .bam file...
+
+[Wed Jul  6 07:31:41 2022]
+Finished job 8.
+47 of 91 steps (52%) done
+
+[Wed Jul  6 07:31:41 2022]
+Job 3: Computing coverage of .bam file...
+
+[Wed Jul  6 07:55:46 2022]
+Finished job 39.
+48 of 91 steps (53%) done
+
+[Wed Jul  6 07:55:46 2022]
+Job 24: Computing coverage of .bam file...
+
+[Wed Jul  6 08:25:13 2022]
+Finished job 23.
+49 of 91 steps (54%) done
+
+[Wed Jul  6 08:25:13 2022]
+Job 7: Computing coverage of .bam file...
+
+[Wed Jul  6 08:26:40 2022]
+Finished job 3.
+50 of 91 steps (55%) done
+
+[Wed Jul  6 08:26:40 2022]
+Job 52: Computing coverage of .bam file...
+
+[Wed Jul  6 08:45:14 2022]
+Finished job 18.
+51 of 91 steps (56%) done
+
+[Wed Jul  6 08:45:14 2022]
+Job 36: Computing coverage of .bam file...
+
+[Wed Jul  6 08:46:10 2022]
+Finished job 52.
+52 of 91 steps (57%) done
+
+[Wed Jul  6 08:46:10 2022]
+Job 10: Computing coverage of .bam file...
+
+[Wed Jul  6 08:54:16 2022]
+Finished job 24.
+53 of 91 steps (58%) done
+
+[Wed Jul  6 08:54:16 2022]
+Job 38: Computing coverage of .bam file...
+
+[Wed Jul  6 09:19:47 2022]
+Finished job 36.
+54 of 91 steps (59%) done
+
+[Wed Jul  6 09:19:47 2022]
+Job 19: Computing coverage of .bam file...
+
+[Wed Jul  6 09:23:14 2022]
+Finished job 7.
+55 of 91 steps (60%) done
+
+[Wed Jul  6 09:23:14 2022]
+Job 32: Computing coverage of .bam file...
+
+[Wed Jul  6 09:45:34 2022]
+Finished job 10.
+56 of 91 steps (62%) done
+
+[Wed Jul  6 09:45:34 2022]
+Job 50: Computing coverage of .bam file...
+
+[Wed Jul  6 09:48:28 2022]
+Finished job 38.
+57 of 91 steps (63%) done
+
+[Wed Jul  6 09:48:28 2022]
+Job 2: Computing coverage of .bam file...
+
+[Wed Jul  6 10:03:40 2022]
+Finished job 50.
+58 of 91 steps (64%) done
+
+[Wed Jul  6 10:03:40 2022]
+Job 31: Computing coverage of .bam file...
+
+[Wed Jul  6 10:09:13 2022]
+Finished job 19.
+59 of 91 steps (65%) done
+
+[Wed Jul  6 10:09:13 2022]
+Job 17: Computing coverage of .bam file...
+
+[Wed Jul  6 10:13:20 2022]
+Finished job 32.
+60 of 91 steps (66%) done
+
+[Wed Jul  6 10:13:20 2022]
+Job 92: Computing coverage of .bam file...
+
+[Wed Jul  6 10:47:19 2022]
+Finished job 2.
+61 of 91 steps (67%) done
+
+[Wed Jul  6 10:47:19 2022]
+Job 20: Computing coverage of .bam file...
+
+[Wed Jul  6 10:53:23 2022]
+Finished job 31.
+62 of 91 steps (68%) done
+
+[Wed Jul  6 10:53:23 2022]
+Job 53: Computing coverage of .bam file...
+
+[Wed Jul  6 10:57:34 2022]
+Finished job 17.
+63 of 91 steps (69%) done
+
+[Wed Jul  6 10:57:34 2022]
+Job 91: Computing coverage of .bam file...
+
+[Wed Jul  6 10:59:25 2022]
+Finished job 92.
+64 of 91 steps (70%) done
+
+[Wed Jul  6 10:59:25 2022]
+Job 22: Computing coverage of .bam file...
+
+[Wed Jul  6 11:10:59 2022]
+Finished job 53.
+65 of 91 steps (71%) done
+
+[Wed Jul  6 11:10:59 2022]
+Job 1: Computing coverage of .bam file...
+
+[Wed Jul  6 11:41:07 2022]
+Finished job 20.
+66 of 91 steps (73%) done
+
+[Wed Jul  6 11:41:07 2022]
+Job 15: Computing coverage of .bam file...
+
+[Wed Jul  6 11:41:41 2022]
+Finished job 91.
+67 of 91 steps (74%) done
+
+[Wed Jul  6 11:41:41 2022]
+Job 29: Computing coverage of .bam file...
+
+[Wed Jul  6 11:46:14 2022]
+Finished job 22.
+68 of 91 steps (75%) done
+
+[Wed Jul  6 11:46:14 2022]
+Job 35: Computing coverage of .bam file...
+
+[Wed Jul  6 12:04:12 2022]
+Finished job 1.
+69 of 91 steps (76%) done
+
+[Wed Jul  6 12:04:12 2022]
+Job 14: Computing coverage of .bam file...
+
+[Wed Jul  6 12:19:14 2022]
+Finished job 35.
+70 of 91 steps (77%) done
+
+[Wed Jul  6 12:19:14 2022]
+Job 42: Computing coverage of .bam file...
+
+[Wed Jul  6 12:27:21 2022]
+Finished job 29.
+71 of 91 steps (78%) done
+
+[Wed Jul  6 12:27:21 2022]
+Job 34: Computing coverage of .bam file...
+
+[Wed Jul  6 12:27:42 2022]
+Finished job 15.
+72 of 91 steps (79%) done
+
+[Wed Jul  6 12:27:42 2022]
+Job 37: Computing coverage of .bam file...
+
+[Wed Jul  6 12:46:00 2022]
+Finished job 14.
+73 of 91 steps (80%) done
+
+[Wed Jul  6 12:46:00 2022]
+Job 45: Computing coverage of .bam file...
+
+[Wed Jul  6 12:51:39 2022]
+Finished job 42.
+74 of 91 steps (81%) done
+
+[Wed Jul  6 12:51:39 2022]
+Job 13: Computing coverage of .bam file...
+
+[Wed Jul  6 12:52:25 2022]
+Finished job 34.
+75 of 91 steps (82%) done
+
+[Wed Jul  6 12:52:25 2022]
+Job 44: Computing coverage of .bam file...
+
+[Wed Jul  6 13:00:44 2022]
+Finished job 37.
+76 of 91 steps (84%) done
+
+[Wed Jul  6 13:00:44 2022]
+Job 43: Computing coverage of .bam file...
+
+[Wed Jul  6 13:14:42 2022]
+Finished job 45.
+77 of 91 steps (85%) done
+
+[Wed Jul  6 13:14:42 2022]
+Job 46: Computing coverage of .bam file...
+
+[Wed Jul  6 13:18:26 2022]
+Finished job 13.
+78 of 91 steps (86%) done
+
+[Wed Jul  6 13:18:26 2022]
+Job 25: Computing coverage of .bam file...
+
+[Wed Jul  6 13:20:47 2022]
+Finished job 44.
+79 of 91 steps (87%) done
+
+[Wed Jul  6 13:20:47 2022]
+Job 51: Computing coverage of .bam file...
+
+[Wed Jul  6 13:24:47 2022]
+Finished job 43.
+80 of 91 steps (88%) done
+
+[Wed Jul  6 13:24:47 2022]
+Job 33: Computing coverage of .bam file...
+
+[Wed Jul  6 13:28:13 2022]
+Finished job 51.
+81 of 91 steps (89%) done
+
+[Wed Jul  6 13:28:13 2022]
+Job 188: Running MACS2...
+
+[Wed Jul  6 13:31:16 2022]
+Finished job 33.
+82 of 91 steps (90%) done
+
+[Wed Jul  6 13:31:16 2022]
+Job 187: Running MACS2...
+
+[Wed Jul  6 13:36:20 2022]
+Finished job 46.
+83 of 91 steps (91%) done
+
+[Wed Jul  6 13:36:20 2022]
+Job 149: Running MACS2...
+
+[Wed Jul  6 13:37:17 2022]
+Finished job 188.
+84 of 91 steps (92%) done
+
+[Wed Jul  6 13:37:17 2022]
+Job 148: Running MACS2...
+
+[Wed Jul  6 13:37:40 2022]
+Finished job 25.
+85 of 91 steps (93%) done
+
+[Wed Jul  6 13:37:40 2022]
+Job 147: Running MACS2...
+
+[Wed Jul  6 13:39:58 2022]
+Finished job 187.
+86 of 91 steps (95%) done
+
+[Wed Jul  6 13:39:58 2022]
+Job 150: Running MACS2...
+
+[Wed Jul  6 13:41:22 2022]
+Finished job 149.
+87 of 91 steps (96%) done
+[Wed Jul  6 13:41:52 2022]
+Finished job 147.
+88 of 91 steps (97%) done
+[Wed Jul  6 13:42:14 2022]
+Finished job 148.
+89 of 91 steps (98%) done
+[Wed Jul  6 13:43:40 2022]
+Finished job 150.
+90 of 91 steps (99%) done
+
+[Wed Jul  6 13:43:41 2022]
+localrule all:
+    input: bw/dm6/atac/individual/orer_1to15_atac_4.bw, bw/dm6/atac/individual/orer_1to15_atac_6.bw, bw/dm6/atac/individual/orer_1to15_atac_7.bw, bw/dm6/atac/individual/orer_15to2_atac_4.bw, bw/dm6/atac/individual/orer_15to2_atac_6.bw, bw/dm6/atac/individual/orer_15to2_atac_7.bw, bw/dm6/atac/individual/orer_2to25_atac_4.bw, bw/dm6/atac/individual/orer_2to25_atac_6.bw, bw/dm6/atac/individual/orer_2to25_atac_7.bw, bw/dm6/atac/individual/orer_25to3_atac_4.bw, bw/dm6/atac/individual/orer_25to3_atac_6.bw, bw/dm6/atac/individual/orer_25to3_atac_7.bw, bw/dm6/atac/individual/gd7_1to15_atac_3.bw, bw/dm6/atac/individual/gd7_1to15_atac_5.bw, bw/dm6/atac/individual/gd7_1to15_atac_6.bw, bw/dm6/atac/individual/gd7_15to2_atac_3.bw, bw/dm6/atac/individual/gd7_15to2_atac_5.bw, bw/dm6/atac/individual/gd7_15to2_atac_6.bw, bw/dm6/atac/individual/gd7_2to25_atac_3.bw, bw/dm6/atac/individual/gd7_2to25_atac_5.bw, bw/dm6/atac/individual/gd7_2to25_atac_6.bw, bw/dm6/atac/individual/gd7_25to3_atac_3.bw, bw/dm6/atac/individual/gd7_25to3_atac_5.bw, bw/dm6/atac/individual/gd7_25to3_atac_6.bw, bw/dm6/atac/individual/zldrnai_1to15_atac_1.bw, bw/dm6/atac/individual/zldrnai_15to2_atac_1.bw, bw/dm6/atac/individual/zldrnai_2to25_atac_1.bw, bw/dm6/atac/individual/zldrnai_25to3_atac_1.bw, bw/dm6/atac/individual/zldrnai_1to15_atac_2.bw, bw/dm6/atac/individual/zldrnai_15to2_atac_2.bw, bw/dm6/atac/individual/zldrnai_2to25_atac_2.bw, bw/dm6/atac/individual/zldrnai_25to3_atac_2.bw, bw/dm6/atac/individual/zldrnai_1to15_atac_3.bw, bw/dm6/atac/individual/zldrnai_15to2_atac_3.bw, bw/dm6/atac/individual/zldrnai_2to25_atac_3.bw, bw/dm6/atac/individual/zldrnai_25to3_atac_3.bw, bw/dm6/atac/individual/cic6_2to25_atac_1.bw, bw/dm6/atac/individual/cic6_2to25_atac_2.bw, bw/dm6/atac/individual/cic6_2to25_atac_3.bw, bw/dm6/atac/individual/cic6_25to3_atac_1.bw, bw/dm6/atac/individual/cic6_25to3_atac_2.bw, bw/dm6/atac/individual/cic6_25to3_atac_3.bw, bw/dm6/atac/individual/gd7_2to4_atac_1.bw, bw/dm6/atac/individual/gd7_2to4_atac_2.bw, bw/dm6/atac/individual/toll10b_2to4_atac_1.bw, bw/dm6/atac/individual/toll10b_2to4_atac_2.bw, bw/dm6/mnase/individual/orer_mbt_100u_mnase_1.bw, bw/dm6/mnase/individual/orer_mbt_100u_mnase_2.bw, bw/dm6/mnase/individual/orer_mbt_100u_mnase_3.bw, bw/dm6/mnase/individual/gd7_2to4_mono_mnase_1.bw, bw/dm6/mnase/individual/gd7_2to4_mono_mnase_2.bw, bw/dm6/mnase/individual/toll10b_2to4_mono_mnase_1.bw, bw/dm6/mnase/individual/toll10b_2to4_mono_mnase_2.bw, bw/dm6/nexus/individual/orer_zld_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_zld_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_zld_mbt_nexus_4_positive.bw, bw/dm6/nexus/individual/orer_bcd_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_bcd_mbt_nexus_2_positive.bw, bw/dm6/nexus/individual/orer_bcd_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_cad_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_cad_mbt_nexus_2_positive.bw, bw/dm6/nexus/individual/orer_cad_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_dl_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_dl_mbt_nexus_2_positive.bw, bw/dm6/nexus/individual/orer_dl_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_twi_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_twi_mbt_nexus_2_positive.bw, bw/dm6/nexus/individual/orer_twi_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_gaf_mbt_nexus_1_positive.bw, bw/dm6/nexus/individual/orer_gaf_mbt_nexus_3_positive.bw, bw/dm6/nexus/individual/orer_gaf_mbt_nexus_4_positive.bw, bw/dm6/seq/individual/orer_h3k27ac_mbt_seq_1.bw, bw/dm6/seq/individual/orer_h3k27ac_mbt_seq_2.bw, bw/dm6/seq/individual/orer_h3k4me1_mbt_seq_1.bw, bw/dm6/seq/individual/orer_h3k4me1_mbt_seq_2.bw, bw/dm6/seq/individual/orer_wce_mbt_seq_1.bw, bw/dm6/atac/combined/orer_1to15_atac_combined.bw, bw/dm6/atac/combined/orer_15to2_atac_combined.bw, bw/dm6/atac/combined/orer_2to25_atac_combined.bw, bw/dm6/atac/combined/orer_25to3_atac_combined.bw, bw/dm6/atac/combined/gd7_1to15_atac_combined.bw, bw/dm6/atac/combined/gd7_15to2_atac_combined.bw, bw/dm6/atac/combined/gd7_2to25_atac_combined.bw, bw/dm6/atac/combined/gd7_25to3_atac_combined.bw, bw/dm6/atac/combined/zldrnai_1to15_atac_combined.bw, bw/dm6/atac/combined/zldrnai_15to2_atac_combined.bw, bw/dm6/atac/combined/zldrnai_2to25_atac_combined.bw, bw/dm6/atac/combined/zldrnai_25to3_atac_combined.bw, bw/dm6/atac/combined/cic6_2to25_atac_combined.bw, bw/dm6/atac/combined/cic6_25to3_atac_combined.bw, bw/dm6/atac/combined/gd7_2to4_atac_combined.bw, bw/dm6/atac/combined/toll10b_2to4_atac_combined.bw, bw/dm6/mnase/combined/orer_mbt_100u_mnase_combined.bw, bw/dm6/mnase/combined/gd7_2to4_mono_mnase_combined.bw, bw/dm6/mnase/combined/toll10b_2to4_mono_mnase_combined.bw, bw/dm6/nexus/combined/orer_zld_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_cad_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_dl_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_twi_mbt_nexus_combined_positive.bw, bw/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_positive.bw, bw/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined.bw, bw/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined.bw, bw/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined.bw, bw/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined.bw, bw/dm6/seq/combined/orer_wce_mbt_seq_combined.bw, peaks/dm6/atac/individual/orer_1to15_atac_4_peaks.narrowPeak, peaks/dm6/atac/individual/orer_1to15_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/orer_1to15_atac_7_peaks.narrowPeak, peaks/dm6/atac/individual/orer_15to2_atac_4_peaks.narrowPeak, peaks/dm6/atac/individual/orer_15to2_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/orer_15to2_atac_7_peaks.narrowPeak, peaks/dm6/atac/individual/orer_2to25_atac_4_peaks.narrowPeak, peaks/dm6/atac/individual/orer_2to25_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/orer_2to25_atac_7_peaks.narrowPeak, peaks/dm6/atac/individual/orer_25to3_atac_4_peaks.narrowPeak, peaks/dm6/atac/individual/orer_25to3_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/orer_25to3_atac_7_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_1to15_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_1to15_atac_5_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_1to15_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_15to2_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_15to2_atac_5_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_15to2_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_2to25_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_2to25_atac_5_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_2to25_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_25to3_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_25to3_atac_5_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_25to3_atac_6_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_1to15_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_15to2_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_2to25_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_25to3_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_1to15_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_15to2_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_2to25_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_25to3_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_1to15_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_15to2_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_2to25_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/zldrnai_25to3_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_2to25_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_2to25_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_2to25_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_25to3_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_25to3_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/cic6_25to3_atac_3_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_2to4_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/gd7_2to4_atac_2_peaks.narrowPeak, peaks/dm6/atac/individual/toll10b_2to4_atac_1_peaks.narrowPeak, peaks/dm6/atac/individual/toll10b_2to4_atac_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_zld_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_zld_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_zld_mbt_nexus_4_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_bcd_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_bcd_mbt_nexus_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_bcd_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_cad_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_cad_mbt_nexus_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_cad_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_dl_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_dl_mbt_nexus_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_dl_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_twi_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_twi_mbt_nexus_2_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_twi_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_gaf_mbt_nexus_1_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_gaf_mbt_nexus_3_peaks.narrowPeak, peaks/dm6/nexus/individual/orer_gaf_mbt_nexus_4_peaks.narrowPeak, peaks/dm6/seq/individual/orer_h3k27ac_mbt_seq_1_peaks.narrowPeak, peaks/dm6/seq/individual/orer_h3k27ac_mbt_seq_2_peaks.narrowPeak, peaks/dm6/seq/individual/orer_h3k4me1_mbt_seq_1_peaks.narrowPeak, peaks/dm6/seq/individual/orer_h3k4me1_mbt_seq_2_peaks.narrowPeak, peaks/dm6/atac/combined/orer_1to15_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/orer_15to2_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/orer_2to25_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/orer_25to3_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_1to15_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_15to2_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_2to25_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_25to3_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/zldrnai_1to15_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/zldrnai_15to2_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/zldrnai_2to25_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/zldrnai_25to3_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/cic6_2to25_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/cic6_25to3_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/gd7_2to4_atac_combined_peaks.narrowPeak, peaks/dm6/atac/combined/toll10b_2to4_atac_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_zld_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_cad_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_dl_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_twi_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_peaks.narrowPeak, peaks/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined_peaks.narrowPeak, peaks/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined_peaks.narrowPeak, peaks/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined_peaks.narrowPeak, peaks/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined_peaks.narrowPeak, bw/dm6/seq/individual/orer_h3k27ac_mbt_seq_1_log2_normalized.bw, bw/dm6/seq/individual/orer_h3k27ac_mbt_seq_2_log2_normalized.bw, bw/dm6/seq/individual/orer_h3k4me1_mbt_seq_1_log2_normalized.bw, bw/dm6/seq/individual/orer_h3k4me1_mbt_seq_2_log2_normalized.bw, bw/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined_log2_normalized.bw, bw/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined_log2_normalized.bw
+    jobid: 0
+
+[Wed Jul  6 13:43:41 2022]
+Finished job 0.
+91 of 91 steps (100%) done
+Complete log: /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/.snakemake/log/2022-07-05T154948.477582.snakemake.log

@@ -1,0 +1,47 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 6
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	24	combined_bam_to_combined_bw
+	68	individual_bam_to_individual_bw
+	93
+
+[Thu Jun 30 11:00:48 2022]
+Job 72: Computing coverage of .bam file...
+
+[Thu Jun 30 11:00:49 2022]
+Job 74: Computing coverage of .bam file...
+
+[Thu Jun 30 11:00:49 2022]
+Job 71: Computing coverage of .bam file...
+
+[Thu Jun 30 11:00:49 2022]
+Job 70: Computing coverage of .bam file...
+
+[Thu Jun 30 11:00:49 2022]
+Job 83: Computing coverage of .bam file...
+
+[Thu Jun 30 11:00:49 2022]
+Job 80: Computing coverage of .bam file...
+
+[Thu Jun 30 14:06:46 2022]
+Finished job 74.
+1 of 93 steps (1%) done
+[Thu Jun 30 14:18:17 2022]
+Finished job 71.
+2 of 93 steps (2%) done
+[Thu Jun 30 14:24:54 2022]
+Finished job 80.
+3 of 93 steps (3%) done
+[Thu Jun 30 14:37:05 2022]
+Finished job 72.
+4 of 93 steps (4%) done
+Will exit after finishing currently running jobs.
+Removing output files of failed job combined_bam_to_combined_bw since they might be corrupted:
+bw/dm6/atac/combined/orer_15to2_atac_combined.bw
+Will exit after finishing currently running jobs.
+Shutting down, this might take some time.
+Complete log: /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/.snakemake/log/2022-06-30T110046.025003.snakemake.log

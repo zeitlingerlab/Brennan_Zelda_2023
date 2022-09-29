@@ -1,0 +1,633 @@
+---
+title: 'In vitro protein binding microarray analysis with Zelda affinity'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to use protein binding microarray (PBM) data previously generated with the Rushlow and Hughes labs, in addition to our BPNet/ChromBPNet results, to study Zelda motif affinities associated with the different Zelda heptads. Note that we have reviewed previously described Zelda TAGteam motif affinities from the following publications: 
+
+1. Nien et al., PLOS Genetics, 2011: https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1002339
+2. Harrison et al., PLOS Genetics, 2011: https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1002339
+3. Harrison et al., Developmental Biology, 2010: https://www.sciencedirect.com/science/article/pii/S0012160610008468?via%3Dihub
+4. Liang et al., Nature, 2008: https://www.nature.com/articles/nature07388
+
+We will also plot the in silico analysis results that were generated as part of 8_acc_insilico_perturbs.ipynb, where motifs were injected at some distance away from other motifs and accessibility was predicted. Note that this analysis will cover Figure 3 a,b,h, and i. The rest of figure 3, including the Zelda depeltion analysis, will be in 13_*.rmd.
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/12_pbm_w_affinities/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data for this analysis
+
+```{r import}
+
+# PBM data
+
+## PBM E-scores: 
+
+pbm_e_rep1.df<-read.delim('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/pbm/Cterm/E_2016-02-04_12072_1M-ME_Standard_pEX0562.1_Zld.txt', sep="\t") %>% 
+  dplyr::mutate(type = 'pbm_rep1') %>% 
+  dplyr::rename(seq = `X.8mers`)
+pbm_e_rep2.df<-read.delim('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/pbm/Cterm/E_2016-02-04_12088_1M-HK_Standard_pEX0562.2_Zld.txt', sep="\t") %>% 
+  dplyr::mutate(type = 'pbm_rep2') %>% 
+  dplyr::rename(seq = `X.8mers`)
+
+pbm.e.df<-rbind(pbm_e_rep1.df, pbm_e_rep2.df) %>%
+  dplyr::arrange(desc(all))
+
+## PBM Z-scores: 
+
+pbm_z_rep1.df<-read.delim('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/pbm/Cterm/Z_2016-02-04_12072_1M-ME_Standard_pEX0562.1_Zld.txt', sep="\t") %>% 
+  dplyr::mutate(type = 'pbm_rep1') %>% 
+  dplyr::rename(seq = `X.8mers`)
+pbm_z_rep2.df<-read.delim('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/pbm/Cterm/Z_2016-02-04_12088_1M-HK_Standard_pEX0562.2_Zld.txt', sep="\t") %>% 
+  dplyr::mutate(type = 'pbm_rep2') %>% 
+  dplyr::rename(seq = `X.8mers`)
+
+pbm_z.df<-rbind(pbm_z_rep1.df, pbm_z_rep2.df) %>%
+  dplyr::arrange(desc(all))
+
+# Zelda motifs from BPNet-binding model 
+
+zld_motifs_ov.gr <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>% 
+  dplyr::filter(pattern_name == 'Zld') %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F) %>%
+  plyranges::mutate(seq = getSeq(bsgenome, ., as.character = T))
+
+# Motif affinity scores determined with marginalization 
+
+marg_bind.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/binding/binding_zld_seq_freqs.tsv.gz') %>%
+  as.data.frame()
+marg_acc.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/accessibility/accessibility_zld_seq_freqs.tsv.gz') %>%
+  as.data.frame()
+
+```
+
+# 4. Plot sequences of all Zld motifs
+
+```{r seq}
+
+# Variables
+
+motifs.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz')
+motifs_of_interest<-c('Zld', 'GAF', 'Cad', 'Dl','Twi','Bcd')
+figure_filepath<-"/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/figures/12_pbm_w_affinities"
+window_size<-31
+
+# Function
+
+metaplots.list<-mclapply(motifs_of_interest, function(x){
+  
+  #Define and order motifs
+  message(x)
+  motif.df<-motifs.df %>%
+    dplyr::filter(pattern_name == x) %>%
+    dplyr::arrange(contrib_weighted) %>% #order by TF binding contribution
+    dplyr::mutate(ordered_row = 1:n())
+  motif.gr<-makeGRangesFromDataFrame(motif.df, keep.extra.columns = T)
+  
+  
+  #Plot sequence of these motifs
+  if(width(motif.gr[1]) %% 2 == 0){window_size<-30}else{window_size<-31}
+  motif_resized.gr<-resize(motif.gr, window_size, 'center') %>%
+    plyranges::mutate(seq = getSeq(bsgenome, ., as.character = T))
+  motif_seq.df<-lapply(1:length(motif_resized.gr), function(x){
+    split_vec<-strsplit(motif_resized.gr$seq[x], split="") %>% unlist
+    df<-data.frame(nt=split_vec, position=1:length(split_vec), row=x, stringsAsFactors = F)
+    return(df)
+  }) %>% rbindlist %>%
+    dplyr::mutate(position = position %>% as.character(.) %>% as.integer())
+  
+  seq.plot<-ggplot(motif_seq.df, aes(x=position, y=row, fill=nt))+
+    ggrastr::geom_tile_rast()+
+    scale_y_continuous(expand = c(0, 0), name = 'Motifs ordered by TF contrib.')+
+    scale_x_continuous(expand = c(0, 0), name = 'Position across motif (bp)')+
+    scale_fill_manual(values = c("#36982F", "#402CFD", "#FFB530", "#FC3437"), name="Nucleotide")+
+    ggtitle('Sequences')+
+    theme_classic()+
+    theme(legend.position="bottom", panel.background = element_blank())
+  
+  ggsave(paste0(figure_filepath, '/', x, '_affinity_seq.png'), 
+         seq.plot, height = 6, width = 8)
+  ggsave(paste0(figure_filepath, '/', x, '_affinity_seq.pdf'), 
+         seq.plot, height = 6, width = 8)
+  
+  #Plot logos 
+  grouped_motifs.gr<-motif.gr %>%
+    plyranges::mutate(seq = getSeq(bsgenome, ., as.character = T),
+                      seq_group = cut(ordered_row, breaks = 4, labels = c(1:4)))
+  grouped_seqs.list<-lapply(4:1, function(x){
+    grouped_motifs.gr %>% plyranges::filter(seq_group==x) %>%
+      .$seq
+  })
+  names(grouped_seqs.list)<-4:1
+  logo.plot<-ggseqlogo(grouped_seqs.list) + facet_wrap(~seq_group, ncol = 1) + ggtitle('Logos')
+  
+  ggsave(paste0(figure_filepath, '/', x, '_affinity_logo.png'), 
+         logo.plot, height = 6, width = 4)
+  ggsave(paste0(figure_filepath, '/', x, '_affinity_logo.pdf'), 
+         logo.plot, height = 6, width = 4)
+  
+  motif_seq_vs_contrib.plot<-logo.plot + seq.plot  + 
+    plot_layout(nrow = 1, widths = c(.4, 1)) + 
+    plot_annotation(title = paste0(x, ', ordered by contrib'))
+    
+  ggsave(paste0(figure_filepath, '/', x, '_affinity_metaplots.png'), 
+         motif_seq_vs_contrib.plot, height = 6, width = 20)
+  ggsave(paste0(figure_filepath, '/', x, '_affinity_metaplots.pdf'), 
+         motif_seq_vs_contrib.plot, height = 6, width = 20)
+  return(motif_seq_vs_contrib.plot)
+}, mc.cores = 2)
+
+```
+
+## 4.1. Plot accessibility heatmaps at all Zld motifs
+
+### 4.1.1. Define function for atac heatmaps 
+
+```{r plot_acc}
+
+get_standard_heatmap_df<-function(regions.gr, sample, upstream=50, downstream=50, removal_threshold=.5, normalize_threshold=0.99){
+
+  #Get signals across regions
+  mat<-standard_metapeak_matrix(regions.gr = resize(regions.gr, 1, "start"), sample=sample, upstream=upstream, downstream=downstream)
+  
+  #Convert matrix to dataframe
+  mat.tidy.df<-mat %>% as.data.table
+  colnames(mat.tidy.df)<-c(-upstream:(downstream-1)) %>% as.character
+  mat.tidy.df<-mat.tidy.df %>% 
+    dplyr::mutate(row_id = 1:nrow(.)) %>%
+    melt.data.table(id.vars = c('row_id'), variable.name = 'position', value.name = 'reads') %>%
+    dplyr::group_by(row_id) %>%
+    dplyr::mutate(total_row_counts = sum(reads),
+                  position = position %>% as.character(.) %>% as.integer(.))
+  
+  #Normalize matrix
+  mat.tidy.df<-mat.tidy.df %>% 
+    # dplyr::group_by(row_sum_ordered) %>%
+    dplyr::group_by(row_id) %>%
+    dplyr::mutate(removal_threshold_val = quantile(reads, removal_threshold), #for each row, what is the quantile threshold?
+                  above_removal_threshold = reads > removal_threshold_val, #for each row, which positions are above a quantile threshold?
+                  reads_above_removal_threshold = ifelse(above_removal_threshold, reads, 0), #anything below the quantile threshold is zero
+                  log2_reads_above_removal_threshold = log2(reads_above_removal_threshold + 1), #log2-scale the reads that remain
+                  upper_threshold_val = quantile(reads, normalize_threshold), #for each row, what is the quantile threshold?
+                  norm_reads_above_removal_threshold = pmin(reads/upper_threshold_val, 1) #max-scale the reads the remain to the upper threshold
+                  )
+  return(mat.tidy.df)
+}
+
+```
+
+### 4.1.2. Plot summaries
+
+```{r summarize, eval=FALSE}
+
+timepoints <- c('1to15','15to2','2to25','25to3')
+alpha_value = 0.5
+motifs_for_plotting <-c('Zld')
+
+acc.list<-mclapply(motifs_for_plotting, function(x){
+  
+  #Define and order motifs
+  message(x)
+  motif.df<-motifs.df %>%
+    dplyr::filter(pattern_name == x) %>%
+    dplyr::arrange(contrib_weighted) %>% #order by TF binding contribution
+    dplyr::mutate(ordered_row = 1:n())
+  motif.gr<-makeGRangesFromDataFrame(motif.df, keep.extra.columns = T)
+  
+  #Define and order input coverage
+  atac.bw<-Sys.glob('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_*_atac_combined_normalized.bw') %>% as.list()
+  names(atac.bw)<-atac.bw %>% unlist %>% basename(.) %>% gsub('orer_', '', .) %>% gsub('_atac_combined_normalized.bw', '', .)
+  
+  #Plot ATAC coverage across regions
+  obs_atac.df<-mclapply(names(atac.bw), function(x){
+    df<-get_standard_heatmap_df(regions.gr = motif.gr, sample = atac.bw[[x]], upstream = 500, downstream = 501, removal_threshold = .7) %>%
+      dplyr::mutate(timepoint = x)
+  }, mc.cores = 4) %>% rbindlist %>%
+    dplyr::mutate(timepoint = factor(timepoint, levels = timepoints))
+  
+  atac_heatmap.plot<-ggplot()+
+    ggrastr::geom_tile_rast(data=obs_atac.df, aes(x=position, y=row_id, fill=log2_reads_above_removal_threshold))+
+    scale_fill_gradientn(colors = c("white", '#edf2f7', '#dce5ef','#b8cbe0','#95b1d0','#7498c2','#5f89b9','#4e7cb1','#3e638e','#2f4b6a'), 
+                         name = "norm.\nsignal") +   
+    scale_y_continuous(expand = c(0, 0), name = 'Motifs ordered by TF contrib.')+
+    scale_x_continuous(expand = c(0, 0), name = 'Position wrt motif (bp)')+
+    facet_wrap(~timepoint, scales = 'fixed', nrow = 1)+
+    ggtitle('log2(atac rpm pileup above 70th percentile threshold)')+
+    theme_classic()+
+    theme(text=element_text(size=14), legend.position="bottom", panel.background = element_blank())
+  
+  ggsave(paste0(figure_filepath, '/', x, '_affinity_atac_hm.png'), 
+         atac_heatmap.plot, height = 6, width = 8)
+  ggsave(paste0(figure_filepath, '/', x, '_affinity_atac_hm.pdf'), 
+         atac_heatmap.plot, height = 6, width = 8)
+}, mc.cores = 2)
+
+```
+
+# 5. Match motifs with PBM scores and marginalization scores
+
+## 5.1. Collect sequences of all Zelda motifs
+
+```{r assemble}
+
+# Collect sequences of all mapped Zelda motifs 
+
+zld_seqs.df<-zld_motifs_ov.gr %>%
+  as.data.frame %>%
+  dplyr::group_by(seq) %>%
+  dplyr::summarize(mapped_count = dplyr::n(),
+                   median_contrib_p = median(contrib_weighted_p),
+                   median_affinity_p = median(seq_match_p)
+                   )
+zld_seqs.df$rev <- zld_seqs.df$seq %>% DNAStringSet(.) %>% reverseComplement(.) %>% as.character(.)
+zld_seqs.df$seq_id <- 1:nrow(zld_seqs.df)
+
+# Note that the negative control heptad from Nien et al. 2011 (TATCGAT) does not have any sequence match to our BPNet-mapped Zelda motifs, so we have to add it manually since we still can evaluate its PBM and marginalization scores
+
+zld_seqs.df <- zld_seqs.df %>% 
+  add_row(seq = "TATCGAT", mapped_count = 0, median_contrib_p = 0, median_affinity_p = 0, rev = "ATCGATA", seq_id = NA)
+
+```
+
+## 5.2. Scan PBM data for matches to the Zelda affinity motifs, and collect both E and Z scores
+
+```{r scan}
+
+#Note that we are using median values since we have octamers 
+
+# E-score
+
+affinity_e.df<-lapply(1:nrow(zld_seqs.df), function(x){
+  zld_seq.df<-zld_seqs.df[x,]
+  
+  pbm_seq_match.df<-pbm.e.df %>%
+    dplyr::filter(grepl(pattern = paste0(zld_seq.df$seq, '|', zld_seq.df$rev), x = seq)) %>%
+    dplyr::group_by(type) %>%
+    dplyr::summarize(median_pbm_enrichment = median(all))
+  
+  zld_seq.df$pbm_enrich_rep1<-pbm_seq_match.df$median_pbm_enrichment[pbm_seq_match.df$type=='pbm_rep1']
+  zld_seq.df$pbm_enrich_rep2<-pbm_seq_match.df$median_pbm_enrichment[pbm_seq_match.df$type=='pbm_rep2']
+  
+  return(zld_seq.df)
+}) %>% rbindlist %>%
+  arrange(median_affinity_p) %>%
+  dplyr::mutate(order_id = 1:nrow(.),
+                seq = factor(seq, levels = seq))
+
+# Z-score
+
+affinity_z.df<-lapply(1:nrow(zld_seqs.df), function(x){
+  zld_seq.df<-zld_seqs.df[x,]
+  
+  pbm_seq_match.df<-pbm_z.df %>%
+    dplyr::filter(grepl(pattern = paste0(zld_seq.df$seq, '|', zld_seq.df$rev), x = seq)) %>%
+    dplyr::group_by(type) %>%
+    dplyr::summarize(median_pbm_enrichment = median(all))
+  
+  zld_seq.df$pbm_z_rep1<-pbm_seq_match.df$median_pbm_enrichment[pbm_seq_match.df$type=='pbm_rep1']
+  zld_seq.df$pbm_z_rep2<-pbm_seq_match.df$median_pbm_enrichment[pbm_seq_match.df$type=='pbm_rep2']
+  
+  return(zld_seq.df)
+}) %>% rbindlist %>%
+  arrange(median_affinity_p) %>%
+  dplyr::mutate(order_id = 1:nrow(.),
+                seq = factor(seq, levels = seq))
+
+# Map Z-scores onto E-scores, calculate averages between replicates and save object
+
+pbm_affinity_w_heptads.df <- affinity_e.df %>%
+  dplyr::left_join(., affinity_z.df %>% dplyr::select(c(pbm_z_rep1, pbm_z_rep2, seq)), by = 'seq')
+
+ave_e_score <- rowMeans(as.matrix(pbm_affinity_w_heptads.df[,c(7:8)]))
+pbm_affinity_w_heptads.df$ave_e_score <- ave_e_score
+ave_z_score <- rowMeans(as.matrix(pbm_affinity_w_heptads.df[,c(10:11)]))
+pbm_affinity_w_heptads.df$ave_z_score <- ave_z_score
+
+# Filter for any low observations and keep the TATCGAT control
+
+pbm_affinity_filtered.df <- pbm_affinity_w_heptads.df[order(pbm_affinity_w_heptads.df$mapped_count, decreasing = TRUE),][c(1:5,7,10,15,32),]
+
+```
+
+# 5.3. Save PBM object
+
+```{r save, eval=FALSE}
+
+library("xlsx")
+write.xlsx(x = pbm_affinity_w_heptads.df, file = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/pbm/Cterm/analysis/e_and_z_scores_for_tagteams.xlsx', col.names = TRUE)
+
+```
+
+## 5.4. Scan marginalization scores for matches to the Zelda affinity motifs, and collect both binding accessibility scores 
+
+```{r marginal}
+
+# assemble octamers into heptads, collecting only the sequences that we are using from mapped Zelda instances above 
+
+## which sequences do we want?
+
+pbm_affinity_filtered.df$seq
+
+## binding
+
+names(marg_bind.df)[5] <- "octamer"
+marg_bind.df$seq <- NA
+marg_bind.df[grep(pattern = "CAGGTAG", marg_bind.df$octamer),]$seq <- "CAGGTAG"
+marg_bind.df[grep(pattern = "CAGGTAA", marg_bind.df$octamer),]$seq <- "CAGGTAA"
+marg_bind.df[grep(pattern = "CAGGTAC", marg_bind.df$octamer),]$seq <- "CAGGTAC"
+marg_bind.df[grep(pattern = "CAGGTAT", marg_bind.df$octamer),]$seq <- "CAGGTAT"
+marg_bind.df[grep(pattern = "TAGGTAG", marg_bind.df$octamer),]$seq <- "TAGGTAG"
+marg_bind.df[grep(pattern = "TAGGTAA", marg_bind.df$octamer),]$seq <- "TAGGTAA"
+marg_bind.df[grep(pattern = "CAGGCAG", marg_bind.df$octamer),]$seq <- "CAGGCAG"
+marg_bind.df[grep(pattern = "CAGGCAA", marg_bind.df$octamer),]$seq <- "CAGGCAA"
+marg_bind.df[grep(pattern = "TATCGAT", marg_bind.df$octamer),]$seq <- "TATCGAT"
+marg_bind.df <- marg_bind.df[!is.na(marg_bind.df$seq),]
+
+## accessibility 
+
+names(marg_acc.df)[5] <- "octamer"
+marg_acc.df$seq <- NA
+marg_acc.df[grep(pattern = "CAGGTAG", marg_acc.df$octamer),]$seq <- "CAGGTAG"
+marg_acc.df[grep(pattern = "CAGGTAA", marg_acc.df$octamer),]$seq <- "CAGGTAA"
+marg_acc.df[grep(pattern = "CAGGTAC", marg_acc.df$octamer),]$seq <- "CAGGTAC"
+marg_acc.df[grep(pattern = "CAGGTAT", marg_acc.df$octamer),]$seq <- "CAGGTAT"
+marg_acc.df[grep(pattern = "TAGGTAG", marg_acc.df$octamer),]$seq <- "TAGGTAG"
+marg_acc.df[grep(pattern = "TAGGTAA", marg_acc.df$octamer),]$seq <- "TAGGTAA"
+marg_acc.df[grep(pattern = "CAGGCAG", marg_acc.df$octamer),]$seq <- "CAGGCAG"
+marg_acc.df[grep(pattern = "CAGGCAA", marg_acc.df$octamer),]$seq <- "CAGGCAA"
+marg_acc.df[grep(pattern = "TATCGAT", marg_acc.df$octamer),]$seq <- "TATCGAT"
+marg_acc.df <- marg_acc.df[!is.na(marg_acc.df$seq),]
+
+# Calculate median marginalization scores
+
+marg_binding_summarized.df <- marg_bind.df %>%
+  dplyr::group_by(seq) %>%
+  dplyr::summarize(median_marg_bind_score = median(marg_score),
+                   count = sum(freq)) %>%
+  as.data.frame()
+
+marg_acc_summarized.df <- marg_acc.df %>%
+  dplyr::group_by(seq, timepoint) %>%
+  dplyr::summarize(median_marg_acc_score = median(marg_score),
+                   count = sum(freq)) %>%
+  as.data.frame()
+
+```
+
+## 5.3. Combine motifs, PBMs, and marginalization scores into one data.frame
+
+```{r combine}
+
+motifs_pbm_marg.df <- pbm_affinity_filtered.df %>%
+  dplyr::left_join(., marg_binding_summarized.df %>% dplyr::select(c(median_marg_bind_score, seq)), by = 'seq') %>%
+  dplyr::left_join(., marg_acc_summarized.df[marg_acc_summarized.df$timepoint == "25to3",] %>%
+                     dplyr::select(c(median_marg_acc_score, seq)), by = 'seq')
+
+```
+
+## 5.5. Plot 
+
+```{r plot}
+
+# order sequences by sequence match score
+
+motifs_pbm_marg.df <- motifs_pbm_marg.df[order(motifs_pbm_marg.df$median_affinity_p,decreasing = FALSE),] %>% as.data.frame()
+motifs_pbm_marg.df$seq<-factor(motifs_pbm_marg.df$seq, levels = motifs_pbm_marg.df$seq)
+
+# seq match
+affinity_seq.plot <- ggplot(motifs_pbm_marg.df, aes(x = 1, y = seq))+
+  geom_tile(aes(fill = median_affinity_p), color = 'black', size = 1)+
+  scale_fill_gradient(low = 'white', high = '#DD6031', name = 'BPNet affinity')+
+  scale_y_discrete('Zelda ov motifs mapped by BPNet')+
+  theme_cowplot() +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), legend.position = 'bottom')
+
+# pbm e
+
+pbm_e.plot <- ggplot(motifs_pbm_marg.df, aes(x = 1, y = seq))+
+  geom_tile(aes(fill = ave_e_score), color = 'black', size = 1)+
+  scale_fill_gradient(low = 'white', high = '#74526C', name = 'Av. PBM enrich.')+
+  scale_y_discrete('Zelda ov motifs mapped by BPNet')+
+  theme_cowplot() +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), legend.position = 'bottom')
+
+# pbm z
+
+pbm_z.plot <- ggplot(motifs_pbm_marg.df, aes(x = 1, y = seq))+
+  geom_tile(aes(fill = ave_z_score), color = 'black', size = 1)+
+  scale_fill_gradient(low = 'white', high = '#093824', name = 'Av. PBM Z-score')+
+  scale_y_discrete('Zelda motifs mapped by BPNet')+
+  theme_cowplot()+
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), legend.position = 'bottom')
+
+# binding marginalization
+
+bind_marg.plot <- ggplot(motifs_pbm_marg.df, aes(x = 1, y = seq))+
+  geom_tile(aes(fill = median_marg_bind_score), color = 'black', size = 1)+
+  scale_fill_gradient(low = 'white', high = '#2176AE', name = 'binding marg')+
+  scale_y_discrete('Zelda motifs mapped by BPNet')+
+  theme_cowplot()+
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), legend.position = 'bottom')
+
+# acc marginalization
+
+acc_marg.plot <- ggplot(motifs_pbm_marg.df, aes(x = 1, y = seq))+
+  geom_tile(aes(fill = median_marg_acc_score), color = 'black', size = 1)+
+  scale_fill_gradient(low = 'white', high = '#C8AD55', name = 'acc marg, 2.5-3h')+
+  scale_y_discrete('Zelda motifs mapped by BPNet')+
+  theme_cowplot()+
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), legend.position = 'bottom')
+
+# combine plots
+
+affinity.plot<-affinity_seq.plot + bind_marg.plot + acc_marg.plot + pbm_e.plot + pbm_z.plot  + 
+  plot_layout(widths = c(.5, .5, .5, .5, .5))
+affinity.plot
+
+ggsave("pbm_affinities_marg.pdf", plot = affinity.plot, path = "figures/12_pbm_w_affinities", height = 6, width = 20)
+ggsave("pbm_affinities_marg.png", plot = affinity.plot, path = "figures/12_pbm_w_affinities", height = 6, width = 20)
+
+```
+
+# 6. Plot in silico injections of low and high affinity Zelda motifs 
+
+## 6.1. Import in silico data 
+
+Note that we get negative counts predictions because we “correct for shoulder effects”, which is: AB - (B - 0) (this is two motifs being too close together because of their lengths)
+
+Where: - AB: contains both, central and side_motif - B : contains only side_motif - 0 : doesn’t contain any motif
+
+Here, we will import the predictions.
+
+```{r silico}
+
+#Pre-existing variables
+
+tasks <- c('Zld', 'Zld-lowestaff', 'Gaf', 'Cad', 'Dl','Twi','Bcd')
+timepoints <- c('1to15','15to2','2to25','25to3')
+threads <- 5
+figure_filepath<-"/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/figures/12_pbm_w_affinities"
+
+# Import
+
+preds.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/accessibility/insilico/in_silico_injections_paired_profiles.tsv.gz') %>%
+  as.data.frame() %>%
+  dplyr::mutate(motif_pair = paste0(primary_motif, '<>', secondary_motif)) %>%
+  dplyr::filter(distance >=20, distance <=200)
+preds.df %>% head
+
+```
+
+## 6.2. Correct non-symmetric predictions 
+
+```{r correct}
+
+AtoB.df<-preds.df
+
+#Fill in the nonredundant features
+BtoA.df<-AtoB.df %>%
+  dplyr::filter(primary_motif != secondary_motif) %>%
+  dplyr::rename(motifB = primary_motif, motifA = secondary_motif, synB = all_synergy_A_corrected, synA = all_synergy_B_corrected) %>% 
+  #flip the motifA and motifB features to get the other part, multiplicative is not directionally computed
+  dplyr::rename(secondary_motif = motifB, primary_motif = motifA, all_synergy_A_corrected = synA, all_synergy_B_corrected = synB)
+  
+preds.df<-rbind(AtoB.df, BtoA.df)
+
+table(preds.df$primary_motif, preds.df$secondary_motif)
+
+```
+
+## 6.3. Remove the Zld-lowaff motif since we only want the highest and lowest in this plot 
+
+```{r remove}
+
+a <- grep(pattern = "lowaff", preds.df$motif_pair)
+preds.df <- preds.df[-a,]
+
+```
+
+## 6.4. Plot
+
+```{r distances}
+
+filler<-lapply(tasks, function(x){
+  preds_depending_on_motif.df<-preds.df %>% as.data.frame %>% 
+    dplyr::filter(secondary_motif==x) %>%
+    dplyr::group_by(primary_motif) %>%
+    dplyr::arrange(distance) %>% 
+    dplyr::mutate(fc_sum = all_synergy_A_corrected,
+                  log2_fc_sum = log2(fc_sum))
+  
+  preds_depending_on_motif.df$primary_motif<-factor(preds_depending_on_motif.df$primary_motif, levels = rev(tasks))
+  preds_depending_on_motif.df$timepoint<-preds_depending_on_motif.df$timepoint %>% factor(., levels = timepoints)
+  
+  sum_log2fc.plot<-ggplot(preds_depending_on_motif.df, aes(x = distance, y = primary_motif))+
+    ggrastr::geom_tile_rast(aes(fill = log2_fc_sum))+
+    facet_grid(. ~ timepoint) + 
+    scale_fill_gradient2(high = '#2f4b6a', mid = 'white', low = '#FE5F55', limits = c(-.5, 1), name = 'log2FC in accessibility')+
+    scale_x_continuous(name = paste0('Distance from distal ', x, ' motif (bp)'))+
+    scale_y_discrete(name = 'Central motif')+
+    theme_classic()
+  ggsave(paste0(figure_filepath, '/in_silico_', x, '_partner_synergy.png'), sum_log2fc.plot, height = 4, width = 8)
+  ggsave(paste0(figure_filepath, '/in_silico_', x, '_partner_synergy.pdf'), sum_log2fc.plot, height = 4, width = 8)
+  return(NULL)
+})
+
+```
+
+# 7. Plot binding cooperativity of all TFs with different Zelda affinity heptads 
+
+```{r binding_coop}
+
+# Import in silico binding cooperative information generated in 6_binding_insilico_perturbs.ipynb
+
+bind_coop.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/binding/insilico_zld_affinity_grouped_summaries.tsv.gz') %>%
+  as.data.frame()
+
+# Filter for the Zld heptads to displace
+
+bind_coop_filter.df <- bind_coop.df[bind_coop.df$side_motif == "CAGGTAG" | bind_coop.df$side_motif == "TAGGTAG",]
+
+# Plot
+
+coop_order_x <- c("Zld", "GAF", "Bcd", "Cad", "Dl", "Twi")
+coop_order_y <- c("TAGGTAG", "CAGGTAG")
+bind_coop_filter.df$central_motif <- factor(bind_coop_filter.df$central_motif, levels = coop_order_x)
+bind_coop_filter.df$side_motif <- factor(bind_coop_filter.df$side_motif, levels = coop_order_y)
+
+coop.plot <- ggplot(bind_coop_filter.df, aes(x = central_motif, y = side_motif, fill = log2_cooperativity)) +
+  geom_tile(color = 'black', size = .5) +
+  scale_y_discrete(name = 'Zelda sequence variant') +
+  scale_x_discrete(name = 'TF') +
+  scale_fill_gradient2(name = 'TF cooperativity to\nZelda sequence variant', high = '#b2182b', low = '#2166ac', mid = 'white', midpoint = 0) +
+  theme_cowplot()
+coop.plot
+
+ggsave("insilico_injections_zld_heptads_coop.pdf", plot = coop.plot, path = "figures/12_pbm_w_affinities", height = 10, width = 20)
+ggsave("insilico_injections_zld_heptads_coop.png", plot = coop.plot, path = "figures/12_pbm_w_affinities", height = 10, width = 20)
+
+```
+
+# 8. Conclusions
+
+Here, we can see very nice agreement between Zelda sequence affinity, in vitro PBM data, and our marginalization scores for binding and chromatin accessibility, and we also see that though low affinity motifs for Zelda appear to matter less, they still induce some degree of accessibility in our in silico experiments. These plots make up approximately half of figure 3. 
+
+# 9. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

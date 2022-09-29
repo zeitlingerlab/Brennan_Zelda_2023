@@ -1,0 +1,862 @@
+---
+title: 'ChromBPNet predictions and interplay with TF binding'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to plot observed ATAC-seq data and compare it to data predicted by our deep learning model ChromBPNet at enhancers of interst. We will also compare TF binding and chromatin accessibility at our BPNet-mapped motifs to ask about the interplay between binding and accessibility. Note that this analysis generates Figure 2. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/11_acc_summary_w_binding/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data for this analysis
+
+```{r import}
+
+obs_atac.bw <- list(orer_1to15 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_1to15_atac_combined_normalized.bw',
+                    orer_15to2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_15to2_atac_combined_normalized.bw',
+                    orer_2to25 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined_normalized.bw',
+                    orer_25to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_normalized.bw')
+
+atac_peaks.gr <- rtracklayer::import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/narrowpeak/atac_orer_all_peaks_no_promoters.narrowpeak') %>%
+  GenomicRanges::reduce(ignore.strand = T) %>%
+  GenomicRanges::resize(1, 'center')
+
+enhancers.gr <- rtracklayer::import("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/enhancers/enhancers_for_models.bed")
+
+motifs.gr<-readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F) %>%
+  plyranges::mutate(motif = pattern_name,
+                    name = pattern_name) %>%
+  GenomicRanges::sort(ignore.strand = T)
+
+# Note that for for observed and predicted enhancers we will generate these for all time points, separately 
+
+t1.bw.list <- list(`Obs. pileup` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_1to15_atac_combined.bw',
+              `Obs. cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_1to15_atac_combined_cutsites.bw',
+              `Pred. cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_1to15_w_bias.bw',
+              `Pred. \nno Tn5\n cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_1to15_wo_bias.bw',
+              `Contribution` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_1to15.counts_scores.bw')
+
+t2.bw.list <- list(`Obs. pileup` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_15to2_atac_combined.bw',
+              `Obs. cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_15to2_atac_combined_cutsites.bw',
+              `Pred. cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_15to2_w_bias.bw',
+              `Pred. \nno Tn5\n cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_15to2_wo_bias.bw',
+              `Contribution` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_15to2.counts_scores.bw')
+
+t3.bw.list <- list(`Obs. pileup` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined.bw',
+              `Obs. cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined_cutsites.bw',
+              `Pred. cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_2to25_w_bias.bw',
+              `Pred. \nno Tn5\n cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_2to25_wo_bias.bw',
+              `Contribution` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_2to25.counts_scores.bw')
+
+t4.bw.list <- list(`Obs. pileup` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined.bw',
+              `Obs. cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_cutsites.bw',
+              `Pred. cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_25to3_w_bias.bw',
+              `Pred. \nno Tn5\n cuts` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_25to3_wo_bias.bw',
+              `Contribution` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_25to3.counts_scores.bw')
+
+
+```
+
+# 4. Plot observed ATAC average profiles over the time series
+
+Here we are asking "how does chromatin accessibility change over time?," and our region set is the ChromBPNet input peak set. 
+
+## 4.1. Define functions
+
+```{r define}
+
+# Define function for calculating mp
+
+get_multi_bw_standard_metapeak <- function(gr = gr, bw.list = bw.list, upstream = 500, downstream = 500,smooth = NA){
+    mclapply(names(bw.list), function(x){
+    bw <- bw.list[[x]]
+    standard_metapeak(gr,bw, upstream = upstream, downstream = downstream, smooth = smooth, sample_name = x)
+    },mc.cores = 10) %>% dplyr::bind_rows()
+}
+
+# Define function for plotting
+
+plot_standard_metapeak <- function(metapeak, name = name, xlab = xlab, ylab = ylab, ncol = NA){
+    x <- ggplot(metapeak, aes(x=tss_distance, y=reads)) +
+         geom_line(position="identity", alpha = 0.2) +
+         geom_smooth(method = "loess", span = 0.3, color = "dodgerblue4")+
+         ggtitle(name) +
+            facet_wrap(~sample_name, scales = "fixed", ncol = ncol) +
+            theme(legend.position = "none") +
+            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            panel.background = element_blank(), axis.line.x = element_line(colour = "black"),
+            axis.line.y = element_line(colour = "black")) +
+            xlab(xlab) +
+            ylab(ylab)
+    x
+        }
+
+```
+
+## 4.2. Calculate average normalized ATAC-seq
+
+```{r time}
+
+atac_at_peaks.mp <- get_multi_bw_standard_metapeak(gr = atac_peaks.gr, bw.list = obs_atac.bw, upstream = 500, downstream = 500, smooth = 2)
+atac_at_peaks.plot <- plot_standard_metapeak(atac_at_peaks.mp, name = "Average ATAC-seq", xlab = "Distance from called-peak center", ylab = "Normalized fragment coverage", ncol = 4) + theme_cowplot()
+atac_at_peaks.plot
+
+ggsave("atacseq_over_time_average_plots.pdf", plot = atac_at_peaks.plot, path = "figures/11_acc_summary_w_binding", width = 40, height = 20, units = "cm")
+ggsave("atacseq_over_time_average_plots.png", plot = atac_at_peaks.plot, path = "figures/11_acc_summary_w_binding", width = 40, height = 20, units = "cm")
+
+```
+
+## 4.3. How does ATAC-seq change over time as a function of the number of Zelda motifs?
+
+```{r zeldan, eval=FALSE}
+
+# Import islands
+
+islands_with_all_info_filtered.gr <- readRDS("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData")
+
+# separate islands based on how many Zld motifs are in them
+
+zld_counted_islands <- c(islands_with_all_info_filtered.gr[grep(pattern = "Zld-1", x=islands_with_all_info_filtered.gr$island_content),], islands_with_all_info_filtered.gr[grep(pattern = "Zld-2", x=islands_with_all_info_filtered.gr$island_content),], islands_with_all_info_filtered.gr[grep(pattern = "Zld-3", x=islands_with_all_info_filtered.gr$island_content),], islands_with_all_info_filtered.gr[grep(pattern = "Zld-4", x=islands_with_all_info_filtered.gr$island_content),], islands_with_all_info_filtered.gr[grep(pattern = "Zld-5", x=islands_with_all_info_filtered.gr$island_content),])
+
+zld_counted_islands$zld_content <- ifelse(grepl(pattern = "Zld-1", x=zld_counted_islands$island_content), "Zld-1", ifelse(grepl(pattern = "Zld-2", x=zld_counted_islands$island_content), "Zld-2", ifelse(grepl(pattern = "Zld-3", x=zld_counted_islands$island_content), "Zld-3", ifelse(grepl(pattern = "Zld-4", x=zld_counted_islands$island_content), "Zld-4+", ifelse(grepl(pattern = "Zld-5", x=zld_counted_islands$island_content), "Zld-4+", "")))))
+
+# calculate ATAC
+
+atac_across_zld_counted_islands.df <- mclapply(names(obs_atac.bw), function(x){
+  regionSums(zld_counted_islands %>% resize(250, 'center'), obs_atac.bw[[x]])
+}, mc.cores = 4) %>% as.data.frame()
+names(atac_across_zld_counted_islands.df)<-names(obs_atac.bw)
+
+islands_w_atac_zelda.df <- cbind(zld_counted_islands %>% as.data.frame, atac_across_zld_counted_islands.df) %>%
+  as.data.table %>% .[,c(12:16)] %>%
+  melt.data.table(id.vars = c('zld_content'), variable.name = 'timepoint', value.name = 'ATAC_signal')
+
+# plot
+
+zld_groups <- list(c("Zld-1", "Zld-2"), c("Zld-2", "Zld-3"), c("Zld-3","Zld-4+"), c("Zld-1", "Zld-4+"))
+
+zld_content_islands_plot <- ggplot(islands_w_atac_zelda.df, aes(x=zld_content, y=log2(ATAC_signal))) +
+  geom_boxplot(aes(fill = zld_content), outlier.color = NA, outlier.fill = NA) + 
+  facet_wrap(~timepoint)+
+  scale_y_continuous(name = "log2(Normalized ATAC-seq signal)")+
+  stat_compare_means(comparisons = zld_groups, method = "wilcox.test", label = "p.signif", paired = FALSE) +
+  theme_cowplot()
+
+ggsave("zld_content_increased_plots.pdf", plot = zld_content_islands_plot, path = "figures/11_acc_summary_w_binding", width = 40, height = 20, units = "cm")
+ggsave("zld_content_increased_plots.png", plot = zld_content_islands_plot, path = "figures/11_acc_summary_w_binding", width = 40, height = 20, units = "cm")
+
+```
+
+# 5. Plot observed and predicted chromatin accessibility at enhancers
+
+Here we will plot the observed vs. predicted chromatin accessibility at our enhancer list of interest. We will also account for Tn5 bias and show motif contribution.
+
+## 5.1. Define variables and function
+
+```{r function}
+
+#Specific variables
+
+library(RColorBrewer)
+n_motifs<-motifs.gr$name %>% unique %>% length
+colors <- colorRampPalette(brewer.pal(n_motifs, "Accent"))(n_motifs)
+names(colors)<-motifs.gr$name %>% unique
+motif.colors.list<-as.list(colors)
+
+# Define function
+
+plot_coverage_and_enhancer<-function(enhancer.gr, motifs.gr, bw.list, motif.colors.list, title, region_width = 1000, 
+                                     cores = 6, scales = 'fixed', rounding_margin = 50, label_margin = 200){
+  
+  #Assertion requirements to make the function run correctly.
+  testit::assert("Input enhancer GRanges needs to contain only 1 region.", length(enhancer.gr)==1)
+  testit::assert("Motifs need to be a GRanges object", is(motifs.gr, "GRanges"))
+  testit::assert("Enhancers need to be a GRanges object", is(enhancer.gr, "GRanges"))
+  testit::assert("Region width should be larger than enhancer width.", width(enhancer.gr)<=region_width)
+  testit::assert("Bigwig object needs to be a list of samples. If samples are ChIP-nexus/double-stranded samples, they need to be in a nested list.", 
+                 is(bw.list, "list") & all(!(names(bw.list) %in% c("pos", "neg"))))
+  testit::assert("Motif object needs a column titled pattern_name, motif_name, or name to distinguish motifs apart.", 
+                 any(grepl("pattern_name|name|motif_name", colnames(motifs.gr@elementMetadata))))
+  
+  #Find overlaps between motif set and enhancer
+  motifs_in_enhancer.gr<-subsetByOverlaps(motifs.gr, resize(enhancer.gr, region_width, "center"), ignore.strand = T)
+  if("pattern_name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$pattern_name
+  }
+  if("name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$name
+  }
+  
+  #Extract colors for enhancer
+  fills_in_order<-lapply(motifs_in_enhancer.gr$motif_name, function(x) motif.colors.list[[x]]) %>% unlist %>% unique %>% as.character
+  motifs_in_order<-motifs_in_enhancer.gr$motif_name %>% unique %>% as.character
+  motifs_in_enhancer.df<-motifs_in_enhancer.gr %>% as.data.frame
+  motifs_in_enhancer.df$motif_name<-factor(motifs_in_enhancer.df$motif_name, levels = motifs_in_order)
+  
+  #Convert enhancer coordinates to df
+  enhancer.df<-enhancer.gr %>% as.data.frame
+  
+  #Get half of the enhancer
+  enh_half<-floor(width(enhancer.gr)/2)
+  lower_bounds<-plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor)
+  upper_bounds<-plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling)
+  
+  enhancer.plot<-ggplot()+
+    geom_hline(yintercept = .5, color = "gray 85")+
+    geom_rect(data = enhancer.df, aes(xmin = start, xmax = end, ymin = 0, ymax = 1), fill = "gray 85")+
+    geom_text(data = enhancer.df, aes(x = ((start - end)/2 + start), y = .5, label = paste0(seqnames, ":", start, "-", end)), 
+              color = "black")
+  if(nrow(motifs_in_enhancer.df)>0){
+    enhancer.plot<-enhancer.plot + geom_rect(data = motifs_in_enhancer.df, 
+                                             aes(xmin = start, xmax = end, ymin = 1.1, ymax = 2, fill = motif_name), color = 'black', size = .1)
+  }
+  enhancer.plot<-enhancer.plot+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    scale_y_continuous(breaks = c(.5, 1.75), labels = c("Enhancer", "Motif(s)"), position = "right")+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line = element_blank(), axis.ticks.y = element_blank(),
+          legend.position = "none")
+  
+  # Get coverage across bigwig list
+  coverage.df<-mclapply(names(bw.list), function(x){
+    if(length(bw.list[[x]])==1){
+      df<-standard_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = floor(region_width/2) + rounding_margin, downstream = floor(region_width/2)+300) %>% 
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(resize(enhancer.gr, 1, "center")), sample_name = x)
+    }
+    if(length(bw.list[[x]])==2){
+      df<-exo_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = region_width/2 + rounding_margin, downstream = region_width/2+rounding_margin) %>%
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(enhancer.gr), sample_name = x)
+    }
+    return(df)
+  }, mc.cores = cores) %>% rbindlist() %>%
+    dplyr::filter(position >= lower_bounds, position <= upper_bounds) %>%
+    dplyr::mutate(sample_name = factor(sample_name, levels = names(bw.list)))
+  
+  #Check for strand if there are no 2-channeled samples.
+  if(!("strand" %in% colnames(coverage.df))){
+    coverage.df$strand<-NA
+  }
+  
+  #Plot the enhancer coverage.
+  coverage.plot<-ggplot(coverage.df)
+  if(nrow(motifs_in_enhancer.df)>0){
+    coverage.plot<-coverage.plot + geom_rect(data = motifs_in_enhancer.df, aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = motif_name), alpha = .2)
+  }
+  coverage.plot<-coverage.plot +
+    geom_area(aes(x = position, y = reads, group = strand), fill = "black")+
+    geom_text(aes(x = Inf, y = Inf, label = sample_name), hjust = -.01)+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    facet_grid(sample_name ~ ., scales = scales)+
+    ggtitle(title)+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line.x = element_blank(), strip.background = element_blank())  
+  
+  g<-coverage.plot + enhancer.plot + plot_layout(ncol = 1, heights = c(5, 1))
+  return(g)
+}
+
+```
+
+## 5.2. Plot observed and predicted at enhancers of interest for all timepoints
+
+```{r o_v_p, eval=FALSE}
+
+# 1-1.5 hr AEL
+
+mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = t1.bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'free_y')
+  ggsave(paste0("figures/11_acc_summary_w_binding/obs_v_pred/", enhancer.gr$name,"_single_example_atac_1to15.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/11_acc_summary_w_binding/obs_v_pred/", enhancer.gr$name,"_single_example_atac_1to15.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+# 1.5-2 hr AEL
+
+mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = t2.bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'free_y')
+  ggsave(paste0("figures/11_acc_summary_w_binding/obs_v_pred/", enhancer.gr$name,"_single_example_atac_15to2.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/11_acc_summary_w_binding/obs_v_pred/", enhancer.gr$name,"_single_example_atac_15to2.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+# 2-2.5 hr AEL
+
+mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = t3.bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'free_y')
+  ggsave(paste0("figures/11_acc_summary_w_binding/obs_v_pred/", enhancer.gr$name,"_single_example_atac_2to25.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/11_acc_summary_w_binding/obs_v_pred/", enhancer.gr$name,"_single_example_atac_2to25.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+# 2.5-3 hr AEL
+
+mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = t4.bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'free_y')
+  ggsave(paste0("figures/11_acc_summary_w_binding/obs_v_pred/", enhancer.gr$name,"_single_example_atac_25to3.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/11_acc_summary_w_binding/obs_v_pred/", enhancer.gr$name,"_single_example_atac_25to3.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+```
+
+# 6. Plot ChromBPNet enhancer predictions
+
+Here, we will use ChromBPNet to predict what happens to chromatin accessibility, across time, when we mutate motifs of interest at enhancers. Note that these enhancer predictions were generated first in the following markdown: 7_acc_genomic_perturbs.ipynb
+
+## 6.1. Define variables and functions
+
+```{r variables}
+
+# Variables
+
+timepoint.specs.list<-list(`1to15` = '#31218C', `15to2` = '#232996', `2to25` = '#236E96', `25to3` = '#218C89')
+
+myceiling<-function(x, base = 10){
+  return( ceiling(x / base) * base)
+}
+myfloor<-function(x, base = 10){
+  return( floor(x / base) * base)
+}
+
+enhancer.path <- '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/enhancers/enhancers_for_models.bed'
+
+# Function: Given a data.frame with position, prediction, strand, and task columns, plot the profiles across the desired window.
+
+## With no orientation changes
+plot_prediction_scores<-function(wt_preds.df, mut_preds.df, motifs_across_window.df,
+                                  fill_hex = c('#6e828e', '#7f778c', '#b47382'), color_hex = c('#314d5e', '#493d5c','#94384d')){
+  g<-ggplot()
+  
+  #Add in motif boxes
+  for(row in 1:nrow(motifs_across_window.df)){
+    g<-g + annotate("rect", xmin = motifs_across_window.df$start[row], xmax = motifs_across_window.df$end[row],
+                    ymin = -Inf, ymax = Inf, alpha = .2)
+    g<-g + annotate("text", x = motifs_across_window.df$start[row], label = motifs_across_window.df$pattern_name[row], y = Inf, vjust = 1.5)
+  }
+  
+  g<-g + geom_area(data = wt_preds.df, mapping = aes(genomic_position_0based, pred, fill = timepoint), alpha = .3)+
+    geom_line(data = mut_preds.df, mapping = aes(genomic_position_0based, pred, color = timepoint))+
+    facet_grid(timepoint ~ ., scales = "free")+
+    scale_x_continuous(name = "Position (bp)")+
+    scale_y_continuous(name = "ChromBPNet predictions")+
+    scale_fill_manual(values = fill_hex, name = "WT")+
+    scale_color_manual(values = color_hex, name = "Variant")+
+    theme_classic()
+}
+
+```
+
+## 6.2. Format
+
+```{r format}
+
+library(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+
+enhancers_0based.df<-readr::read_tsv(enhancer.path, col_names = c('chrom','start','end','name','score','strand'))
+
+non_promoter_enhancers.df<-enhancers_0based.df %>% makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = T) %>%
+  .[!overlapsAny(., genes(TxDb.Dmelanogaster.UCSC.dm6.ensGene) %>% resize(., 1, 'start') %>% resize(., 600, 'center'), ignore.strand = T)]
+
+```
+
+## 6.3. Plot
+
+```{r perturbs, eval=FALSE}
+
+enhancers.vec<-list.files('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/accessibility/enhancer/', '_motifs.tsv.gz') %>% gsub('_motifs.tsv.gz','',.) %>% .[. %in% non_promoter_enhancers.df$name]
+
+filler<-mclapply(enhancers.vec, function(x){
+  
+  profile_preds.df<-paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/accessibility/enhancer/', x, '_preds.tsv.gz') %>% readr::read_tsv()
+  profile_preds.df$genomic_position_0based<- profile_preds.df$position + (enhancers_0based.df %>% dplyr::filter(name==x) %>% .$start)
+  profile_preds.df$timepoint<-factor(profile_preds.df$timepoint, levels = names(timepoint.specs.list))
+  motifs.df<-paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/accessibility/enhancer/', x, '_motifs.tsv.gz') %>% readr::read_tsv()
+  
+  #Read and filter information
+  wt_preds.df<-profile_preds.df %>% dplyr::filter(mut=='Reference')
+  mut_preds.df<-profile_preds.df %>% dplyr::filter(mut!='Reference')
+
+  #Coordinate x-axis for predictions and contribution
+  # xlim_genomic<-c(min(myfloor(motifs.df$start, 50)-50), max(myceiling(motifs.df$end, 50)+50))
+  # xlim_window<-xlim_genomic-motifs.df$enhancer_start_0based[1] 
+  # motifs.df$contrib_start<-motifs.df$pattern_start - xlim_window[1]
+  # motifs.df$contrib_end<-motifs.df$pattern_end - xlim_window[1]
+  
+  #Plot predictions as compared to WT (genomic coordinates)
+  preds.plot.list<-lapply(unique(mut_preds.df$mut), function(x){
+    g<-plot_prediction_scores(wt_preds.df = wt_preds.df, mut_preds.df = mut_preds.df %>% dplyr::filter(mut == x), 
+                              motifs_across_window.df = motifs.df, 
+                              fill_hex = timepoint.specs.list %>% unlist, color_hex = timepoint.specs.list %>% unlist)
+    g<-g+ggtitle(x) + theme(legend.position = 'none')
+    return(g)
+  })
+  
+  #Create metaplot of the highest and lowest scores
+  g<-wrap_plots(preds.plot.list) + plot_layout(ncol = length(preds.plot.list)) + plot_annotation(title = paste0("Enhancer: ", x))
+  ggsave(paste0("figures/11_acc_summary_w_binding/perturbs/enh_", x, "_perturbs.pdf"), 
+         g, height = 8, width = nrow(motifs.df)*4)
+  ggsave(paste0("figures/11_acc_summary_w_binding/perturbs/enh_", x, "_perturbs.png"), 
+         g, height = 8, width = nrow(motifs.df)*4)
+  return(NULL)
+}, mc.cores = 8)
+
+```
+
+# 7. Plot summarized chromatin accessibility from ChromBPNet
+
+Here we will plot summaries for accessibility counts contribution from our BPNet-discovered and mapped motifs that have been overlapped with accessible regions. We will first collect binding and accessibility contribution at these overlapped motifs. 
+
+## 7.1. Normalize contribution tracks
+
+Profile contribution does not need to be normalized because it is always bounded to the same scale through softmax. Surag Nair in Anshul Kundaje's lab, who developed ChromBPNet, recommends that count contribution scores are normalized by scaling them to the 99th percentile of their assigned values.
+
+```{r}
+
+# Variables
+
+timepoints <- c('1to15','15to2','2to25','25to3')
+weight_threshold<-'99.95%'
+
+```
+
+```{r, eval = F}
+
+# Normalize and export
+
+mclapply(timepoints, function(x){
+  contrib_path<-paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_', x, '.counts_scores.bw')
+  contrib.gr<-rtracklayer::import(contrib_path)
+  weight_path <- paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_', x, '.counts_scores.txt')
+  weight.df<-read.table(weight_path)
+  weight<-weight.df$V2[weight.df$V1==weight_threshold]
+  contrib.gr$score<-contrib.gr$score / weight
+  rtracklayer::export(contrib.gr, paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_', x, 
+                                         '.counts_scores_norm_', 
+                                         gsub('[\\%,]', '', weight_threshold),'.bw'))
+}, mc.cores = 4)
+
+```
+
+## 7.2. Import data necessary for contribution calculation
+
+```{r overlap}
+
+# motifs that have been overlapped with ATAC regions (from 4_binding_motif_curation)
+
+motifs_ov.gr <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/atac_overlapping_instances_curated_1based.tsv.gz') %>% makeGRangesFromDataFrame(starts.in.df.are.0based = F, keep.extra.columns = T)
+motifs_ov.gr$pattern_name %>% table()
+
+# ATAC contrib normalized bws
+
+contrib.bws<-list.files('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/',
+                        pattern = 'counts_scores_norm_99.95', full.names = T, recursive = T) %>% as('list')
+names(contrib.bws)<-stringr::str_match(contrib.bws, "preds_fold1_\\s*(.*?)\\s*.counts_scores")[,2]
+
+# TF binding contrib bws (both counts and profile)
+
+tf.bws<-list.files('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw',
+                        pattern = 'contrib', full.names = T, recursive = F) %>% as('list') 
+names(tf.bws) <- c("Bcd.contrib.counts", "Bcd.contrib.profile", "Cad.contrib.counts", "Cad.contrib.profile", "Dl.contrib.counts", "Dl.contrib.profile", "GAF.contrib.counts", "GAF.contrib.profile", "Twi.contrib.counts", "Twi.contrib.profile", "Zld.contrib.counts","Zld.contrib.profile")
+
+```
+
+## 7.3. Calculate ATAC and ChIP contribution 
+
+```{r calc_contrib}
+
+contrib.df<-lapply(names(contrib.bws), function(x){
+  regionSums(motifs_ov.gr, contrib.bws[[x]])
+}) %>% as.data.frame()
+colnames(contrib.df)<-names(contrib.bws)
+
+tf.df<-mclapply(names(tf.bws), function(x){
+  regionSums(motifs_ov.gr, tf.bws[[x]])
+}, mc.cores = 8) %>% as.data.frame()
+colnames(tf.df)<-names(tf.bws)
+
+```
+
+## 7.4. Merge contribution scores with motif list
+
+```{r merge}
+
+motifs_ov.df<-motifs_ov.gr %>%
+  plyranges::mutate(seq = getSeq(bsgenome, resize(., width = 30, fix = 'center'))) %>%
+  as.data.frame(.) %>%
+  cbind(., contrib.df) %>%
+  cbind(., tf.df)
+
+motifs_ov.df$`tf.contrib.profile`<-mclapply(1:nrow(motifs_ov.df), function(x){
+  motifs_ov.df[[paste0(motifs_ov.df$pattern_name[x], '.contrib.profile')]][x]
+}, mc.cores = 8) %>% unlist
+motifs_ov.df$`tf.contrib.counts`<-mclapply(1:nrow(motifs_ov.df), function(x){
+  motifs_ov.df[[paste0(motifs_ov.df$pattern_name[x], '.contrib.counts')]][x]
+}, mc.cores = 8) %>% unlist
+motifs_ov.df<-motifs_ov.df %>% as.data.frame
+
+```
+
+## 7.5. Save motifs with metadata
+
+```{r, eval = F}
+
+readr::write_tsv(motifs_ov.df, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/atac_overlapping_instances_curated_w_metadata_1based.tsv.gz')
+
+```
+
+## 7.6. Summarize ChromBPNet contribution from BPNet-mapped motifs overlapped with accessible regions
+
+```{r contrib}
+
+# Variables
+
+motifs_of_interest<-c('Zld', 'GAF', 'Cad', 'Dl','Twi','Bcd')
+
+# Calculate average counts contribution to accessibility
+
+motif_summary.df<-motifs_ov.df %>%
+  as.data.table %>%
+  melt.data.table(id.vars = c('pattern_name'), measure.vars = timepoints, 
+                  variable.name = 'timepoint', value.name = 'atac_contrib') %>%
+  dplyr::mutate(log_atac_contrib = log2(atac_contrib+1)) %>%
+  dplyr::filter(!is.na(log_atac_contrib)) %>%
+  dplyr::group_by(pattern_name, timepoint) %>%
+  dplyr::summarize(mean_log_atac_contrib = mean(log_atac_contrib),
+                   mean_atac_contrib = mean(atac_contrib)) %>%
+  dplyr::mutate(pattern_name = factor(pattern_name, levels = rev(motifs_of_interest)),
+                timepoint = factor(timepoint, levels = timepoints))
+
+# Plot
+
+colors_raw<-viridis(100, begin = 0, end = 1)
+colors_formatted<-colors_raw#c(colors_raw[seq(1, 50, 5)], colors_raw[seq(70, 80, 1)], colors_raw[seq(95, 100, 1)])
+
+motif_summary.plot<-ggplot(motif_summary.df, aes(x = timepoint, y = pattern_name, fill = mean_log_atac_contrib))+
+  geom_tile(color = 'black', size = 1)+
+  scale_x_discrete(name = 'Timepoint')+
+  scale_y_discrete(name = 'Motif')+
+  scale_fill_gradient(low = 'white', high = '#1c5b78', name = 'Log2(Average\ncounts contrib + 1)')+
+  theme_classic()
+
+motif_summary.plot
+
+ggsave("acc_counts_contrib_at_ov_motifs.pdf", plot = motif_summary.plot, path = "figures/11_acc_summary_w_binding", height = 4, width = 4)
+ggsave("acc_counts_contrib_at_ov_motifs.png", plot = motif_summary.plot, path = "figures/11_acc_summary_w_binding", height = 4, width = 4)
+
+```
+
+## 7.7 Plot the closest ChromBPNet CWM motif logos for each TF
+
+```{r logo}
+
+# Define variables
+
+atac_seqlets.list<-list('Zld' = list(timepoint = '25to3', metacluster = 0, pattern = 0, revcomp = T), 
+                       'GAF'= list(timepoint = '25to3', metacluster = 0, pattern = 1, revcomp = F), 
+                       'Cad'= list(timepoint = '2to25', metacluster = 0, pattern =  17, revcomp = T),  
+                       'Dl'= list(timepoint = '25to3', metacluster = 0, pattern = 9, revcomp = T), 
+                       'Twi'= list(timepoint = '25to3', metacluster = 0, pattern = 10, revcomp = F))
+
+# Collect information
+
+cwm.list<-mclapply(names(atac_seqlets.list), function(x){
+  ##Collect motifs and sequences
+  gr<-rtracklayer::import(paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/modisco/fold1_', 
+                                 atac_seqlets.list[[x]]$timepoint, 
+                                 '_counts/metacluster_', 
+                                 atac_seqlets.list[[x]]$metacluster,
+                                 '_pattern_',
+                                 atac_seqlets.list[[x]]$pattern,
+                                 '_seqlets.bed'))
+  if(atac_seqlets.list[[x]]$revcomp){
+    gr<-gr %>% plyranges::mutate(strand = ifelse(strand=='+', '-', '+'))
+  }
+  gr<-gr %>% plyranges::mutate(seq = getSeq(bsgenome, ., as.character = T))
+  seqs<-gr$seq
+  seqs_1he.list<-mclapply(seqs, function(x) one_hot_encode_DNA(x), mc.cores = 8)
+  
+  
+  ##Define ATAC-seq contribution
+  atac_shap.path<-paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_',
+                         atac_seqlets.list[[x]]$timepoint, '.counts_scores.bw')
+  
+  ##Collect contribution
+  contrib.mat<-standard_metapeak_matrix(gr, atac_shap.path, keep_region_coordinates = T)
+  testit::assert('Arrays do not match.', dim(contrib.mat)[1]==length(seqs_1he.list))
+  
+  ##Compute CWM
+  cwm.list<-mclapply(1:length(seqs_1he.list), function(z){
+    s<-seqs_1he.list[[z]]
+    c<-contrib.mat[z,]
+    cwm<-lapply(1:length(c), function(y){
+      s[,y]*c[y]
+    }) %>% as.data.frame
+    colnames(cwm)<-NULL
+    cwm<-as.matrix(cwm)
+    return(cwm)
+  }, mc.cores = 8)
+  
+  cwm<-Reduce("+", cwm.list) / length(cwm.list)
+  return(cwm)
+}, mc.cores = 6)
+
+names(cwm.list)<-names(atac_seqlets.list)
+
+# Plot
+
+cwm.plot<-ggplot() + geom_logo(cwm.list, method='custom', seq_type='dna') +
+  facet_grid(seq_group~., scales = 'free_y')+
+  theme_classic()+
+  ggtitle('CWM')+
+  theme(axis.line.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.title = element_blank(), 
+        strip.background = element_blank())
+
+ggsave("chrombpnet_closest_cwm.pdf", plot = cwm.plot, path = "figures/11_acc_summary_w_binding", height = 8, width = 4)
+ggsave("chrombpnet_closest_cwm.png", plot = cwm.plot, path = "figures/11_acc_summary_w_binding", height = 8, width = 4)
+```
+
+## 7.8. Plot binding at ChromBPNet closest seqlets
+
+```{r binding_seq}
+
+# Import nexus binding information
+
+binding.bw.list <- list(zld_binding = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_zld_mbt_nexus_combined_positive.bw",
+                                           neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_zld_mbt_nexus_combined_negative.bw"),
+                        gaf_binding = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_positive.bw",
+                                           neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_negative.bw"),
+                        cad_binding = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_cad_mbt_nexus_combined_positive.bw",
+                                           neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_cad_mbt_nexus_combined_negative.bw"),
+                        dl_binding = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_dl_mbt_nexus_combined_positive.bw",
+                                          neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_dl_mbt_nexus_combined_negative.bw"),
+                        twi_binding = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_twi_mbt_nexus_combined_positive.bw",
+                                           neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_twi_mbt_nexus_combined_negative.bw"))
+
+# get seqlets as a GRanges list onject
+
+motif_seqlets.list<-mclapply(names(atac_seqlets.list), function(x){
+  #Collect motifs and sequences
+  gr<-rtracklayer::import(paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/modisco/fold1_', 
+                                 atac_seqlets.list[[x]]$timepoint, 
+                                 '_counts/metacluster_', 
+                                 atac_seqlets.list[[x]]$metacluster,
+                                 '_pattern_',
+                                 atac_seqlets.list[[x]]$pattern,
+                                 '_seqlets.bed'))
+})
+names(motif_seqlets.list) <- c("Zld_motif", "Gaf_motif", "Cad_motif", "Dl_motif", "Twi_motif")
+
+# Calculate each TF individually and plot
+
+zld.binding <- exo_metapeak(gr = resize(motif_seqlets.list$Zld_motif, 1, 'center'), sample = binding.bw.list$zld_binding, upstream = 500, downstream = 500)
+zld.seqlets.plot <- ggplot(zld.binding, aes(x=tss_distance, y=reads, fill=strand))+
+  geom_line(aes(group=strand))+
+  scale_fill_manual(values= alpha(c("red", "dodgerblue4"), 0.4)) +
+  ylim(-5,5) +
+  xlab("Distance from seqlet center")+
+  ylab("Zld ChIP-nexus Reads")+
+  ggtitle("Zelda binding at ChromBPNet seqlets")+
+  theme_cowplot()
+
+gaf.binding <- exo_metapeak(gr = resize(motif_seqlets.list$Gaf_motif, 1, 'center'), sample = binding.bw.list$gaf_binding, upstream = 500, downstream = 500)
+gaf.seqlets.plot <- ggplot(gaf.binding, aes(x=tss_distance, y=reads, fill=strand))+
+  geom_line(aes(group=strand))+
+  scale_fill_manual(values= alpha(c("red", "dodgerblue4"), 0.4)) +
+  ylim(-15,15) +
+  xlab("Distance from seqlet center")+
+  ylab("GAF ChIP-nexus Reads")+
+  ggtitle("GAF binding at ChromBPNet seqlets")+
+  theme_cowplot()
+
+cad.binding <- exo_metapeak(gr = resize(motif_seqlets.list$Cad_motif, 1, 'center'), sample = binding.bw.list$cad_binding, upstream = 500, downstream = 500)
+cad.seqlets.plot <- ggplot(cad.binding, aes(x=tss_distance, y=reads, fill=strand))+
+  geom_line(aes(group=strand))+
+  scale_fill_manual(values= alpha(c("red", "dodgerblue4"), 0.4)) +
+  ylim(-15,15) +
+  xlab("Distance from seqlet center")+
+  ylab("Cad ChIP-nexus Reads")+
+  ggtitle("Caudal binding at ChromBPNet seqlets")+
+  theme_cowplot()
+
+dl.binding <- exo_metapeak(gr = resize(motif_seqlets.list$Dl_motif, 1, 'center'), sample = binding.bw.list$dl_binding, upstream = 500, downstream = 500)
+dl.seqlets.plot <- ggplot(dl.binding, aes(x=tss_distance, y=reads, fill=strand))+
+  geom_line(aes(group=strand))+
+  scale_fill_manual(values= alpha(c("red", "dodgerblue4"), 0.4)) +
+  ylim(-15,15) +
+  xlab("Distance from seqlet center")+
+  ylab("Dl ChIP-nexus Reads")+
+  ggtitle("Dorsal binding at ChromBPNet seqlets")+
+  theme_cowplot()
+
+twi.binding <- exo_metapeak(gr = resize(motif_seqlets.list$Twi_motif, 1, 'center'), sample = binding.bw.list$twi_binding, upstream = 500, downstream = 500)
+twi.seqlets.plot <- ggplot(twi.binding, aes(x=tss_distance, y=reads, fill=strand))+
+  geom_line(aes(group=strand))+
+  scale_fill_manual(values= alpha(c("red", "dodgerblue4"), 0.4)) +
+  ylim(-5,5) +
+  xlab("Distance from seqlet center")+
+  ylab("Twi ChIP-nexus Reads")+
+  ggtitle("Twist binding at ChromBPNet seqlets")+
+  theme_cowplot()
+
+tfs_at_seqlets.plot <- zld.seqlets.plot + gaf.seqlets.plot + cad.seqlets.plot + dl.seqlets.plot + twi.seqlets.plot
+
+ggsave("tfs_binding_at_seqlets.pdf", plot = tfs_at_seqlets.plot, path = "figures/11_acc_summary_w_binding", height = 8, width = 24)
+ggsave("tfs_binding_at_seqlets.png", plot = tfs_at_seqlets.plot, path = "figures/11_acc_summary_w_binding", height = 8, width = 24)
+
+```
+
+# 8. Plot binding contirbution vs. accessibility contribution across motifs
+
+Here we will correlate the binding and accessibility contribution accross all motifs of interest 
+
+```{r correlate}
+
+# Gather contribution scores and compare to motif affinity
+contrib_comparison.df<-motifs_ov.df %>%
+  as.data.table %>%
+  melt.data.table(id.vars = c('tf.contrib.counts', 'pattern_name', 'seq_match_p'), measure.vars = timepoints, 
+                  value.name = 'atac_contrib', variable.name = 'timepoint') %>%
+  dplyr::mutate(timepoint = factor(timepoint, levels = timepoints))
+
+# Calculate correlation values
+contrib_corrs.df<-contrib_comparison.df %>%
+  dplyr::group_by(pattern_name, timepoint) %>%
+  dplyr::summarize(p_corr = round(cor(`tf.contrib.counts`, atac_contrib, method = 'pearson'), 2),
+                   s_corr = round(cor(`tf.contrib.counts`, atac_contrib, method = 'spearman'), 2)) %>%
+  dplyr::mutate(timepoint = factor(timepoint, levels = timepoints))
+
+#Plot values
+
+contrib_comparison.df$pattern_name<-contrib_comparison.df$pattern_name %>% factor(., levels = motifs_of_interest)
+contrib_corrs.df$pattern_name<-contrib_corrs.df$pattern_name %>% factor(., levels = motifs_of_interest)
+
+tf_vs_atac_contrib.plot<-ggplot(contrib_comparison.df, aes(x = `tf.contrib.counts`, y = atac_contrib)) +
+  geom_point(aes(color = seq_match_p), size = .2) +
+  geom_smooth(method=lm, se=FALSE, col='red', size=0.5) +
+  geom_text(data = contrib_corrs.df, aes(x = Inf, y = Inf, label = paste0('p_corr: ', p_corr, '\n', 's_corr: ', s_corr)),vjust = 1, hjust = 1) +
+  stat_regline_equation(label.y = 30, aes(label = ..rr.label..)) +
+  stat_regline_equation(label.y = 40, aes(label = ..eq.label..)) +
+  scale_y_continuous('ATAC-seq contribution, normalized')+
+  scale_x_continuous('TF counts contribution')+
+  scale_color_gradientn(colors = viridis(50, end = .9), name = 'PWM affinity\nseq_match\nTF model')+
+  facet_grid(timepoint~pattern_name, scales = "free_x")+
+  theme_cowplot()+
+  theme(panel.background = element_rect(color = 'black'))
+tf_vs_atac_contrib.plot
+
+ggsave("tf_counts_contrib_vs_atac_contrib.pdf", plot = tf_vs_atac_contrib.plot, path = "figures/11_acc_summary_w_binding", width = 12, height = 8)
+ggsave("tf_counts_contrib_vs_atac_contrib.png", plot = tf_vs_atac_contrib.plot, path = "figures/11_acc_summary_w_binding", width = 12, height = 8)
+
+```
+
+# 9. Plot Tn5 bias logos
+
+```{r tn5}
+
+tn5_p1 <- read.delim(file = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/modisco/thresh_5_profile/metacluster_0_pattern_0_seqlets.txt')
+tn5_p1_odd <- seq_len(nrow(tn5_p1)) %% 2 
+tn5_p1 <- tn5_p1[tn5_p1_odd== 1, ]
+
+tn5_p2 <- read.delim(file = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/modisco/thresh_5_profile/metacluster_0_pattern_1_seqlets.txt')
+tn5_p2_odd <- seq_len(nrow(tn5_p2)) %% 2 
+tn5_p2 <- tn5_p2[tn5_p2_odd== 1, ]
+
+tn5_p3 <- read.delim(file = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/modisco/thresh_5_profile/metacluster_0_pattern_2_seqlets.txt')
+tn5_p3_odd <- seq_len(nrow(tn5_p3)) %% 2 
+tn5_p3 <- tn5_p3[tn5_p3_odd== 1, ]
+
+tn5_logo1 <- ggplot() + geom_logo(tn5_p1) + theme_logo() + ggtitle("Tn5 bias logo 1")
+tn5_logo2 <- ggplot() + geom_logo(tn5_p2) + theme_logo() + ggtitle("Tn5 bias logo 2")
+tn5_logo3 <- ggplot() + geom_logo(tn5_p3) + theme_logo() + ggtitle("Tn5 bias logo 3")
+
+tn5.bias.logos <- tn5_logo1 + tn5_logo2 + tn5_logo3
+
+ggsave("tn5_bias_logos.pdf", plot = tn5.bias.logos, path = "figures/11_acc_summary_w_binding", width = 12, height = 8)
+ggsave("tn5_bias_logos.png", plot = tn5.bias.logos, path = "figures/11_acc_summary_w_binding", width = 12, height = 8)
+
+```
+
+# 10. Conclusions
+
+Here, we have processed the BPNet-mapped motifs that overlap with acessible regions, and we have shown the correlation between accessibility and binding contribution for all of the TFs of interest at these motifs, across time. We see a striking pattern for the known pioneers Zelda and GAF. We see this further reflected in the strong contribution of these motifs to accessibility when we summarize the contribution. Finally, we have used our known enhancers and plotted both the observed and predicted coverage as well as ChromBPNet predictions upon motif mutation, which shows how individual TFs/motifs are predicted to influence chromatin accessibility across time. 
+
+# Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

@@ -1,0 +1,770 @@
+---
+title: 'Anaylsis of ATAC-seq in embryos depleted for Dorsal'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to compare ATAC-seq time course data generated in wild-type, OregonR embryos to the same experiments performed in embryos depleted for Dorsal (gd7). These flies are generated  from a gd7/winscy, P{hs-hid}5 stock that was heat-shocked at the larval stage (see methods). We will use these data to investigate the influence of DV patterning TFs, namely Dorsal, on chromatin accessibility, and will look at this in a pattern-specific way. We will also look at ATAC-seq and MNase-seq data comparisons between gd7 and toll10b (high, uniform Dorsal; dorsal ectoderm) mutants. Note that this analysis generates Figure 5 a-c, f-g. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/15_dorsal_depletion_atac/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data for this analysis
+
+```{r import}
+
+# motifs 
+
+motifs.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>% 
+  as.data.frame()
+
+# ATAC replicate coverage list: for DESeq2, we will use 3 replicates of all 4 time points, both in wt and gd7 embryos. 
+
+atac.bw.gd7.list <- list(wt_1to15_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_4_cutsites.bw',
+                         wt_1to15_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_6_cutsites.bw',
+                         wt_1to15_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_7_cutsites.bw',
+                         gd7_1to15_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_1to15_atac_3_cutsites.bw',
+                         gd7_1to15_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_1to15_atac_5_cutsites.bw',
+                         gd7_1to15_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_1to15_atac_6_cutsites.bw',
+                         wt_15to2_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_4_cutsites.bw',
+                         wt_15to2_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_6_cutsites.bw',
+                         wt_15to2_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_7_cutsites.bw',
+                         gd7_15to2_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_15to2_atac_3_cutsites.bw',
+                         gd7_15to2_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_15to2_atac_5_cutsites.bw',
+                         gd7_15to2_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_15to2_atac_6_cutsites.bw',
+                         wt_2to25_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_4_cutsites.bw',
+                         wt_2to25_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_6_cutsites.bw',
+                         wt_2to25_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_7_cutsites.bw',
+                         gd7_2to25_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to25_atac_3_cutsites.bw',
+                         gd7_2to25_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to25_atac_5_cutsites.bw',
+                         gd7_2to25_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to25_atac_6_cutsites.bw',
+                         wt_25to3_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_4_cutsites.bw',
+                         wt_25to3_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_6_cutsites.bw',
+                         wt_25to3_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_7_cutsites.bw',
+                         gd7_25to3_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_25to3_atac_3_cutsites.bw',
+                         gd7_25to3_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_25to3_atac_5_cutsites.bw',
+                         gd7_25to3_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_25to3_atac_6_cutsites.bw')
+
+```
+
+# 4. Determine differential accessibility using DESeq2
+
+## 4.1. Format and calculate counts using cutsite information
+
+```{r format}
+
+# Define peaks--these are non-overlapping and evenly-sized
+
+peaks.gr <- rtracklayer::import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/narrowpeak/atac_orer_all_peaks.narrowpeak') %>%
+  GenomicRanges::reduce(ignore.strand = T) %>%
+  GenomicRanges::resize(2114, 'center') %>%
+  plyranges::mutate(peak_id = 1:length(.))
+
+# Calculate the counts across all peaks
+
+counts.gd7.df<-mclapply(atac.bw.gd7.list, function(x){
+  regionSums(peaks.gr, x)
+}, mc.cores = 8) %>% as.data.frame()
+colnames(counts.gd7.df)<-names(atac.bw.gd7.list)
+
+# Set conditions for the DESeq2 model
+
+peak_condition_gd7.df<-data.frame(condition = c(rep('wt_1to15', 3), rep('gd7_1to15', 3), rep('wt_15to2', 3), rep('gd7_15to2', 3), rep('wt_2to25', 3), rep('gd7_2to25', 3), rep('wt_25to3', 3), rep('gd7_25to3', 3)))
+peak_condition_gd7.df$condition<- factor(peak_condition_gd7.df$condition, levels = c("wt_1to15", "gd7_1to15", "wt_15to2","gd7_15to2", "wt_2to25","gd7_2to25", "wt_25to3","gd7_25to3"))
+rownames(peak_condition_gd7.df)<-names(atac.bw.gd7.list)
+
+```
+
+## 4.2. Set up differential model
+
+```{r setup}
+
+library(DESeq2)
+
+dds_gd7 <- DESeqDataSetFromMatrix(countData = counts.gd7.df,
+                              colData = peak_condition_gd7.df,
+                              design = ~ condition)
+model_gd7 <- DESeq(dds_gd7)
+
+```
+
+## 4.3. Gather time point results 
+
+```{r time}
+
+t1_res.gd7.df <- results(model_gd7, contrast = c("condition","gd7_1to15","wt_1to15"), alpha = 0.05)
+plotMA(t1_res.gd7.df, ylim=c(-3,3), ylab = 'log fold change log2(gd7_1to15/wt_1to15)') 
+t1.ma <- ggplot(as.data.frame(t1_res.gd7.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(gd7_1to15/wt_1to15)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 1-1.5 hr") +
+  theme_cowplot()
+
+t2_res.gd7.df <- results(model_gd7, contrast = c("condition","gd7_15to2","wt_15to2"), alpha = 0.05)
+plotMA(t2_res.gd7.df, ylim=c(-3,3), ylab = 'log fold change log2(gd7_15to2/wt_15to2)')
+t2.ma <- ggplot(as.data.frame(t2_res.gd7.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(gd7_15to2/wt_15to2)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 1.5-2 hr") +
+  theme_cowplot()
+
+t3_res.gd7.df <- results(model_gd7, contrast = c("condition","gd7_2to25","wt_2to25"), alpha = 0.05)
+plotMA(t3_res.gd7.df, ylim=c(-3,3), ylab = 'log fold change log2(gd7_2to25/wt_2to25)')
+t3.ma <- ggplot(as.data.frame(t3_res.gd7.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(gd7_2to25/wt_2to25)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 2-2.5 hr") +
+  theme_cowplot()
+
+t4_res.gd7.df <- results(model_gd7, contrast = c("condition","gd7_25to3","wt_25to3"), alpha = 0.05)
+plotMA(t4_res.gd7.df, ylim=c(-3,3), ylab = 'log fold change log2(gd7_25to3/wt_25to3)')
+t4.ma <- ggplot(as.data.frame(t4_res.gd7.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(gd7_25to3/wt_25to3)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 2.5-3 hr") +
+  theme_cowplot()
+
+maplots <- t1.ma + t2.ma + t3.ma + t4.ma
+ggsave("gd7_effect_ma_plots.pdf", plot = maplots, path = "figures/15_dorsal_depletion_atac/", width = 25, height = 20, units = "cm")
+ggsave("gd7_effect_ma_plots.png", plot = maplots, path = "figures/15_dorsal_depletion_atac/", width = 25, height = 20, units = "cm")
+
+```
+
+## 4.4. Plot results at enhancers
+
+```{r enhancers}
+
+# Import enhancers  list that contains some DV and AP enhancers that we manually parsed down from larger enhancer lists (Cusanovich, Koenecke, Zeitlinger) for ease of viewing. 
+
+dv_enhancers_subset.gr <- read.csv(file = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/enhancers/dv_enhancers_subset.csv', header = TRUE) %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+# Join ATAC peaks with enhancers
+
+peaks.gr$enhancer_name <- NA
+enhancer.ov <- findOverlaps(peaks.gr, dv_enhancers_subset.gr, ignore.strand = T)
+peaks.gr$enhancer_name[enhancer.ov@from]<-dv_enhancers_subset.gr$name[enhancer.ov@to]
+
+# Add patterning information 
+
+peaks.gr$pattern <- NA
+peaks.gr$pattern[enhancer.ov@from]<-dv_enhancers_subset.gr$pattern[enhancer.ov@to]
+
+#Join with DE results (I used the 4th timepoint because this is the peak influence of Dorsal binding, according to Li & Eisen, 2018)
+
+peaks_w_de.df <- cbind(peaks.gr %>% as.data.frame, t4_res.gd7.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+
+#Plot with DE results
+
+names_to_show <- c("sog_shadow", "rho", "vn", "brk_primary", "vnd_3", "twi_Ozdemir", "mir-1_Biemar", "Mef2_Nguyen", "sna-S_Perry", "tld_Kirov", "zen_dist_Doyle", "dpp_Huang", "shn", "doc2", "Asph_Ozdemir")
+
+gd7_effect_at_dv_enhancers <- ggplot(peaks_w_de.df, aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  geom_text(data = peaks_w_de.df[peaks_w_de.df$enhancer_name %in% names_to_show,],aes(label = enhancer_name, color = pattern), size = 4)+
+  scale_y_continuous(limits = c(-1.5, 1.5), name = 'log2(gd7_25to3/wt_25to3)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Average of normalized ATAC counts") +
+  ggtitle("Gd7 effect at 2.5-3 hr at validated DV patterning enhancers") +
+  theme_cowplot()
+gd7_effect_at_dv_enhancers
+
+ggsave("gd7_effect_at_dv_enhancers_25to3_w_signif.pdf", plot = gd7_effect_at_dv_enhancers, path = "figures/15_dorsal_depletion_atac/", width = 25, height = 20, units = "cm")
+ggsave("gd7_effect_at_dv_enhancers_25to3_w_signif.png", plot = gd7_effect_at_dv_enhancers, path = "figures/15_dorsal_depletion_atac/", width = 25, height = 20, units = "cm")
+
+# Print padj values
+
+peaks_w_de.df[!is.na(peaks_w_de.df$enhancer_name),][peaks_w_de.df[!is.na(peaks_w_de.df$enhancer_name),]$enhancer_name %in% names_to_show, c(7,8,13,14)]
+
+```
+
+## 4.5. Map DESeq2 results back to peaks 
+
+```{r map}
+
+# overlap with peaks
+
+peaks_w_de_t1.df <- cbind(peaks.gr %>% as.data.frame, t1_res.gd7.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+peaks_w_de_t2.df <- cbind(peaks.gr %>% as.data.frame, t2_res.gd7.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+peaks_w_de_t3.df <- cbind(peaks.gr %>% as.data.frame, t3_res.gd7.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+peaks_w_de_t4.df <- cbind(peaks.gr %>% as.data.frame, t4_res.gd7.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+
+# make GRanges for export
+
+peaks_w_de_t1.gr <- peaks_w_de_t1.df %>%
+  dplyr::mutate(timepoint = '1to15') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)    
+
+peaks_w_de_t2.gr <- peaks_w_de_t2.df %>%
+  dplyr::mutate(timepoint = '15to2') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+peaks_w_de_t3.gr <- peaks_w_de_t3.df %>%
+  dplyr::mutate(timepoint = '2to25') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+peaks_w_de_t4.gr <- peaks_w_de_t4.df %>%
+  dplyr::mutate(timepoint = '25to3') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+```
+
+## 4.6. Save DESeq2 results
+
+```{r save}
+
+deseq_at_peaks.list <- list('gd7_1to15/wt_1to15' = peaks_w_de_t1.gr,
+                            'gd7_15to2/wt_15to2' = peaks_w_de_t2.gr,
+                            'gd7_2to25/wt_2to25' = peaks_w_de_t3.gr,
+                            'gd7_25to3/wt_25to3' = peaks_w_de_t4.gr)
+saveRDS(deseq_at_peaks.list, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/gd7/deseq_timepoints_at_orer_1to3_atac_peaks.RData')
+
+```
+
+## 4.7. Map log2FC values onto motifs
+
+```{r motifs}
+
+# Summarize from all time points into one total de onject
+
+peaks_w_de_t1.df$t1_log2FC <- peaks_w_de_t1.df$log2FoldChange
+peaks_w_de_t2.df$t2_log2FC <- peaks_w_de_t2.df$log2FoldChange
+peaks_w_de_t3.df$t3_log2FC <- peaks_w_de_t3.df$log2FoldChange
+peaks_w_de_t4.df$t4_log2FC <- peaks_w_de_t4.df$log2FoldChange
+
+peaks_w_all_time_de.df <- peaks_w_de_t4.df[,1:8]
+peaks_w_all_time_de.df$t1_log2FC <- peaks_w_de_t1.df$log2FoldChange
+peaks_w_all_time_de.df$t2_log2FC <- peaks_w_de_t2.df$log2FoldChange
+peaks_w_all_time_de.df$t3_log2FC <- peaks_w_de_t3.df$log2FoldChange
+peaks_w_all_time_de.df$t4_log2FC <- peaks_w_de_t4.df$log2FoldChange
+
+# Map peaks with DESeq information back to motifs 
+
+motifs_vs_peaks.ov<-findOverlaps(motifs.df %>% makeGRangesFromDataFrame(), peaks.gr, ignore.strand = T)
+motifs.df$peak_id<-NA
+motifs.df$peak_id[motifs_vs_peaks.ov@from]<-peaks.gr$peak_id[motifs_vs_peaks.ov@to]
+
+motifs_across_peaks.df<-motifs.df %>%
+  dplyr::filter(!is.na(peak_id)) %>%
+  dplyr::left_join(., peaks_w_all_time_de.df %>% dplyr::select(-c(seqnames, start, end, width, strand)), by = 'peak_id') %>%
+  as.data.frame()
+
+```
+
+# 5. Compare wt and gd7 ATAC-seq time course data, along with the zld- ATAC, at the patterned enhancers
+
+## 5.1. Import relevant data
+
+```{r relevant}
+
+# Import enhancers from "Genome-wide identification of Drosophila dorso-ventral enhancers by differential histone acetylation analysis" by Koenecke et al., 2016
+
+dv_enhancers.gr <- readRDS('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/enhancers/koenecke2016_dv_enhancers_denovo_dm6.rds')
+
+# Create coverage bigwig list
+
+atac.total.list <- list(orer_1to1.5 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_1to15_atac_combined_normalized.bw',
+                        orer_1.5to2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_15to2_atac_combined_normalized.bw',
+                        orer_2to2.5 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined_normalized.bw',
+                        orer_2.5to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_normalized.bw',
+                        gd7_1to1.5 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_1to15_atac_combined_normalized.bw',
+                        gd7_1.5to2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_15to2_atac_combined_normalized.bw',
+                        gd7_2to2.5 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_2to25_atac_combined_normalized.bw',
+                        gd7_2.5to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_25to3_atac_combined_normalized.bw',
+                        zldrnai_1to1.5 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_1to15_atac_combined_normalized.bw',
+                        zldrnai_1.5to2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_15to2_atac_combined_normalized.bw',
+                        zldrnai_2to2.5 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_2to25_atac_combined_normalized.bw',
+                        zldrnai_2.5to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_25to3_atac_combined_normalized.bw')
+
+```
+
+## 5.2. Calculate ATAC-seq at mesodermal and dorsal ectodermal enhancers
+
+```{r pattern}
+
+atac_across_denovo.df<-mclapply(names(atac.total.list), function(x){
+  regionSums(dv_enhancers.gr %>% resize(1000, 'center'), atac.total.list[[x]])
+}, mc.cores = 4) %>% as.data.frame()
+names(atac_across_denovo.df)<-names(atac.total.list)
+
+dv_enhancers_with_all_atac.df <- cbind(dv_enhancers.gr %>% as.data.frame, atac_across_denovo.df) %>%
+  dplyr::select(differential_k27ac, orer_1to1.5, orer_1.5to2, orer_2to2.5, orer_2.5to3, gd7_1to1.5, gd7_1.5to2, gd7_2to2.5,
+                gd7_2.5to3, zldrnai_1to1.5, zldrnai_1.5to2, zldrnai_2to2.5, zldrnai_2.5to3) %>%
+  as.data.table %>%
+  melt.data.table(id.vars = c('differential_k27ac'), variable.name = 'timepoint', value.name = 'ATAC_signal')
+
+```
+
+## 5.3. Plot boxplots for mesodermal vs. dorsal ectodermal enhancers 
+
+```{r boxes}
+
+box_order <- c("orer_1to1.5", "zldrnai_1to1.5", "gd7_1to1.5", "orer_1.5to2", "zldrnai_1.5to2", "gd7_1.5to2", "orer_2to2.5", "zldrnai_2to2.5", "gd7_2to2.5", "orer_2.5to3", "zldrnai_2.5to3", "gd7_2.5to3")
+my_comparisons <- list(c("orer_1to1.5", "gd7_1to1.5"), c("orer_1to1.5", "zldrnai_1to1.5"), 
+                       c("orer_1.5to2", "gd7_1.5to2"), c("orer_1.5to2", "zldrnai_1.5to2"),
+                       c("orer_2to2.5", "gd7_2to2.5"), c("orer_2to2.5", "zldrnai_2to2.5"),
+                       c("orer_2.5to3", "gd7_2.5to3"), c("orer_2.5to3", "zldrnai_2.5to3"))
+dv_enhancers_with_all_atac.df$timepoint <- factor(dv_enhancers_with_all_atac.df$timepoint, levels = box_order)
+
+# Plot each pattern separately
+
+meso.df <- dv_enhancers_with_all_atac.df[dv_enhancers_with_all_atac.df$differential_k27ac == "Higher in Toll10b",]
+dee.df <- dv_enhancers_with_all_atac.df[dv_enhancers_with_all_atac.df$differential_k27ac == "Higher in gd7",]
+
+
+denovo_meso.plot <- ggplot(meso.df, aes(x=timepoint, y=log2(ATAC_signal))) +
+  geom_boxplot(aes(fill = timepoint)) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif", paired = TRUE, label.y = 13)+
+  ylim(8,14) +
+  scale_fill_viridis_d()+
+  ggtitle("Timecourse ATAC-seq at at mesodermal enhancers") +
+  theme_cowplot() +
+  theme(legend.position="none")
+
+denovo_dee.plot <- ggplot(dee.df, aes(x=timepoint, y=log2(ATAC_signal))) +
+  geom_boxplot(aes(fill = timepoint)) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif", paired = TRUE, label.y = 13)+
+  ylim(8,14) +
+  scale_fill_viridis_d()+
+  ggtitle("Timecourse ATAC-seq at dorsal ectodermal enhancers") +
+  theme_cowplot() +
+  theme(legend.position="none")
+
+denovo_boxes <- denovo_dee.plot + denovo_meso.plot + 
+  plot_layout(widths = c(2, 2))
+denovo_boxes
+
+ggsave("atac_regionsums_at_enhancers_1000window.pdf", plot = denovo_boxes, path = "figures/15_dorsal_depletion_atac/", width = 20, height = 10)
+ggsave("atac_regionsums_at_enhancers_1000window.png", plot = denovo_boxes, path = "figures/15_dorsal_depletion_atac/", width = 20, height = 10)
+
+```
+
+## 5.4. Plot ATAC-seq at more limited list with DEE vs. NEE vs. ME information included
+
+```{r neuro}
+
+# Bring in enhancers
+
+dv_w_nee.gr <- read.csv(file = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/enhancers/dv_enhancers_w_nee.csv', header = TRUE) %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+# Calculate
+
+atac_across_nee.df<-mclapply(names(atac.total.list), function(x){
+  regionSums(dv_w_nee.gr %>% resize(1000, 'center'), atac.total.list[[x]])
+}, mc.cores = 4) %>% as.data.frame()
+names(atac_across_nee.df)<-names(atac.total.list)
+
+dv_enhancers_nee_with_all_atac.df <- cbind(dv_w_nee.gr %>% as.data.frame, atac_across_nee.df) %>%
+  dplyr::select(pattern, orer_1to1.5, orer_1.5to2, orer_2to2.5, orer_2.5to3, gd7_1to1.5, gd7_1.5to2, gd7_2to2.5,
+                gd7_2.5to3, zldrnai_1to1.5, zldrnai_1.5to2, zldrnai_2to2.5, zldrnai_2.5to3) %>%
+  as.data.table %>%
+  melt.data.table(id.vars = c('pattern'), variable.name = 'timepoint', value.name = 'ATAC_signal')
+
+# Plot
+
+dv_enhancers_nee_with_all_atac.df$timepoint <- factor(dv_enhancers_nee_with_all_atac.df$timepoint, levels = box_order)
+
+ventral.df <- dv_enhancers_nee_with_all_atac.df[dv_enhancers_nee_with_all_atac.df$pattern == "ventral",]
+dorsal.df <- dv_enhancers_nee_with_all_atac.df[dv_enhancers_nee_with_all_atac.df$pattern == "dorsal",]
+neuroectoderm.df <- dv_enhancers_nee_with_all_atac.df[dv_enhancers_nee_with_all_atac.df$pattern == "neuroectoderm",]
+
+ventral.plot <- ggplot(ventral.df, aes(x=timepoint, y=log2(ATAC_signal))) +
+  geom_boxplot(aes(fill = timepoint)) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif", paired = TRUE, label.y = 13)+
+  ylim(8,14) +
+  scale_fill_viridis_d()+
+  ggtitle("Timecourse ATAC-seq at mesodermal enhancers") +
+  theme_cowplot() +
+  theme(legend.position="none")
+
+dorsal.plot <- ggplot(dorsal.df, aes(x=timepoint, y=log2(ATAC_signal))) +
+  geom_boxplot(aes(fill = timepoint)) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif", paired = TRUE, label.y = 13)+
+  ylim(8,14) +
+  scale_fill_viridis_d()+
+  ggtitle("Timecourse ATAC-seq at dorsel ectoderm enhancers") +
+  theme_cowplot() +
+  theme(legend.position="none")
+
+neuroectoderm.plot <- ggplot(neuroectoderm.df, aes(x=timepoint, y=log2(ATAC_signal))) +
+  geom_boxplot(aes(fill = timepoint)) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif", paired = TRUE, label.y = 13)+
+  ylim(8,14) +
+  scale_fill_viridis_d()+
+  ggtitle("Timecourse ATAC-seq at neuroectoderm enhancers") +
+  theme_cowplot() +
+  theme(legend.position="none")
+
+patterning_boxes <- dorsal.plot + neuroectoderm.plot + ventral.plot + 
+  plot_layout(widths = c(2, 2, 2))
+patterning_boxes
+
+ggsave("atac_regionsums_at_patterned_enhancers_1000window.pdf", plot = patterning_boxes, path = "figures/15_dorsal_depletion_atac/", width = 20, height = 10)
+ggsave("atac_regionsums_at_patterned_enhancers_1000window.png", plot = patterning_boxes, path = "figures/15_dorsal_depletion_atac/", width = 20, height = 10)
+
+```
+
+# 6. Compare ATAC-seq and MNase-seq between dorsalized (gd7) and ventralized (toll10b) embryos
+
+## 6.1. Import data necessary for this analysis
+
+```{r mnase}
+
+mnase.bw.list <- list(gd7 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/combined/gd7_2to4_mono_mnase_combined.bw",
+                      toll10b = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/combined/toll10b_2to4_mono_mnase_combined.bw")
+atac.bw.list <- list(gd7 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_2to4_atac_combined.bw",
+                     toll10b = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/toll10b_2to4_atac_combined.bw")
+
+```
+
+## 6.2. Prepare functions
+
+```{r prepare}
+
+source("scripts/r/heatmaps/heatmaps.r")
+source("scripts/r/heatmaps/metapeaks.r")
+source("scripts/r/heatmaps/granges_common.r")
+source("scripts/r/granges_common.r")
+
+# Functions
+
+read_matrix <- function(gr, cov, reverse_reads=FALSE, df=FALSE, nu=25) {
+  if(class(cov) == "character") {
+    #cov <- import.bw(cov, which=gr, as="RleList") #deprecated command, rtracklayer will recognize values
+    cov <- rtracklayer::import(cov, which=gr, as="RleList")
+  }
+  transform_function <- if(reverse_reads) { rev } else { identity }
+  gr <- granges(gr) # remove metadata to speed up RleList data retrieval in Views()
+  o <- order(gr)
+  gr <- gr[o]
+
+  if(df==TRUE){
+    reads.list <- regionApply_list(gr,cov, as.numeric )
+    reads.list <-lapply(reads.list, function(reads) { approx(reads, n=nu)$y })
+    reads.m <- matrix(as.numeric(unlist(reads.list, use.name=FALSE)), nrow=length(reads.list), byrow=T)
+    if(reverse_reads == T)reads.m <- reads.m[, ncol(reads.m):1]
+  }else{
+    reads.list <- regionApply(gr, cov, as.numeric)
+      #rl <- as(gr, "GRangesList")
+      rl <- split(gr, seqnames(gr))
+      rl <- rl[which(lapply(rl, function(x)length(x))!=0)] #eliminate chromosomes that are not used
+      view <- RleViewsList(rleList=cov[names(rl)], rangesList=rl)
+      reads.list <- viewApply(view, function(x) { transform_function(as.numeric(x)) })
+      reads.m <- matrix(unlist(sapply(reads.list, as.numeric)), nrow=length(gr), byrow=TRUE)
+  }
+  reads.m[o, ] <- reads.m
+  reads.m
+}
+
+standard_metapeak_matrix <- function(regions.gr, sample.cov, upstream=100, downstream=100) {
+  regions.gr <- resize(regions.gr, width=downstream)
+  regions.gr <- resize(regions.gr, width=upstream + width(regions.gr), fix="end")
+  
+  failed_resize <- which(width(regions.gr) != upstream + downstream)
+  if(length(failed_resize) > 0) {
+    stop("The following regions.gr elements cannot be resized due to chromosome boundaries: ", paste0(failed_resize, collapse=", "))
+  }
+  
+  regions.p <- regions.gr[strand(regions.gr) == "+" | strand(regions.gr) == "*"]
+  regions.n <- regions.gr[strand(regions.gr) == "-"]
+  
+  reads <- NULL
+  
+  if(class(sample.cov) == "character") {
+    sample.cov <- rtracklayer::import(sample.cov, which=regions.gr, as="RleList")
+  }
+  
+  if(length(regions.p) > 0) reads <- rbind(reads, read_matrix(regions.p, sample.cov))
+  if(length(regions.n) > 0) reads <- rbind(reads, read_matrix(regions.n, sample.cov, reverse_reads=TRUE))
+
+  stopifnot(nrow(reads) == length(regions.gr))
+  reads
+}
+
+total_signal <- function(cov) {
+  if(class(cov) == "character") {
+    cache.file <- paste0(cov, ".ts.rds")
+    if(file.exists(cache.file)) {
+      return(readRDS(cache.file))
+    } else {
+      cov <- check_coverage_argument(cov)
+      ts <- sum(as.numeric(sapply(cov, function(x) sum(as.numeric(x)))))
+      #saveRDS(ts, file=cache.file)
+      return(ts)
+    }
+  } else {
+    return(sum(as.numeric(sapply(cov, function(x) sum(as.numeric(x))))))
+  }
+}
+
+apply_order <- function(m, o) {
+  m[o, ]
+}
+
+prenormalize_matrix <- function(m, bw) {
+  m <- m / total_signal(bw) * 150 * 15 * 1e6
+}
+
+atac_tissue_heatmap <- function(gr1, bigwigs) {
+  gr1 %<>% resize(1, fix="center")
+  
+  gd.m1   <- standard_metapeak_matrix(gr1, bigwigs$gd7, upstream=1000, downstream=1000) %>% prenormalize_matrix(bigwigs$gd7)
+  toll.m1 <- standard_metapeak_matrix(gr1, bigwigs$toll10b, upstream=1000, downstream=1000) %>% prenormalize_matrix(bigwigs$toll10b)
+ 
+  diff.m1 <- toll.m1 - gd.m1
+
+  o1 <- order(rowSums(diff.m1[, 750:1250]))
+  
+  gd.m <- apply_order(gd.m1, o1)
+  toll.m <- apply_order(toll.m1, o1)
+  diff.m <- apply_order(diff.m1, o1)
+  
+  list(gd=gd.m, toll=toll.m, diff=diff.m1)
+}
+
+mnase_tissue_heatmap <- function(gr1, bigwigs) {
+  gr1 %<>% resize(1, fix="center")
+  
+  gd.m1   <- standard_metapeak_matrix(gr1, bigwigs$gd7, upstream=1000, downstream=1000) %>% prenormalize_matrix(bigwigs$gd7)
+  toll.m1 <- standard_metapeak_matrix(gr1, bigwigs$toll10b, upstream=1000, downstream=1000) %>% prenormalize_matrix(bigwigs$toll10b)
+ 
+  diff.m1 <- gd.m1 - toll.m1
+
+  o1 <- order(rowSums(diff.m1[, 750:1250]))
+  
+  gd.m <- apply_order(gd.m1, o1)
+  toll.m <- apply_order(toll.m1, o1)
+  diff.m <- apply_order(diff.m1, o1)
+  
+  list(gd=gd.m, toll=toll.m, diff=diff.m1)
+}
+
+# normalization in the function: you are taking the 98th percentile value (which is 47.43776; this comes from the draw_standard_heatmap function) and dividing all values in the matrix by that. You then take that value if it is less than 1 and take 1 if it is greater than 1 so that everything is technically less than 1
+
+normalize_matrix <- function(m, value) {
+  m <- pmin(m / value, 1)
+  m
+}
+
+jeff_normalize_heatmap <- function(m, normalize=TRUE) {
+  if(normalize) {
+    max.value <- quantile(m, 0.98, na.rm=TRUE)
+    m <- normalize_matrix(m, max.value)
+    return(m)
+  }
+}
+
+# write function to get the order that we use, which in this case is based on ATAC
+
+atac_order <- function(gr1, bigwigs) {
+  gr1 %<>% resize(1, fix="center")
+  
+  gd.m1   <- standard_metapeak_matrix(gr1, bigwigs$gd7, upstream=1000, downstream=1000) %>% prenormalize_matrix(bigwigs$gd7)
+  toll.m1 <- standard_metapeak_matrix(gr1, bigwigs$toll10b, upstream=1000, downstream=1000) %>% prenormalize_matrix(bigwigs$toll10b)
+  diff.m1 <- gd.m1 - toll.m1
+
+  order_for_atac <- order(rowSums(diff.m1[, 750:1250]))
+  return(order_for_atac)
+}
+
+```
+
+## 6.3. Calculate and plot ATAC-seq in gd7 and toll10b embryos
+
+```{r plot_atac}
+
+# We want to use the mesodermal enhancers, which comes from the higher in toll10b Nej peaks
+
+peaks_toll <- subset(dv_enhancers.gr, differential_k27ac == "Higher in Toll10b")
+
+# Calculate
+
+dv_atac_heatmaps <- atac_tissue_heatmap(peaks_toll, atac.bw.list)
+
+gd_atac_normalized.mat <- jeff_normalize_heatmap(dv_atac_heatmaps$gd)
+toll_atac_normalized.mat <- jeff_normalize_heatmap(dv_atac_heatmaps$toll)
+
+# Format and plot
+
+heatmap_colors3 <- colorRampPalette(c("#F6F6F6", "#330000"))(32)
+
+gd_atac_normalized.mat.df <- gd_atac_normalized.mat %>% as.data.table
+  colnames(gd_atac_normalized.mat.df) <- c(-1000:(1000-1)) %>% as.character
+  gd_atac_normalized.mat.df <- gd_atac_normalized.mat.df %>% 
+    dplyr::mutate(row_id = 1:nrow(.)) %>%
+    melt.data.table(id.vars = c('row_id'), variable.name = 'position', value.name = 'reads') 
+
+  gd7_atac_at_mesodermal_regions_center_nej_peaks_norm.plot <- ggplot()+
+    ggrastr::geom_tile_rast(data=gd_atac_normalized.mat.df, aes(x=position, y=row_id, fill=reads))+
+    scale_fill_gradientn(colors = heatmap_colors3, 
+                         name = "norm.\nsignal") +   
+    scale_y_continuous(name = 'H3K27ac higher in Tol10b (Mesodermal regions), n=416')+
+    xlab('Distance from Nej peak (bp)') +
+    #scale_x_continuous(expand = c(0, 0), name = 'Distance from Nej peak (bp)') +
+    ggtitle('Normalized ATAC reads in gd7 (poised enhancers)')+
+    theme_cowplot()+
+    theme(text=element_text(size=14), legend.position="bottom", panel.background = element_blank())
+  
+  toll_atac_normalized.mat.df <- toll_atac_normalized.mat %>% as.data.table
+  colnames(toll_atac_normalized.mat.df) <- c(-1000:(1000-1)) %>% as.character
+  toll_atac_normalized.mat.df <- toll_atac_normalized.mat.df %>% 
+    dplyr::mutate(row_id = 1:nrow(.)) %>%
+    melt.data.table(id.vars = c('row_id'), variable.name = 'position', value.name = 'reads') 
+
+ tol10b_atac_at_mesodermal_regions_center_nej_peaks_norm.plot <- ggplot()+
+   ggrastr::geom_tile_rast(data=toll_atac_normalized.mat.df, aes(x=position, y=row_id, fill=reads))+
+    scale_fill_gradientn(colors = heatmap_colors3, 
+                         name = "norm.\nsignal") +   
+    scale_y_continuous(name = 'H3K27ac higher in Tol10b (Mesodermal regions), n=416')+
+    xlab('Distance from Nej peak (bp)') +
+    #scale_x_continuous(expand = c(0, 0), name = 'Distance from Nej peak (bp)') +
+    ggtitle('Normalized ATAC reads in tol10b (active enhancers)')+
+    theme_cowplot()+
+    theme(text=element_text(size=14), legend.position="bottom", panel.background = element_blank())
+
+atac_tissue.plot <- gd7_atac_at_mesodermal_regions_center_nej_peaks_norm.plot + tol10b_atac_at_mesodermal_regions_center_nej_peaks_norm.plot
+atac_tissue.plot
+
+ggsave("atac_at_mesodermal_regions_center_nej_peaks_norm.pdf", plot = atac_tissue.plot, path = "figures/15_dorsal_depletion_atac/", height = 6, width = 8)
+ggsave("atac_at_mesodermal_regions_center_nej_peaks_norm.png", plot = atac_tissue.plot, path = "figures/15_dorsal_depletion_atac/", height = 6, width = 8)
+ 
+```
+
+## 6.4. Calculate and plot MNase-seq in gd7 and toll10b embryos
+
+```{r plot_mnase}
+
+dv_mnase_heatmaps <- mnase_tissue_heatmap(peaks_toll, mnase.bw.list)
+
+gd_normalized.mat <- jeff_normalize_heatmap(dv_mnase_heatmaps$gd)
+toll_normalized.mat <- jeff_normalize_heatmap(dv_mnase_heatmaps$toll)
+
+# Formant and plot
+
+heatmap_colors2 <- colorRampPalette(c("#F6F6F6", "#19334d"))(32)
+
+gd_normalized.mat.df <- gd_normalized.mat %>% as.data.table
+  colnames(gd_normalized.mat.df) <- c(-1000:(1000-1)) %>% as.character
+  gd_normalized.mat.df <- gd_normalized.mat.df %>% 
+    dplyr::mutate(row_id = 1:nrow(.)) %>%
+    melt.data.table(id.vars = c('row_id'), variable.name = 'position', value.name = 'reads') 
+
+  gd7_mnase_at_mesodermal_regions_center_nej_peaks_norm.plot <- ggplot()+
+    ggrastr::geom_tile_rast(data=gd_normalized.mat.df, aes(x=position, y=row_id, fill=reads))+
+    scale_fill_gradientn(colors = heatmap_colors2, 
+                         name = "norm.\nsignal") +   
+    scale_y_continuous(name = 'H3K27ac higher in Tol10b (Mesodermal regions), n=416')+
+    xlab('Distance from Nej peak (bp)') +
+    #scale_x_continuous(expand = c(0, 0), name = 'Distance from Nej peak (bp)') +
+    ggtitle('Normalized MNase reads in gd7 (poised enhancers)')+
+    theme_cowplot()+
+    theme(text=element_text(size=14), legend.position="bottom", panel.background = element_blank())
+  
+  toll_normalized.mat.df <- toll_normalized.mat %>% as.data.table
+  colnames(toll_normalized.mat.df) <- c(-1000:(1000-1)) %>% as.character
+  toll_normalized.mat.df <- toll_normalized.mat.df %>% 
+    dplyr::mutate(row_id = 1:nrow(.)) %>%
+    melt.data.table(id.vars = c('row_id'), variable.name = 'position', value.name = 'reads') 
+
+ tol10b_mnase_at_mesodermal_regions_center_nej_peaks_norm.plot <- ggplot()+
+   ggrastr::geom_tile_rast(data=toll_normalized.mat.df, aes(x=position, y=row_id, fill=reads))+
+    scale_fill_gradientn(colors = heatmap_colors2, 
+                         name = "norm.\nsignal") +   
+    scale_y_continuous(name = 'H3K27ac higher in Tol10b (Mesodermal regions), n=416')+
+    xlab('Distance from Nej peak (bp)') +
+    #scale_x_continuous(expand = c(0, 0), name = 'Distance from Nej peak (bp)') +
+    ggtitle('Normalized MNase reads in tol10b (active enhancers)')+
+    theme_cowplot()+
+    theme(text=element_text(size=14), legend.position="bottom", panel.background = element_blank())
+ 
+ mnase_tissue.plot <- gd7_mnase_at_mesodermal_regions_center_nej_peaks_norm.plot + tol10b_mnase_at_mesodermal_regions_center_nej_peaks_norm.plot
+ mnase_tissue.plot
+ 
+ggsave("mnase_at_mesodermal_regions_center_nej_peaks_norm.pdf", plot = mnase_tissue.plot, path = "figures/15_dorsal_depletion_atac/", height = 6, width = 8)
+ggsave("mnase_at_mesodermal_regions_center_nej_peaks_norm.png", plot = mnase_tissue.plot, path = "figures/15_dorsal_depletion_atac/", height = 6, width = 8)
+
+```
+
+# 7. Conclusions
+
+Here, we have characterized the differences in Ore-R and gd7 ATAC-seq and find that the changes depend on the pattern of expression. While mesodermal enhancers, which are Dorsal-activated, decrease in accessibility upon loss of Dorsal, dorsal ectodermal enhancers, which can be Dorsal-repressed, do not lose accessibility but instead can gain it. This suggests that Dorsal's influence on chromatin accessibility is commensurate with its role as an activator or repressor of transcription. We see these differences further highlighted by comparing mesodermal enhancers in active (toll10b) and poised (gd7) states, and find that active enhancers are more accessibilie while poised enhancers have more nucleosome occupancy. 
+
+# 8. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

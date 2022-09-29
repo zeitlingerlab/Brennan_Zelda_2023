@@ -1,0 +1,105 @@
+---
+title: 'Plot in silico injections'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to plot the in silico injections previously generated in 8_acc_insilico_perturbs.ipynb to examine how injecting TF binding motifs into nonpeak regions affects ChromBPNet's chromatin accessibility prediction. Note that this analysis generates the figure 4a. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/8a_plot_insilico_preds/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import and format relevant data
+
+```{r import}
+
+insilico.df<-readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/accessibility/insilico/insilico_inj_profiles_nonpeak_seq.tsv.gz')
+
+# Re-order columns by motif name and by timepoint
+
+insilico.df$motifA <- factor(insilico.df$motifA, levels = c("Zld", "Zld-lowaff", "Zld-lowestaff", "Gaf", "Cad", "Dl", "Twi", "Bcd"))
+
+insilico.df$timepoint <- factor(insilico.df$timepoint, levels = c("1to15", "15to2", "2to25", "25to3"))
+
+```
+
+# 4. Plot
+
+```{r plot}
+
+insilico.plot <- ggplot(insilico.df, aes(x = position, y = signal, color = type, fill = type))+
+  geom_line(size = 1)+
+  scale_color_manual(values = c('red3', 'slategray3'), name = '', labels = c("Motif", "No motif"))+
+  scale_y_continuous(name = 'Predicted ATAC cuts', limits=c(0, 1.5))+
+  scale_x_continuous(name = "Distance from injection (bp)")+
+  facet_grid(timepoint ~ motifA) +
+  theme_cowplot()
+insilico.plot
+
+ggsave("insilico_injections.pdf", plot = insilico.plot, path = "figures/8a_plot_insilico_preds/", width = 60, height = 25, units = "cm")
+ggsave("insilico_injections.png", plot = insilico.plot, path = "figures/8a_plot_insilico_preds/", width = 60, height = 25, units = "cm")
+
+```
+
+# 5. Conclusions
+
+Here, we can see that the injection of the Zelda motif and the GAf motif generated chromatin accessibility at all time points, as expected for pioneer TFs. For the following TFs, with the exception of Bcd, we see minor predicted chromatin accessibility in a time point-specific manner (Cad 2-2.5 hr; D; 2.5-3 hr), which is consistent with a more context-specific role of these TFs in accessibility. 
+
+# 6. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

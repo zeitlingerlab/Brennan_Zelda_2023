@@ -1,0 +1,27 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	16	combined_bam_to_combined_bw
+	46	individual_bam_to_individual_bw
+	62	run_peak_calling
+	125
+
+[Mon Aug 15 16:01:00 2022]
+Job 88: Computing coverage of .bam file...
+
+[Mon Aug 15 16:01:00 2022]
+Job 78: Computing coverage of .bam file...
+
+[Mon Aug 15 16:01:00 2022]
+Job 79: Computing coverage of .bam file...
+
+[Mon Aug 15 16:01:00 2022]
+Job 80: Computing coverage of .bam file...
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/.snakemake/log/2022-08-15T160058.162877.snakemake.log

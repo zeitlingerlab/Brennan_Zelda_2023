@@ -1,0 +1,390 @@
+---
+title: 'Assign perturbation scores to ZDTBCG motifs'
+author: "Melanie (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+We use the perturbation analysis conducted in `5_` and in `8_` in order to assess the response of the predicted TFs upon mutation of each motif in the genome to both binding and accessibility.
+
+# Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(parallel)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/9_assign_genomic_perturbs", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(readr)
+library(patchwork)
+source("scripts/r/perturb_functions.r")
+
+#TFs have a one-to-many association with motifs.
+instances_path<-'tsv/mapped_motifs/all_instances_curated_1based.tsv.gz'
+zld_instances_path<-'tsv/perturbs/accessibility/genomic/atac_overlapping_zld_0based.tsv.gz'
+binding_perturbs_path.list<-list(nuc_range = "tsv/perturbs/binding/genomic/perturbs_200bp_",
+                                 all_range = "tsv/perturbs/binding/genomic/perturbs_1000bp_")
+accessibility_perturbs_path.list<-list(`1to15` = 'tsv/perturbs/accessibility/genomic/genomic_perturbs_atac_overlapping_motifs_1000bp_1to15_',
+                                       `15to2` = 'tsv/perturbs/accessibility/genomic/genomic_perturbs_atac_overlapping_motifs_1000bp_15to2_',
+                                       `2to25` = 'tsv/perturbs/accessibility/genomic/genomic_perturbs_atac_overlapping_motifs_1000bp_2to25_',
+                                       `25to3` = 'tsv/perturbs/accessibility/genomic/genomic_perturbs_atac_overlapping_motifs_1000bp_25to3_')
+motif_specs.list<-list(
+  Zld = list(tf = "Zld"),
+  GAF = list(tf = "GAF"),
+  Dl = list(tf = "Dl"),
+  Twi = list(tf = "Twi"),
+  Bcd = list(tf = "Bcd"),
+  Cad = list(tf = "Cad")
+)
+atac_specs.list<-list(
+  Zld = list(tf = "atac"),
+  GAF = list(tf = "atac"),
+  Dl = list(tf = "atac"),
+  Twi = list(tf = "atac"),
+  Bcd = list(tf = "atac"),
+  Cad = list(tf = "atac")
+)
+
+dir.create('rdata', showWarnings = F)
+```
+
+# Import all motifs used in perturbations
+
+Import the canonical curated motif set.
+
+```{r}
+instances.df<-read_tsv(instances_path) %>% data.frame(stringsAsFactors = F)
+
+#Assign unique mutation ids
+instances.df<-instances.df %>% 
+  dplyr::filter(seqnames != 'chrY', seqnames != 'chrM') %>%
+  dplyr::group_by(region_id, pattern_name) %>% 
+  dplyr::mutate(motif_num = dplyr::row_number())
+instances.df$pattern_name_unique<-paste0(instances.df$pattern_name, "-", instances.df$motif_num) 
+```
+
+# Extract binding perturbations across binding motifs
+
+Create modified function to obtain perturbations from a given `example_idx` and `pattern_name_unique`. Extract nucleosome-range perturbations (within 200bp) and mark responses to perturbations with a single knockout from WT.
+
+```{r}
+
+#When we have a specific window around a motif of interest we want to measure across, we use this function.
+extract_motif_window_single_perturbs_custom<-function(instances.df, motif_specs.list, perturb_prefix, tfs, 
+                                                      measurement_prefix = c("/pc", "/pred_sum", "/pred_max"), cores = 8){
+  
+  #For each chromosome, find motif pairs and subset
+  summary.df<-lapply(unique(instances.df$seqnames), function(chr){
+    message("Processing perturbations from: ", chr)
+    #Subset inputs by chromosome
+    perturbs_across_chr.df<-read_tsv(paste0(perturb_prefix, chr, ".tsv.gz")) %>% as.data.frame
+    inst_across_chr.df<-instances.df %>% dplyr::filter(seqnames == chr) 
+    
+   if(is.null(perturbs_across_chr.df[['example_idx']])){
+     perturbs_across_chr.df$example_idx<-perturbs_across_chr.df$region_id
+   }
+    
+    summary_across_chr.df<-mclapply(inst_across_chr.df$motif_id, function(ridx){
+      inst.df<-inst_across_chr.df %>% dplyr::filter(motif_id==ridx)
+      
+      #Define different parameters for subsetting the perturbs
+      umotifA<-inst.df$pattern_name_unique
+      motifA<-inst.df$pattern_name
+      tfs_cols<-outer(tfs, measurement_prefix, FUN = "paste0") %>% as.character()
+      
+      #Height of TFA at motifA when both motifs are present
+      WT.df<-perturbs_across_chr.df %>% dplyr::filter(example_idx == inst.df$region_id, motif==umotifA, mut=="Reference") %>% dplyr::select(tfs_cols)
+      colnames(WT.df)<-paste0(colnames(WT.df), "_", "WT")
+      
+      #Height of TFA at motifA when only motif B is present
+      dA_a.df <- perturbs_across_chr.df %>% dplyr::filter(example_idx == inst.df$region_id, motif==umotifA, mut==umotifA) %>% dplyr::select(tfs_cols)
+      colnames(dA_a.df)<-paste0(colnames(dA_a.df), "_", "dA")
+      
+      df<-data.frame(row_idx=ridx, motifA = motifA, umotifA = umotifA)
+      df<-cbind(df, WT.df, dA_a.df)
+      
+      #Record additional helpful information
+      df$strand_A<-inst.df$strand
+      return(df)
+    }, mc.cores = cores) %>% rbindlist
+  }) %>% rbindlist
+  
+  return(summary.df)
+}
+
+#When we have a whole window measurement not centered on anything, we select this function.
+extract_whole_window_single_perturbs_custom<-function(instances.df, motif_specs.list, perturb_prefix, tfs, 
+                                                      measurement_prefix = c("/pc", "/pred_sum", "/pred_max"), cores = 8){
+  
+  #For each chromosome, find motif pairs and subset
+  summary.df<-lapply(unique(instances.df$seqnames), function(chr){
+    message("Processing perturbations from: ", chr)
+    #Subset inputs by chromosome
+    perturbs_across_chr.df<-read_tsv(paste0(perturb_prefix, chr, ".tsv.gz")) %>% as.data.frame
+    inst_across_chr.df<-instances.df %>% dplyr::filter(seqnames == chr) 
+    
+    if(is.null(perturbs_across_chr.df[['example_idx']])){
+      perturbs_across_chr.df$example_idx<-perturbs_across_chr.df$region_id
+    }
+    
+    summary_across_chr.df<-mclapply(inst_across_chr.df$motif_id, function(ridx){
+      inst.df<-inst_across_chr.df %>% dplyr::filter(motif_id==ridx)
+      
+      #Define different parameters for subsetting the perturbs
+      umotifA<-inst.df$pattern_name_unique
+      motifA<-inst.df$pattern_name
+      tfs_cols<-outer(tfs, measurement_prefix, FUN = "paste0") %>% as.character()
+      
+      #Height of TFA at motifA when both motifs are present
+      WT.df<-perturbs_across_chr.df %>% dplyr::filter(example_idx == inst.df$region_id, mut=="Reference") %>% dplyr::select(tfs_cols)
+      colnames(WT.df)<-paste0(colnames(WT.df), "_", "WT")
+      
+      #Height of TFA at motifA when only motif B is present
+      dA_a.df <- perturbs_across_chr.df %>% dplyr::filter(example_idx == inst.df$region_id, mut==umotifA) %>% dplyr::select(tfs_cols)
+      colnames(dA_a.df)<-paste0(colnames(dA_a.df), "_", "dA")
+      
+      df<-data.frame(row_idx=ridx, motifA = motifA, umotifA = umotifA)
+      df<-cbind(df, WT.df, dA_a.df)
+      
+      #Record additional helpful information
+      df$strand_A<-inst.df$strand
+      return(df)
+    }, mc.cores = cores) %>% rbindlist
+  }) %>% rbindlist
+  
+  return(summary.df)
+}
+```
+
+Extract perturbations at nucleosome range for ZDTBCG
+
+```{r}
+nuc_range_perturbs.df<-extract_motif_window_single_perturbs_custom(instances.df = instances.df, motif_specs.list = motif_specs.list, 
+                                                                   perturb_prefix =  binding_perturbs_path.list$nuc_range, tfs = c("Zld", "Dl", "Twi", "Bcd", "Cad", "GAF"),
+                                                                   measurement_prefix = c("/pred_sum", "/pred_max", "/pc"))
+```
+
+Join responses to coordinates.
+
+```{r}
+instances_with_perturbs.df<-dplyr::left_join(instances.df, nuc_range_perturbs.df %>% dplyr::rename(motif_id = row_idx), by = "motif_id")
+```
+
+Add extra columns for informative measurements of mutation effects.
+
+```{r}
+#Use log2fc of sum values and assign general state without thresholding
+instances_with_perturbs.df<-instances_with_perturbs.df %>%
+  dplyr::mutate(
+    dA_v_WT_Zld_sum_log2_fc = log2(`Zld/pred_sum_dA`/`Zld/pred_sum_WT`),
+    dA_v_WT_Dl_sum_log2_fc = log2(`Dl/pred_sum_dA`/`Dl/pred_sum_WT`),
+    dA_v_WT_Twi_sum_log2_fc = log2(`Twi/pred_sum_dA`/`Twi/pred_sum_WT`),
+    dA_v_WT_Bcd_sum_log2_fc = log2(`Bcd/pred_sum_dA`/`Bcd/pred_sum_WT`),
+    dA_v_WT_Cad_sum_log2_fc = log2(`Cad/pred_sum_dA`/`Cad/pred_sum_WT`),
+    dA_v_WT_GAF_sum_log2_fc = log2(`GAF/pred_sum_dA`/`GAF/pred_sum_WT`),
+
+    dA_v_WT_Zld_max_log2_fc = log2(`Zld/pred_max_dA`/`Zld/pred_max_WT`),
+    dA_v_WT_Dl_max_log2_fc = log2(`Dl/pred_max_dA`/`Dl/pred_max_WT`),
+    dA_v_WT_Twi_max_log2_fc = log2(`Twi/pred_max_dA`/`Twi/pred_max_WT`),
+    dA_v_WT_Bcd_max_log2_fc = log2(`Bcd/pred_max_dA`/`Bcd/pred_max_WT`),
+    dA_v_WT_Cad_max_log2_fc = log2(`Cad/pred_max_dA`/`Cad/pred_max_WT`),
+    dA_v_WT_GAF_max_log2_fc = log2(`GAF/pred_max_dA`/`GAF/pred_max_WT`),
+   )
+```
+
+Export to a .tsv.gz file.
+
+```{r}
+# instances_with_perturbs.df<-instances_with_perturbs.gr %>% as.data.frame
+write_tsv(instances_with_perturbs.df, "tsv/mapped_motifs/all_instances_curated_1based_with_single_perturbs.tsv.gz")
+```
+
+# Extract binding perturbations across binding/acc motifs
+
+Here, we want to obtain binding perturbations across motifs that are mapped by binding models, but also overlap with accessible regions.
+
+```{r}
+overlapping_ids.df<-readr::read_tsv('tsv/perturbs/accessibility/genomic/atac_overlapping_motifs_0based.tsv.gz') %>%
+  dplyr::select(motif_id, region_id)
+
+atac_overlapping_instances.df <- instances_with_perturbs.df %>%
+  dplyr::filter(motif_id %in% overlapping_ids.df$motif_id) %>%
+  
+  #Reset the pattern_name_unique because the boundaries of which motifs group where are now different because of how we chose to overlap (by motif not by island)
+  dplyr::group_by(region_id, pattern_name) %>% 
+  dplyr::mutate(motif_num = dplyr::row_number())
+atac_overlapping_instances.df$pattern_name_unique<-paste0(atac_overlapping_instances.df$pattern_name, "-", atac_overlapping_instances.df$motif_num) 
+```
+
+Collect ATAC-seq perturbs across all four timepoints.
+
+```{r}
+atac_perturbs.df<-lapply(names(accessibility_perturbs_path.list), function(x){
+  df<-extract_whole_window_single_perturbs_custom(instances.df = atac_overlapping_instances.df, 
+                                                  motif_specs.list = atac_specs.list, 
+                                                  perturb_prefix = paste0('tsv/perturbs/accessibility/genomic/genomic_perturbs_atac_overlapping_motifs_1000bp_', x, '_'), 
+                                                  tfs = c('atac'), 
+                                                  measurement_prefix = c("/pred_sum"), cores = 8) %>%
+    dplyr::mutate(timepoint = x)
+  return(df)
+}) %>% rbindlist(.) %>%
+  dplyr::rename(motif_id = row_idx, pattern_name = motifA, pattern_name_unique = umotifA, strand = strand_A)
+```
+
+Merge ATAC-seq information onto the other metadata
+
+```{r}
+atac_overlapping_instances_w_metadata.df<-atac_perturbs.df %>% 
+  dplyr::rename(atac_WT = `atac/pred_sum_WT`, atac_mut = `atac/pred_sum_dA`) %>% #Pivot perturbations to be wider so that it is untidied by timepoint.
+  tidyr::pivot_wider(values_from = c('atac_WT', 'atac_mut'), names_from = 'timepoint') %>%
+  dplyr::left_join(atac_overlapping_instances.df, .) %>%
+  as.data.frame(.)
+```
+
+Save metadata with coordinate information.
+
+```{r}
+readr::write_tsv(atac_overlapping_instances_w_metadata.df, "tsv/mapped_motifs/atac_overlapping_instances_curated_1based_with_single_perturbs.tsv.gz")
+```
+
+# Collect Zld-only islands
+
+Here, we wish to extract perturbations of ALL Zeldas across any enhancer. This means we will perturb more than just 1-2 Zelda motifs if they exist.
+
+```{r}
+#Pre-existing variables for Zld motifs
+motif_column = 'pattern_name'
+region_index_column = 'region_id'
+motif_chrom_column = 'chrom'
+motif_start_column = 'motif_window_start'
+motif_end_column = 'motif_window_end'
+motif_id_column = 'motif_id'
+output_seqlen = 1000
+```
+
+Import motifs of interest. Add `pattern_name_unique` and `example_idx` (placeholder for whatever `region_index_column` was designated as) for matching regions with the genomic perturbation files.
+
+```{r import_motifs}
+motifs.df<-read.table(zld_instances_path, header = T, sep = '\t') %>%
+  dplyr::group_by_at(c(region_index_column, motif_column)) %>% 
+  dplyr::mutate(motif_num = dplyr::row_number(),
+                "pattern_name_unique" := !! rlang::sym(rlang::quo_name(motif_column)) %>% paste0(., "-", motif_num)) %>%
+  as.data.frame(.)
+
+motifs.df$pattern_center <- motifs.df %>% 
+  dplyr::select_at(c(motif_chrom_column, motif_start_column, motif_end_column, "strand")) %>% 
+  makeGRangesFromDataFrame(starts.in.df.are.0based = T, seqnames.field = motif_chrom_column, 
+                           start.field = motif_start_column, end.field = motif_end_column) %>%
+  resize(1, 'center') %>% start()
+```
+
+Collect island coordinates.
+
+```{r}
+islands.df<-motifs.df %>% dplyr::select(region_chrom, region_0based_start, region_0based_end, region_id) %>%
+  dplyr::rename(chrom = region_chrom, start = region_0based_start, end = region_0based_end) %>%
+  dplyr::mutate(strand = '*') %>%
+  unique()
+```
+
+For each island, collect the WT reference (no mutations) and the mutation state that contains all mutated Zld motifs in the island.
+
+```{r}
+tsv.paths<-Sys.glob('tsv/perturbs/accessibility/genomic/genomic_perturbs_atac_overlapping_zld_1000bp_*_*.tsv.gz')
+preds.df<-mclapply(tsv.paths, function(tsv.path){
+  timepoint<-gsub(".*1000bp_(.+)_chr.*", "\\1", tsv.path)
+
+  p_wt.df<-readr::read_tsv(tsv.path) %>% dplyr::filter(mut=='Reference') %>% dplyr::rename(wt_pred = `atac/pred_sum`)
+  p.df<-readr::read_tsv(tsv.path) %>% 
+    dplyr::filter(mut!='Reference') %>% 
+    dplyr::mutate(zld_count = mut %>% 
+                    gsub('Zld-', '', .) %>% 
+                    lapply(., function(x){stringr::str_split(string = x, pattern = '_') %>% 
+                        unlist %>% 
+                        as.integer(.) %>%
+                        sum(.)}) %>% unlist) %>%
+    dplyr::group_by(region_id) %>% 
+    dplyr::slice_max(order_by = zld_count, n = 1) %>% 
+    dplyr::ungroup() %>%
+    dplyr::rename(mut_pred = `atac/pred_sum`) %>%
+    dplyr::select(-perturb_idx, -`atac/pc`) %>%
+    dplyr::left_join(., p_wt.df %>% dplyr::select(-perturb_idx, -`atac/pc`, -mut), by = 'region_id') %>%
+    dplyr::mutate(timepoint)
+  return(p.df)
+}, mc.cores = 4) %>% rbindlist()
+
+#Collect timepoints
+preds.df<-preds.df %>% tidyr::pivot_wider(names_from = 'timepoint', values_from = c('mut_pred', 'wt_pred'))
+```
+
+Combine island coordinate information with perturb information
+
+```{r}
+islands_w_perturbs.gr<-dplyr::left_join(preds.df, islands.df, by = 'region_id') %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = T)
+```
+
+Save data
+
+```{r}
+saveRDS(islands_w_perturbs.gr, 'rdata/zld_containing_islands_w_zld_atac_perturbations.gr.rds')
+```
+
+This data will be correlated with the Zld RNAi mutant effects in later code.
+
+# Conclusions
+
+In conclusion, we have collected single binding and accessibility perturbations as well as Zld-only island perturbations for later downstream visualization.
+
+# Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+

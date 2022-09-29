@@ -1,0 +1,528 @@
+---
+title: 'Island analysis using various genomics datasets'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to use island analysis to look at how chromatin accessibility, as well as MNase and histone modifications, vary across different genomic loci. Here, we define islands based on motifs that are proximal to one another (in this case, 200 bp, for nucleosome-range distances). We do this is order to see what combinations of motifs generate the highest and lowest levels of acessibility, nucleosome occupancy, and active histone modifications. We are using BPNet-mapped TF binding motifs in this analysis. Note that this analysis will encompass Figure 4 b-d. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/13_island_analysis/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data
+
+```{r import}
+
+# BPNet-identified motifs
+
+motifs.gr <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>% 
+  GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F)
+
+## How many motifs do we have?
+
+motifs.gr$pattern_name %>% table()
+
+# Coverage files
+
+atac.list <- list(orer_1to15 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_1to15_atac_combined_normalized.bw',
+                  orer_15to2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_15to2_atac_combined_normalized.bw',
+                  orer_2to25 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined_normalized.bw',
+                  orer_25to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_normalized.bw')
+mnase.bw <- '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/combined/orer_mbt_100u_mnase_combined_normalized.bw'
+h3k27ac.bw <- '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined_log2_normalized.bw'
+h3k4me1.bw <- '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined_log2_normalized.bw'
+
+```
+
+# 4. Define islands
+
+## 4.1. Filter to take only bound motifs
+
+```{r bound}
+
+bound_motifs.gr <- lapply(motifs.gr$pattern_name %>% unique, function(x){
+  gr<-motifs.gr %>%
+    plyranges::filter(pattern_name == x) %>%
+    subsetByOverlaps(., 
+                     rtracklayer::import(paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/narrowpeak/nexus_orer_mbt_', tolower(x), '_peaks.narrowpeak')) %>% 
+                       resize(500, 'center'), 
+                     ignore.strand = T)
+  return(gr)
+}) %>% GRangesList %>% unlist
+
+bound_motifs.gr$pattern_name %>% table
+
+```
+
+## 4.2. Generate islands
+
+```{r generate}
+
+##look at regions with many motifs
+islands_number.gr<-bound_motifs.gr %>% resize(200, "center") 
+islands_number.gr <- reduce(islands_number.gr, ignore.strand = T)
+islands_number.gr$island_id<-1:length(islands_number.gr)
+
+##assign motifs to an island
+number_ov<-findOverlaps(bound_motifs.gr, islands_number.gr, ignore.strand = T)
+instances_number_ov.gr<-bound_motifs.gr[number_ov@from]
+instances_number_ov.gr$island_id<-islands_number.gr[number_ov@to]$island_id
+
+##Find number of motifs across each island
+instances_number_ov.gr$island_id %>% table %>% table
+
+##Find all motif combinations across each island (counted)
+
+islands_vs_motifs_counted.df<-mclapply(unique(instances_number_ov.gr$pattern_name), function(x){
+  vec<-rep(NA, length(islands_number.gr))
+  instance_ov.gr<-subset(instances_number_ov.gr, x == pattern_name)
+  instance_to_island_ids<-instance_ov.gr$island_id %>% table
+  vec[as.integer(names(instance_to_island_ids))]<-paste0(x, "(", as.character(instance_to_island_ids), ")")
+  return(vec)
+}, mc.cores = 11) %>% as.data.frame
+colnames(islands_vs_motifs_counted.df)<-unique(instances_number_ov.gr$pattern_name)
+rownames(islands_vs_motifs_counted.df)<-1:length(islands_number.gr)
+
+##Extract island combinations and summarize
+island_combos_number.vec<-apply(islands_vs_motifs_counted.df, 1, function(x){
+  vec<-x[!is.na(x)]
+  str<-paste0(vec, collapse = "/")
+  return(str)
+})
+island_combos_number.freq.df<-table(island_combos_number.vec) %>% as.data.frame
+colnames(island_combos_number.freq.df)<-c("Motif combo", "freq")
+island_combos_number.freq.df<-island_combos_number.freq.df[order(island_combos_number.freq.df$freq, decreasing = T),]
+
+## Map combinations back to islands
+islands_vs_motifs_counted.df$motif_combination_class<-apply(islands_vs_motifs_counted.df, 1, function(x) paste0(as.character(x)[!is.na(x)], collapse = "_"))
+islands_vs_motifs_counted.df$island_id<-1:nrow(islands_vs_motifs_counted.df)
+
+## Map combinations back to motifs
+instances_number_ov.gr<-dplyr::left_join(as.data.frame(instances_number_ov.gr), islands_vs_motifs_counted.df, by = "island_id") %>% makeGRangesFromDataFrame(df = ., keep.extra.columns = T, starts.in.df.are.0based = F)
+
+## keep track of island information 
+
+island_names.df <- instances_number_ov.gr %>% 
+  GenomicRanges::sort(ignore.strand = T) %>% 
+  as.data.frame %>%
+  dplyr::group_by(island_id) %>%
+  dplyr::summarize(island_content = paste(unique(sort(pattern_name)), table(sort(pattern_name)), sep = '-', collapse = '_'),
+                   island_content_ordered = paste(pattern_name, collapse = '_'),
+                   island_content_unique = paste(unique(sort(pattern_name)), collapse = '_'),
+                   island_count = length(pattern_name))
+
+## Join island names with instances
+motifs_with_island_info.df<-instances_number_ov.gr %>% as.data.frame %>%
+  dplyr::left_join(., island_names.df, by = 'island_id')
+
+## Join islands with island info 
+
+islands_with_all_info.gr <- island_names.df %>%
+  dplyr::left_join(., islands_number.gr %>% as.data.frame) %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F)
+
+# Now what we have is: 
+
+# 1) island coordinates that contain the genomic span for all motifs in that island, stored in:
+head(islands_with_all_info.gr)
+
+#2) motif instances that contain the island information as well, stored in:
+head(instances_number_ov.gr)
+
+# View island widths and then calculate the distance between motifs in each island 
+
+width(islands_with_all_info.gr) %>% summary()
+
+motifs_in_islands_info.df <- motifs_with_island_info.df %>%
+  dplyr::group_by(island_id) %>%
+  dplyr::mutate(island_start_wrt_motif = min(start),
+                island_end_wrt_motif = max(end),
+                island_width_wrt_motifs = island_end_wrt_motif-island_start_wrt_motif)
+
+motifs_in_islands_info.df$island_width_wrt_motifs %>% summary()
+
+library(ggbreak) 
+
+island.histogram <- ggplot(motifs_in_islands_info.df, aes(x = island_width_wrt_motifs))+
+  geom_histogram(binwidth = 10)+
+  geom_vline(xintercept = mean(motifs_in_islands_info.df$island_width_wrt_motifs), linetype = 'dotted', color = 'red') +
+  geom_vline(xintercept = median(motifs_in_islands_info.df$island_width_wrt_motifs), linetype = 'dotted', color = 'blue') +
+  ggtitle("Distance between motifs in islands") +
+  scale_y_break(c(7500,20000), scales = .1) +
+  theme_cowplot()
+island.histogram
+
+island.length.histogram <- ggplot(as.data.frame(islands_with_all_info.gr), aes(x = width))+
+  geom_histogram(binwidth = 10)+
+  geom_vline(xintercept = mean(as.data.frame(islands_with_all_info.gr)$width), linetype = 'dotted', color = 'red') +
+  geom_vline(xintercept = median(as.data.frame(islands_with_all_info.gr)$width), linetype = 'dotted', color = 'blue') +
+  ggtitle("Island widths") +
+  scale_y_break(c(2000,20000), scales = .1) +
+  theme_cowplot()
+island.length.histogram
+
+ggsave("islands_motifs_width_hist.pdf", plot = island.histogram, path = "figures/13_island_analysis", height = 6, width = 6)
+ggsave("islands_motifs_width_hist.png", plot = island.histogram, path = "figures/13_island_analysis", height = 6, width = 6)
+ggsave("islands_width_hist.pdf", plot = island.length.histogram, path = "figures/13_island_analysis", height = 6, width = 6)
+ggsave("islands_width_hist.png", plot = island.length.histogram, path = "figures/13_island_analysis", height = 6, width = 6)
+
+```
+
+## 4.3. Remove low-observation islands
+
+```{r remove}
+
+islands_with_all_info.gr$island_content_unique %>% table %>% sort(decreasing = T) %>% head(n=20)
+
+islands_with_all_info_filtered.gr <- as.data.frame(islands_with_all_info.gr) %>% group_by(island_content_unique) %>% filter(n()>= 30) %>% ungroup() %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+# Save these islands for use in other analyses
+
+saveRDS(islands_with_all_info_filtered.gr, file = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData")
+
+```
+
+# 5. Calculate chromatin accessibility, nucleosome occupancy, and histone modifications across islands
+
+## 5.1. Calculate ATAC
+
+```{r atac}
+
+atac_across_instances.df<-mclapply(names(atac.list), function(x){
+  regionSums(islands_with_all_info_filtered.gr %>% resize(250, 'center'), atac.list[[x]])
+}, mc.cores = 4) %>% as.data.frame()
+names(atac_across_instances.df)<-names(atac.list)
+
+islands_w_orer_atac.df<-cbind(islands_with_all_info_filtered.gr %>% as.data.frame, atac_across_instances.df) %>%
+  dplyr::group_by(island_content_unique) %>%
+  dplyr::summarize(`1 to 1.5hr wt` = median(`orer_1to15`),
+                   `1.5 to 2hr wt` = median(`orer_15to2`),
+                   `2 to 2.5hr wt` = median(`orer_2to25`),
+                   `2.5 to 3hr wt` = median(`orer_25to3`)) %>%
+  dplyr::mutate(contains_Zld = grepl(pattern = 'Zld', x = island_content_unique)) %>%
+  as.data.table %>%
+  melt.data.table(id.vars = c('island_content_unique','contains_Zld'), variable.name = 'timepoint', value.name = 'median_ATAC_signal')
+
+# Order by accessibility at 2.5-3 hr
+
+island_order_t4<-islands_w_orer_atac.df %>%
+  dplyr::group_by(island_content_unique, timepoint) %>%
+  dplyr::summarize(sum = sum(`median_ATAC_signal`)) %>%
+  dplyr::arrange(desc(timepoint), sum) %>%
+  .$island_content_unique %>% .[1:35]
+islands_w_orer_atac.df$island_content_unique<-factor(islands_w_orer_atac.df$island_content_unique, levels = island_order_t4)
+
+####### Order by row sum
+
+island_order<-islands_w_orer_atac.df %>%
+  dplyr::group_by(island_content_unique) %>%
+  dplyr::summarize(sum = sum(`median_ATAC_signal`)) %>%
+  dplyr::arrange(sum) %>%
+  .$island_content_unique
+islands_w_orer_atac.df$island_content_unique<-factor(islands_w_orer_atac.df$island_content_unique, levels = island_order)
+
+######
+
+atac_colors <- colorRampPalette(c("#0d0d0d", "#4dffdb"), bias=15)(32)
+
+atac_plot <- ggplot(islands_w_orer_atac.df, aes(x = timepoint, y = island_content_unique, fill = `median_ATAC_signal`))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "Timepoint (AEL)", labels = c("1-1.5 hr", "1.5-2 hr", "2-2.5 hr", "2.5-3 hr"))+
+    ylab("Island composition")+
+    ggtitle("Timecourse ATAC-seq across motif islands (250 bp window)")+
+    #scale_fill_gradient2(low = "black", mid = "black", high = "steelblue1")+
+    #scale_fill_gradientn(colors = atac_colors, name = 'Median\nATAC-seq', space = "Lab")
+    scale_fill_gradientn(colors = c("white", "#055072"), name = 'Median\nATAC-seq', space = "Lab")
+    #scale_fill_gradientn(colors = viridis(n=50), name = 'Median\nATAC-seq')
+atac_plot
+
+```
+
+## 5.2. Calculate MNase
+
+```{r mnase}
+
+mnase_across_instances.df <- regionSums(islands_with_all_info_filtered.gr %>% resize(250, 'center'), mnase.bw) %>% as.data.frame()
+colnames(mnase_across_instances.df) <- "mnase"
+
+islands_w_mnase.df<-cbind(islands_with_all_info_filtered.gr %>% as.data.frame, mnase_across_instances.df) %>%
+  dplyr::group_by(island_content_unique) %>%
+  dplyr::summarize(mnase = median(mnase)) %>%
+  dplyr::mutate(contains_Zld = grepl(pattern = 'Zld', x = island_content_unique)) %>%
+  as.data.table %>%
+  melt.data.table(id.vars = c('island_content_unique','contains_Zld'), variable.name = 'timepoint', value.name = 'median_mnase_signal')
+
+islands_w_mnase.df$island_content_unique<-factor(islands_w_mnase.df$island_content_unique, levels = island_order) #same order as ATAC timecourse heatmap
+
+mnase_heatmap <- ggplot(islands_w_mnase.df, aes(x = timepoint, y = island_content_unique, fill = median_mnase_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "MNase")+
+    ylab("Island composition")+
+    ggtitle("MNase-seq across motif islands (250 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#703554"), name = 'Median\nMNase-seq')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nMNase-seq')
+mnase_heatmap
+
+```
+
+## 5.3. Calculate H3K27ac
+
+```{r h3k27ac}
+
+k27_across_instances.df <- regionSums(islands_with_all_info_filtered.gr %>% resize(1500, 'center'), h3k27ac.bw) %>% as.data.frame()
+colnames(k27_across_instances.df) <- "h3k27ac"
+
+islands_w_k27.df<-cbind(islands_with_all_info_filtered.gr %>% as.data.frame, k27_across_instances.df) %>%
+  dplyr::group_by(island_content_unique) %>%
+  dplyr::summarize(h3k27ac = median(h3k27ac)) %>%
+  dplyr::mutate(contains_Zld = grepl(pattern = 'Zld', x = island_content_unique)) %>%
+  as.data.table %>%
+  melt.data.table(id.vars = c('island_content_unique','contains_Zld'), variable.name = 'timepoint', value.name = 'median_h3k27ac_signal')
+
+islands_w_k27.df$island_content_unique<-factor(islands_w_k27.df$island_content_unique, levels = island_order) #same order as ATAC timecourse heatmap
+
+h3k27ac.island <- ggplot(islands_w_k27.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k27ac_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "2-3 hr")+
+    ylab("Island composition")+
+    ggtitle("H3K27ac across motif islands (1500 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#EA3628"), name = 'Median\nH3K27ac')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nH3K27ac')
+h3k27ac.island
+
+```
+
+## 5.4. Calculate H3K4me1
+
+```{r h3k4me1}
+
+k4me1_across_instances.df <- regionSums(islands_with_all_info_filtered.gr %>% resize(1500, 'center'), h3k4me1.bw) %>% as.data.frame()
+colnames(k4me1_across_instances.df) <- "h3k4me1"
+
+islands_w_k4me1.df<-cbind(islands_with_all_info_filtered.gr %>% as.data.frame, k4me1_across_instances.df) %>%
+  dplyr::group_by(island_content_unique) %>%
+  dplyr::summarize(h3k4me1 = median(h3k4me1)) %>%
+  dplyr::mutate(contains_Zld = grepl(pattern = 'Zld', x = island_content_unique)) %>%
+  as.data.table %>%
+  melt.data.table(id.vars = c('island_content_unique','contains_Zld'), variable.name = 'timepoint', value.name = 'median_h3k4me1_signal')
+
+islands_w_k4me1.df$island_content_unique<-factor(islands_w_k4me1.df$island_content_unique, levels = island_order) #same order as ATAC timecourse heatmap
+
+k4me1_colors <- colorRampPalette(c("#0d0d0d", "#ffa31a"))(32)
+
+h3k4me1.island <- ggplot(islands_w_k4me1.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k4me1_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "2-3 hr")+
+    ylab("Island composition")+
+    ggtitle("H3K4me1 across motif islands (1000 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#E2911B"), name = 'Median\nH3K4me1')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nH3K4me1')
+h3k4me1.island
+
+
+```
+
+## 5.5. Calculate overlap with known active enhancers
+
+```{r enhancers}
+
+# Import enhancers
+
+cus_enhancers.gr <- rtracklayer::import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/published/enhancers/cusanovich/cusanovich_dm6_enhancers.bed')
+
+# Which islands have enhancers?
+
+islands_with_all_info_filtered.gr$enhancer_name <- NA
+ov <- findOverlaps(islands_with_all_info_filtered.gr, cus_enhancers.gr, ignore.strand = T)
+islands_with_all_info_filtered.gr$enhancer_name[ov@from]<- cus_enhancers.gr$name[ov@to]
+islands_with_all_info_filtered.gr$has_enhancer <- ifelse(is.na(islands_with_all_info_filtered.gr$enhancer_name), FALSE,TRUE)
+
+# Process
+
+islands_sumamrized.df <- islands_with_all_info_filtered.gr %>% 
+  as.data.frame %>%
+  dplyr::group_by(island_content_unique) %>%
+  dplyr::summarize(total_enhancers = sum(has_enhancer))
+
+islands_sumamrized.df$total_islands <- islands_with_all_info_filtered.gr$island_content_unique %>% table()
+islands_sumamrized.df$enhancer_percent <- islands_sumamrized.df$total_enhancers/islands_sumamrized.df$total_islands
+islands_sumamrized.df <- as.data.frame(islands_sumamrized.df)
+islands_sumamrized.df$enhancer_percent <- islands_sumamrized.df$enhancer_percent %>% as.numeric()
+
+# Plot
+
+islands_sumamrized.df$island_content_unique<-factor(islands_sumamrized.df$island_content_unique, levels = island_order) #same order as ATAC timecourse heatmap
+
+enhancer_ov.plot <- ggplot(islands_sumamrized.df, aes(x=1, y=island_content_unique)) +
+  geom_tile(aes(fill=enhancer_percent), color = 'black', size = 1)+
+  scale_fill_gradient(low = 'white', high = '#336600', name = 'Enhancer overlap')+
+  scale_y_discrete('Island composition')+
+  theme_classic()
+enhancer_ov.plot
+
+```
+
+## 5.6. Generate summary plot
+
+```{r summary}
+
+library(patchwork)
+
+summary.plot <- atac_plot + mnase_heatmap + h3k27ac.island + h3k4me1.island + enhancer_ov.plot +
+  plot_layout(widths = c(2, .5, .5, .5, .5),nrow = 1)
+summary.plot
+
+ggsave("islands_w_genomics.pdf", plot = summary.plot, path = "figures/13_island_analysis", height = 16, width = 20)
+ggsave("islands_w_genomics.png", plot = summary.plot, path = "figures/13_island_analysis", height = 16, width = 20)
+
+```
+
+# 6. Plot individual examples of islands with all aforementioned genomics data
+
+## 6.1. Select individual examples
+
+Here, we selected individual examples by looking at the associated bigwig files in the UCSC genome browser. The following are the genomic coordinates for our examples:
+
+Zelda: chrX:63,000-64,000                              
+Zelda_Dorsal: chr2L:18,651,750-18,652,750              
+Zelda_Dorsal_Twist: chrX:11,146,285-11,147,285      
+
+Note that we downloaded the genome browser shots from the UCSC genome browser.
+
+# 7. Zelda depletion
+
+Here, we will use the log2 fold change values for Zld-/wt embryos generated by comparing the Zelda depleted ATAC to wt ATAC in 14_zelda_depletion_atac.Rmd to see how island types are afected by the loss of Zelda 
+
+## 7.1. Import DESeq2 results from 14_zelda_depletion.Rmd and format
+
+```{r deseq}
+
+peaks_w_all_time_de_med.df <- readRDS('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/deseq_timepoints_at_orer_1to3_atac_peaks_consolidated_single_df_w_med.RData')
+
+peaks_w_all_time_de_med.gr <- peaks_w_all_time_de_med.df %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+```
+
+## 7.2. Map DESeq2 results onto islands and filter for Zelda-containing islands
+
+```{r map}
+
+islands_vs_peaks.ov <- findOverlaps(islands_with_all_info_filtered.gr, peaks_w_all_time_de_med.gr, ignore.strand = T)
+islands_with_all_info_filtered.gr$peak_id <- NA
+islands_with_all_info_filtered.gr$peak_id[islands_vs_peaks.ov@from]<-peaks_w_all_time_de_med.gr$peak_id[islands_vs_peaks.ov@to]
+
+islands_with_deseq.df <- islands_with_all_info_filtered.gr %>% 
+  as.data.frame() %>%
+  dplyr::filter(!is.na(peak_id)) %>%
+  dplyr::left_join(., as.data.frame(peaks_w_all_time_de_med.gr) %>% dplyr::select(-c(seqnames, start, end, width, strand)), by = 'peak_id') %>%
+  as.data.frame()
+
+# filter
+
+zld_islands_w_de.df <- islands_with_deseq.df %>%
+  dplyr::filter(grepl('Zld', island_content_unique)) 
+zld_islands_w_de.df$island_content_unique %>% table()
+
+```
+
+## 7.3. Plot
+
+```{r violins}
+
+box_order <- c("Zld", "Bcd_Zld", "Twi_Zld", "GAF_Zld","Cad_Zld", "Dl_Zld", "GAF_Twi_Zld", "Cad_Twi_Zld", "Bcd_Twi_Zld", "Bcd_Cad_Zld", "Bcd_Dl_Zld", "Dl_Twi_Zld", "Bcd_Cad_Dl_Zld", "Bcd_Cad_Twi_Zld", "Bcd_Dl_Twi_Zld")
+zld_islands_w_de.df$island_content_unique <- factor(zld_islands_w_de.df$island_content_unique, levels = box_order)
+my_comparisons <- list(c("Zld", "Bcd_Zld"), c("Zld", "GAF_Zld"), 
+                       c("Zld", "Twi_Zld"), c("Zld", "Cad_Zld"),
+                       c("Zld", "Dl_Zld"), c("Zld", "Bcd_Twi_Zld"),
+                       c("Zld", "Cad_Twi_Zld"), c("Zld", "GAF_Twi_Zld"),
+                       c("Zld", "Bcd_Dl_Zld"), c("Zld", "Dl_Twi_Zld"),
+                       c("Zld", "Bcd_Cad_Zld"), c("Zld", "Bcd_Cad_Dl_Zld"),
+                       c("Zld", "Bcd_Cad_Twi_Zld"), c("Zld", "Bcd_Dl_Twi_Zld"))
+
+
+islands_with_effect_violin.plot <- ggplot(zld_islands_w_de.df, aes(x=med_log2fc, y=island_content_unique)) +
+  geom_violin(aes(fill=island_content_unique)) +
+  geom_boxplot(width=.1)+
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.format", paired = FALSE)+
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test", label = "p.signif", paired = FALSE)+
+  scale_x_continuous(name = "Median Log2FC Zld_RNAi/WT", breaks = c(-3, -2, -1, 0, 1, 2, 3, 5, 10))+
+  geom_vline(xintercept = 0, linetype = 'dotted', color = 'black')+
+  scale_fill_viridis_d()+
+  theme_cowplot()
+islands_with_effect_violin.plot
+
+ggsave("islands_with_effect_violin_signif.pdf", plot = islands_with_effect_violin.plot, path = "figures/13_island_analysis", height = 12, width = 20)
+ggsave("islands_with_effect_violin_signif.png", plot = islands_with_effect_violin.plot, path = "figures/13_island_analysis", height = 12, width = 20)
+
+```
+
+# 8. Conclusions
+
+Using island analysis, we can see that Zelda with patterning TF motifs generates the highest levels of chromatin accessibility over time, along with high H3K27ac and H3K4me1, and low nucleosome occupancy. Using zld- ATAC-seq data that we generated, we see that these Zelda and patterning TF islands are also most affected by the loss of Zelda, suggesting a hierarchy where upon loss of Zelda these regions lose the combined effects of Zelda pioneering and the effects of patterning TFs, which are dependent on Zelda, but do themselves increase chromatin accessibility in a more context-specific way. 
+
+# 9. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

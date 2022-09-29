@@ -1,0 +1,437 @@
+---
+title: 'Anaylsis of ATAC-seq in embryos depleted for Capicua'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to compare ATAC-seq time course data generated in wild-type, OregonR embryos to the same experiments performed in embryos depleted for Capicua (cic6). These flies are generated from a previously generated stock from Papagianni et al., 2018's paper "Capicua controls Toll/IL-1 signaling targets independently of RTK regulation," and these cic6 mutants were created using CRISPR-Cas9. We performed these experiments because removing Cic effectively converts Dl from a repressor of dorsal ectodermal enhancers into an activator, so we have therefore eliminated Dl's ability to repress. Note that this analysis generates Figure 5 d and e. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/16_capicua_depletion_atac/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data for this analysis
+
+```{r import}
+
+# motifs 
+
+motifs.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>% 
+  as.data.frame()
+
+# ATAC replicate coverage list: for DESeq2, we will use 3 replicates from wt and cic6 embryos
+
+atac.bw.cic6.list <- list(wt_2to25_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_4_cutsites.bw',
+                         wt_2to25_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_6_cutsites.bw',
+                         wt_2to25_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_7_cutsites.bw',
+                         cic6_2to25_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_2to25_atac_1_cutsites.bw',
+                         cic6_2to25_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_2to25_atac_2_cutsites.bw',
+                         cic6_2to25_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_2to25_atac_3_cutsites.bw',
+                         wt_25to3_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_4_cutsites.bw',
+                         wt_25to3_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_6_cutsites.bw',
+                         wt_25to3_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_7_cutsites.bw',
+                         cic6_25to3_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_1_cutsites.bw',
+                         cic6_25to3_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_2_cutsites.bw',
+                         cic6_25to3_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_3_cutsites.bw')
+
+```
+
+# 4. Determine differential accessibility using DESeq2
+
+## 4.1. Format and calculate counts using cutsite information
+
+```{r format}
+
+# Define peaks--these are non-overlapping and evenly-sized
+
+peaks.gr <- rtracklayer::import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/narrowpeak/atac_orer_all_peaks.narrowpeak') %>%
+  GenomicRanges::reduce(ignore.strand = T) %>%
+  GenomicRanges::resize(2114, 'center') %>%
+  plyranges::mutate(peak_id = 1:length(.))
+
+# Calculate the counts across all peaks
+
+counts.cic6.df<-mclapply(atac.bw.cic6.list, function(x){
+  regionSums(peaks.gr, x)
+}, mc.cores = 8) %>% as.data.frame()
+colnames(counts.cic6.df)<-names(atac.bw.cic6.list)
+
+# Set conditions for the DESeq2 model
+
+peak_condition_cic6.df<-data.frame(condition = c(rep('wt_2to25', 3), rep('cic6_2to25', 3), rep('wt_25to3', 3), rep('cic6_25to3', 3)))
+peak_condition_cic6.df$condition<- factor(peak_condition_cic6.df$condition, levels = c("wt_2to25", "cic6_2to25", "wt_25to3","cic6_25to3"))
+rownames(peak_condition_cic6.df)<-names(atac.bw.cic6.list)
+
+```
+
+## 4.2. Set up differential model
+
+```{r setup}
+
+library(DESeq2)
+
+dds_cic6 <- DESeqDataSetFromMatrix(countData = counts.cic6.df,
+                              colData = peak_condition_cic6.df,
+                              design = ~ condition)
+model_cic6 <- DESeq(dds_cic6)
+
+```
+
+## 4.3. Gather time point results 
+
+```{r time}
+
+t3_res.cic6.df <- results(model_cic6, contrast = c("condition","cic6_2to25","wt_2to25"), alpha = 0.05)
+plotMA(t3_res.cic6.df, ylim=c(-3,3), ylab = 'log fold change log2(cic6_2to25/wt_2to25)')
+t3.cic.ma <- ggplot(as.data.frame(t3_res.cic6.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(cic6_2to25/wt_2to25)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 2-2.5 hr") +
+  theme_cowplot()
+
+t4_res.cic6.df <- results(model_cic6, contrast = c("condition","cic6_25to3","wt_25to3"), alpha = 0.05)
+plotMA(t4_res.cic6.df, ylim=c(-3,3), ylab = 'log fold change log2(cic6_25to3/wt_25to3)')
+t4.cic.ma <- ggplot(as.data.frame(t4_res.cic6.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(cic6_25to3/wt_25to3)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 2.5-3 hr") +
+  theme_cowplot()
+
+maplots.cic <- t3.cic.ma + t4.cic.ma
+ggsave("cic6_effect_ma_plots.pdf", plot = maplots.cic, path = "figures/16_capicua_depletion_atac/", width = 25, height = 10, units = "cm")
+ggsave("cic6_effect_ma_plots.png", plot = maplots.cic, path = "figures/16_capicua_depletion_atac/", width = 25, height = 10, units = "cm")
+
+```
+
+## 4.4. Plot results at enhancers
+
+```{r enhancers}
+
+# Import enhancers  list that contains some DV and AP enhancers that we manually parsed down from larger enhancer lists (Cusanovich, Koenecke, Zeitlinger) for ease of viewing. 
+
+dv_enhancers_subset.gr <- read.csv(file = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/enhancers/dv_enhancers_subset.csv', header = TRUE) %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+# Join ATAC peaks with enhancers
+
+peaks.gr$enhancer_name <- NA
+enhancer.ov <- findOverlaps(peaks.gr, dv_enhancers_subset.gr, ignore.strand = T)
+peaks.gr$enhancer_name[enhancer.ov@from]<-dv_enhancers_subset.gr$name[enhancer.ov@to]
+
+# Add patterning information 
+
+peaks.gr$pattern <- NA
+peaks.gr$pattern[enhancer.ov@from]<-dv_enhancers_subset.gr$pattern[enhancer.ov@to]
+
+#Join with DE results (I used the 4th timepoint because this is the timepoint I previoulsy used for Dorsal)
+
+peaks_w_de.df <- cbind(peaks.gr %>% as.data.frame, t4_res.cic6.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+
+#Plot with DE results
+
+cic6_names_to_show <- c("sog_shadow", "brk_primary", "rho", "vnd_3", "twi_Ozdemir", "Asph_Ozdemir", "sna-S_Perry", "mir-1_Biemar", "tld_Kirov", "zen_dist_Doyle", "dpp_Huang", "shn", "doc2", "hkb_(-2)", "hb_(+0)_narrow", "tll_(+1)", "cnc_+5_construct_67.5_Anterior", "ems_elementIV_70_Anterior", "ind", "gt_(-10)", "oc_otd_eye_enhancer")
+
+cic6_effect_at_dv_enhancers <- ggplot(peaks_w_de.df, aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  geom_text(data = peaks_w_de.df[peaks_w_de.df$enhancer_name %in% cic6_names_to_show,],aes(label = enhancer_name, color = pattern), size = 4)+
+  scale_y_continuous(limits = c(-1.5, 1.5), name = 'log2(gd7_25to3/wt_25to3)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Average of normalized ATAC counts") +
+  ggtitle("Cic6 effect at 2.5-3 hr at validated DV patterning enhancers") +
+  theme_cowplot()
+cic6_effect_at_dv_enhancers
+
+ggsave("cic6_effect_at_dv_enhancers_25to3_w_signif.pdf", plot = cic6_effect_at_dv_enhancers, path = "figures/16_capicua_depletion_atac/", width = 25, height = 20, units = "cm")
+ggsave("cic6_effect_at_dv_enhancers_25to3_w_signif.png", plot = cic6_effect_at_dv_enhancers, path = "figures/16_capicua_depletion_atac/", width = 25, height = 20, units = "cm")
+
+# Print padj values
+
+peaks_w_de.df[!is.na(peaks_w_de.df$enhancer_name),][peaks_w_de.df[!is.na(peaks_w_de.df$enhancer_name),]$enhancer_name %in% cic6_names_to_show, c(7,8,13,14)]
+
+```
+
+## 4.5. Map DESeq2 results back to peaks 
+
+```{r map}
+
+# overlap with peaks
+
+peaks_w_de_t3.df <- cbind(peaks.gr %>% as.data.frame, t3_res.cic6.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+peaks_w_de_t4.df <- cbind(peaks.gr %>% as.data.frame, t4_res.cic6.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+
+# make GRanges for export
+
+peaks_w_de_t3.gr <- peaks_w_de_t3.df %>%
+  dplyr::mutate(timepoint = '2to25') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+peaks_w_de_t4.gr <- peaks_w_de_t4.df %>%
+  dplyr::mutate(timepoint = '25to3') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+```
+
+## 4.6. Save DESeq2 results
+
+```{r save}
+
+deseq_at_peaks.list <- list('cic6_2to25/wt_2to25' = peaks_w_de_t3.gr,
+                            'cic6_25to3/wt_25to3' = peaks_w_de_t4.gr)
+saveRDS(deseq_at_peaks.list, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/cic6/deseq_timepoints_at_orer_2to3_atac_peaks.RData')
+
+```
+
+# 5. Plot Wt, Zld-, gd7, and cic6 data at individual enhancers from both AP and DV axes to compare individual well-studied enhancers
+
+```{r individual}
+
+# Define enhancers
+
+enhancers.gr<-c(
+  GRanges('chr2L', IRanges(start = 2456160, end = 2457660), strand = '*', name = 'Dpp'), 
+  GRanges('chr3R', IRanges(start = 24748748, end = 24750248), strand = '*', name = 'Tld'),
+  GRanges('chrX', IRanges(start = 15646300, end = 15647800), strand = '*', name = 'Sog_shadow'),
+  GRanges('chr2L', IRanges(start = 15479300, end = 15480800), strand = '*', name = 'Sna_lp'),
+  GRanges('chr3R', IRanges(start = 4347821, end = 4349321), strand = '*', name = 'hkb_-2'),
+  GRanges('chr3R', IRanges(start = 30851400, end = 30852900), strand = '*', name = 'tll_+1'),
+  GRanges('chr3R', IRanges(start = 8700373, end = 8701873), strand = '*', name = 'hb_-4_downstream'))
+
+# Make bw coverage list with all strains
+
+bw.list<-list(`T4_wt` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_normalized.bw',
+              `T4_gd7` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_25to3_atac_combined_normalized.bw',
+              `T4_zld` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_25to3_atac_combined_normalized.bw',
+              `T4_cic` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/cic6_25to3_atac_combined_normalized.bw')
+
+# Process motifs
+
+motifs.gr<-readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F) %>%
+  plyranges::mutate(motif = pattern_name,
+                    name = pattern_name) %>%
+  GenomicRanges::sort(ignore.strand = T)
+
+#Specific variables
+library(RColorBrewer)
+n_motifs<-motifs.gr$name %>% unique %>% length
+colors <- colorRampPalette(brewer.pal(n_motifs, "Accent"))(n_motifs)
+# getPalette(colourCount)
+# getPalette = colorRampPalette(brewer.pal(n_motifs, "Set1"))
+# 
+# many_colors <- grDevices::colors()[grep('gr(a|e)y|white', grDevices::colors(), invert = T)]
+# many_colors <- many_colors[20:(length(many_colors)-20)]
+# step<-floor(length(many_colors) / n_motifs)
+# colors <- many_colors[seq(1, n_motifs*step, step)]
+names(colors)<-motifs.gr$name %>% unique
+motif.colors.list<-as.list(colors)
+
+# Function
+
+plot_coverage_and_enhancer<-function(enhancer.gr, motifs.gr, bw.list, motif.colors.list, title, region_width = 1000, 
+                                     cores = 6, scales = 'fixed', rounding_margin = 50, label_margin = 200){
+  
+  #Assertion requirements to make the function run correctly.
+  testit::assert("Input enhancer GRanges needs to contain only 1 region.", length(enhancer.gr)==1)
+  testit::assert("Motifs need to be a GRanges object", is(motifs.gr, "GRanges"))
+  testit::assert("Enhancers need to be a GRanges object", is(enhancer.gr, "GRanges"))
+  testit::assert("Region width should be larger than enhancer width.", width(enhancer.gr)<=region_width)
+  testit::assert("Bigwig object needs to be a list of samples. If samples are ChIP-nexus/double-stranded samples, they need to be in a nested list.", 
+                 is(bw.list, "list") & all(!(names(bw.list) %in% c("pos", "neg"))))
+  testit::assert("Motif object needs a column titled pattern_name, motif_name, or name to distinguish motifs apart.", 
+                 any(grepl("pattern_name|name|motif_name", colnames(motifs.gr@elementMetadata))))
+  
+  #Find overlaps between motif set and enhancer
+  motifs_in_enhancer.gr<-subsetByOverlaps(motifs.gr, resize(enhancer.gr, region_width, "center"), ignore.strand = T)
+  if("pattern_name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$pattern_name
+  }
+  if("name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$name
+  }
+  
+  #Extract colors for enhancer
+  fills_in_order<-lapply(motifs_in_enhancer.gr$motif_name, function(x) motif.colors.list[[x]]) %>% unlist %>% unique %>% as.character
+  motifs_in_order<-motifs_in_enhancer.gr$motif_name %>% unique %>% as.character
+  motifs_in_enhancer.df<-motifs_in_enhancer.gr %>% as.data.frame
+  motifs_in_enhancer.df$motif_name<-factor(motifs_in_enhancer.df$motif_name, levels = motifs_in_order)
+  
+  #Convert enhancer coordinates to df
+  enhancer.df<-enhancer.gr %>% as.data.frame
+  
+  #Get half of the enhancer
+  enh_half<-floor(width(enhancer.gr)/2)
+  lower_bounds<-plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor)
+  upper_bounds<-plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling)
+  
+  enhancer.plot<-ggplot()+
+    geom_hline(yintercept = .5, color = "gray 85")+
+    geom_rect(data = enhancer.df, aes(xmin = start, xmax = end, ymin = 0, ymax = 1), fill = "gray 85")+
+    geom_text(data = enhancer.df, aes(x = ((start - end)/2 + start), y = .5, label = paste0(seqnames, ":", start, "-", end)), 
+              color = "black")
+  if(nrow(motifs_in_enhancer.df)>0){
+    enhancer.plot<-enhancer.plot + geom_rect(data = motifs_in_enhancer.df, 
+                                             aes(xmin = start, xmax = end, ymin = 1.1, ymax = 2, fill = motif_name), color = 'black', size = .1)
+  }
+  enhancer.plot<-enhancer.plot+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    scale_y_continuous(breaks = c(.5, 1.75), labels = c("Enhancer", "Motif(s)"), position = "right")+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line = element_blank(), axis.ticks.y = element_blank(),
+          legend.position = "none")
+  
+  # Get coverage across bigwig list
+  coverage.df<-mclapply(names(bw.list), function(x){
+    if(length(bw.list[[x]])==1){
+      df<-standard_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = floor(region_width/2) + rounding_margin, downstream = floor(region_width/2)+300) %>% 
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(resize(enhancer.gr, 1, "center")), sample_name = x)
+    }
+    if(length(bw.list[[x]])==2){
+      df<-exo_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = region_width/2 + rounding_margin, downstream = region_width/2+rounding_margin) %>%
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(enhancer.gr), sample_name = x)
+    }
+    return(df)
+  }, mc.cores = cores) %>% rbindlist() %>%
+    dplyr::filter(position >= lower_bounds, position <= upper_bounds) %>%
+    dplyr::mutate(sample_name = factor(sample_name, levels = names(bw.list)))
+  
+  #Check for strand if there are no 2-channeled samples.
+  if(!("strand" %in% colnames(coverage.df))){
+    coverage.df$strand<-NA
+  }
+  
+  #Plot the enhancer coverage.
+  coverage.plot<-ggplot(coverage.df)
+  if(nrow(motifs_in_enhancer.df)>0){
+    coverage.plot<-coverage.plot + geom_rect(data = motifs_in_enhancer.df, aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = motif_name), alpha = .2)
+  }
+  coverage.plot<-coverage.plot +
+    geom_area(aes(x = position, y = reads, group = strand), fill = "black")+
+    geom_text(aes(x = Inf, y = Inf, label = sample_name), hjust = -.01)+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    facet_grid(sample_name ~ ., scales = scales)+
+    ggtitle(title)+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line.x = element_blank(), strip.background = element_blank())  
+  
+  g<-coverage.plot + enhancer.plot + plot_layout(ncol = 1, heights = c(5, 1))
+  return(g)
+}
+
+# Plot regions
+
+mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'fixed')
+  ggsave(paste0("figures/16_capicua_depletion_atac/", enhancer.gr$name,"_single_example.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/16_capicua_depletion_atac/", enhancer.gr$name,"_single_example.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+
+```
+
+## 5.1 Plot the same regions but with 2-2.5 hr AEL data as a supplemental figure
+
+```{r t3}
+
+t3.bw.list<-list(`T3_wt` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined_normalized.bw',
+              `T3_gd7` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_2to25_atac_combined_normalized.bw',
+              `T3_zld` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_2to25_atac_combined_normalized.bw',
+              `T3_cic` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/cic6_2to25_atac_combined_normalized.bw')
+
+# Plot regions
+
+mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = t3.bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'fixed')
+  ggsave(paste0("figures/16_capicua_depletion_atac/", enhancer.gr$name,"_t3_single_example.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/16_capicua_depletion_atac/", enhancer.gr$name,"_t3_single_example.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+```
+
+# 6. Conclusions
+
+Here we can see that loss of Capicua does indeed convert Dorsal to an activator and we can see that Dorsal-repressed enhancers are the ones most impacted by loss of Cic, since Cic is Dl's means for repression (i.e. these Dl-repressed enhancers become de-repressed in the absence of Cic). We can see Figure 5 summarized really nice at individual patterned enhancers.
+
+# 7. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

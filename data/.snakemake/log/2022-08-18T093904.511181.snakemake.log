@@ -1,0 +1,8 @@
+Building DAG of jobs...
+InputFunctionException in line 142 of /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/Snakefile:
+IndexError: index 0 is out of bounds for axis 0 with size 0
+Wildcards:
+genome=dm6
+exp=atac
+state=combined
+output_sample=orer_1to15_atac_combined_cutsites

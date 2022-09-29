@@ -1,0 +1,12 @@
+#$ -cwd
+#$ -S /bin/bash
+#$ -N generate_in_silico_data
+#$ -pe smp 80
+#$ -l h_vmem=2G
+#$ -l h_rt=24:00:00
+#$ -p -10
+#$ -V
+
+cd /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/
+conda activate /home/mw2098/anaconda3/envs/bpnet-gpu
+./scripts/bpnet_generate_in_silico_zld_affinity_data.py

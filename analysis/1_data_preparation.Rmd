@@ -1,0 +1,404 @@
+---
+title: 'Preparation of data for BPNet and ChromBPNet'
+author: "Melanie (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+The goal of this .Rmd is to prepare ChIP-nexus and ATAC-seq for training. Here, we plan on curating .bw and .narrowpeak/.bed files for proper training on ChIP-nexus data. 
+
+# Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(parallel)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+figure_filepath<-'figures/1_data_preparation'
+options(knitr.figure_dir=figure_filepath, java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+
+#Specific sources
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(GenomicFeatures)
+library(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+library(seqinr)
+bsgenome = BSgenome.Dmelanogaster.UCSC.dm6
+txdb<-TxDb.Dmelanogaster.UCSC.dm6.ensGene
+
+binding_input_seqlen<-1000 
+accessibility_input_seqlen<-2114 
+score_val<-1000
+
+set.seed(10)
+dir.create('../data/narrowpeak', showWarnings = FALSE)
+```
+
+# Define all samples and associated data paths
+
+## Peaksets
+
+### ChIP-nexus 
+
+```{r}
+nexus.peaks.list<-list(nexus_orer_mbt_zld = '../data/idr/dm6/nexus/orer_zld_mbt_nexus/orer_zld_mbt_nexus_3_vs_orer_zld_mbt_nexus_1_idr.txt',
+                       nexus_orer_mbt_dl = '../data/idr/dm6/nexus/orer_dl_mbt_nexus/orer_dl_mbt_nexus_3_vs_orer_dl_mbt_nexus_1_idr.txt',
+                       nexus_orer_mbt_twi = '../data/idr/dm6/nexus/orer_twi_mbt_nexus/orer_twi_mbt_nexus_3_vs_orer_twi_mbt_nexus_1_idr.txt',
+                       nexus_orer_mbt_cad = '../data/idr/dm6/nexus/orer_cad_mbt_nexus/orer_cad_mbt_nexus_2_vs_orer_cad_mbt_nexus_3_idr.txt',
+                       nexus_orer_mbt_bcd = '../data/idr/dm6/nexus/orer_bcd_mbt_nexus/orer_bcd_mbt_nexus_2_vs_orer_bcd_mbt_nexus_3_idr.txt',
+                       nexus_orer_mbt_gaf = '../data/idr/dm6/nexus/orer_gaf_mbt_nexus/orer_gaf_mbt_nexus_1_vs_orer_gaf_mbt_nexus_4_idr.txt')
+```
+
+### ATAC-seq
+
+```{r}
+atac.peaks.list<-list(atac_orer_1to15 = '../data/idr/dm6/atac/orer_1to15_atac/orer_1to15_atac_6_vs_orer_1to15_atac_7_idr.txt',
+                      atac_orer_15to2 = '../data/idr/dm6/atac/orer_15to2_atac/orer_15to2_atac_7_vs_orer_15to2_atac_4_idr.txt',
+                      atac_orer_2to25 = '../data/idr/dm6/atac/orer_2to25_atac/orer_2to25_atac_6_vs_orer_2to25_atac_7_idr.txt',
+                      atac_orer_25to3 = '../data/idr/dm6/atac/orer_25to3_atac/orer_25to3_atac_7_vs_orer_25to3_atac_4_idr.txt')
+```
+
+## Coverage
+
+### ATAC-seq
+
+`chrombpnet` will require that we have clearly specific chromosome end boundaries. This will be need to be assigned in this document.
+
+```{r}
+atac.bw.list<-list(orer_1to15_atac_cutsites = '../data/bw/dm6/atac/combined/orer_1to15_atac_combined.bw',
+                   orer_15to2_atac_cutsites = '../data/bw/dm6/atac/combined/orer_15to2_atac_combined.bw',
+                   orer_2to25_atac_cutsites = '../data/bw/dm6/atac/combined/orer_2to25_atac_combined.bw',
+                   orer_25to3_atac_cutsites = '../data/bw/dm6/atac/combined/orer_25to3_atac_combined.bw')
+```
+
+# Format signal coverage
+
+```{r, eval = F}
+filler<-mclapply(names(atac.bw.list), function(x){
+  bw<-rtracklayer::import(atac.bw.list[[x]])
+  bw$score<-abs(bw$score)
+  seqlevels(bw)<-seqlevels(bsgenome)
+  seqinfo(bw)<-seqinfo(bsgenome)
+  rtracklayer::export(bw, atac.bw.list[[x]])
+  return(NULL)
+}, mc.cores = 4)
+```
+
+
+# Import, format, and export peak coverage
+
+Here, we will format our regions by doing the following:
+
+1. center the peak on the summit, then resize to facilitate the model input size.
+2. remove regions that hang off the ends of chromosomes upon performing (1).
+3. remove chromosome contigs or chromosomes with high heterochomatin content (chrY/chrM)
+4. remove any peak that contains 'N's in the underlying sequence of the `dm6` genome assembly annotations.
+
+## ChIP-nexus coverage
+
+First, find the concatenated set of peaks that are filtered for highest-scoring IDR peaks.
+
+```{r}
+bind_peaks.gr<-names(nexus.peaks.list) %>%
+  
+  #Import the data
+  lapply(., function(x){
+    gr<-readr::read_tsv(nexus.peaks.list[[x]], col_names = c('chrom','start','end','name','score','strand',
+                                         'signalValue', 'pValue', 'qValue', 'peak',
+                                         'localIDR', 'globalIDR',
+                                         'rep1start','rep1end','rep1signal','rep1summit',
+                                         'rep2start','rep2end','rep2signal','rep2summit')) %>%
+      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = T) %>%
+      GRangesList %>% 
+      unlist(use.names = FALSE) %>% 
+      
+      #Resize the center to the peak summit.
+      plyranges::mutate(start = start + peak) %>%
+      GenomicRanges::resize(width = 1, fix = 'start') %>%
+      GenomicRanges::resize(., width = binding_input_seqlen, fix = 'center') %>%
+      plyranges::mutate(peak = floor(binding_input_seqlen/2)) %>%
+      
+      #Filter regions that are poor or don't make sense
+      check_chromosome_boundaries(., 3000, bsgenome) %>%
+      plyranges::select(-seqlength_filler, -end_distance, -start_distance) %>%
+      keepStandardChromosomes(x = ., pruning.mode = 'coarse') %>%
+      plyranges::filter(!(seqnames %in% c('chrY', 'chrM'))) %>%
+      
+      #Filter regions that contain N in the genome
+      plyranges::mutate(seq = getSeq(bsgenome, ., as.character=T)) %>%  
+      plyranges::filter(!grepl('N', seq)) %>% #Filter out all regions with N's in them
+      plyranges::select(-seq) %>%
+      
+      #Sort GRanges to work with later commands
+      GenomicRanges::sort(.)
+    
+    plyranges::write_narrowpeaks(gr, paste0('../data/narrowpeak/', tolower(x), '_peaks.narrowpeak'))
+    return(gr)
+  }) %>%
+  GRangesList %>% 
+  unlist(use.names = FALSE) %>% 
+
+  #Sort GRanges to work with later commands
+  GenomicRanges::sort(.)
+
+plyranges::write_narrowpeaks(bind_peaks.gr, '../data/narrowpeak/nexus_orer_mbt_ZDTBCG_peaks.narrowpeak')
+```
+
+## ATAC-seq coverage
+
+First, find the concatenated set of peaks that are filtered for highest-scoring IDR peaks.
+
+```{r}
+acc_peaks.gr<-names(atac.peaks.list) %>%
+  
+  #Import the data
+  lapply(., function(x){
+    gr<-readr::read_tsv(atac.peaks.list[[x]], col_names = c('chrom','start','end','name','score','strand',
+                                         'signalValue', 'pValue', 'qValue', 'peak',
+                                         'localIDR', 'globalIDR',
+                                         'rep1start','rep1end','rep1signal','rep1summit',
+                                         'rep2start','rep2end','rep2signal','rep2summit')) %>%
+      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = T) %>%
+      GRangesList %>% 
+      unlist(use.names = FALSE) %>% 
+      
+      #Resize the center to the peak summit.
+      plyranges::mutate(start = start + peak) %>%
+      GenomicRanges::resize(width = 1, fix = 'start') %>%
+      GenomicRanges::resize(., width = accessibility_input_seqlen, fix = 'center') %>%
+      plyranges::mutate(peak = floor(accessibility_input_seqlen/2)) %>%
+      
+      #Filter regions that are poor or don't make sense
+      check_chromosome_boundaries(., 3000, bsgenome) %>%
+      plyranges::select(-seqlength_filler, -end_distance, -start_distance) %>%
+      keepStandardChromosomes(x = ., pruning.mode = 'coarse') %>%
+      plyranges::filter(!(seqnames %in% c('chrY', 'chrM'))) %>%
+      
+      #Filter regions that contain N in the genome
+      plyranges::mutate(seq = getSeq(bsgenome, ., as.character=T), name = x) %>%  
+      plyranges::filter(!grepl('N', seq)) %>% #Filter out all regions with N's in them
+      plyranges::select(-seq) %>%
+      
+      #Sort GRanges to work with later commands
+      GenomicRanges::sort(.)
+    
+    plyranges::write_narrowpeaks(gr, paste0('../data/narrowpeak/', tolower(x), '_peaks.narrowpeak'))
+    return(gr)
+  }) %>%
+  GRangesList %>% 
+  unlist(use.names = FALSE) %>% 
+
+  #Sort GRanges to work with later commands
+  GenomicRanges::sort(.)
+
+plyranges::write_narrowpeaks(acc_peaks.gr, '../data/narrowpeak/atac_orer_all_peaks.narrowpeak')
+```
+
+# Identify non-peak regions
+
+For both (1) bias training of the Tn5 bias model in ChromBPNet and (2) ChromBPNet training itself, we need to generate a set of regions that are:
+
+1. closed (ATAC-seq) and unbound regions
+2. low-count regions
+
+First, find GC-content from accessible peaks.
+
+```{r}
+peaks.gr<-c(rtracklayer::import('../data/narrowpeak/atac_orer_all_peaks.narrowpeak'),
+                rtracklayer::import('../data/narrowpeak/nexus_orer_mbt_ZDTBCG_peaks.narrowpeak'))%>%
+  GenomicRanges::reduce(ignore.strand = T) %>% #Since we are determining chromosome boundaries, we want to remove the regions that totally share
+  plyranges::mutate(seq = getSeq(bsgenome, ., as.character=T))
+peaks.gr$gc_content <- mclapply(peaks.gr$seq, function(x) seqinr::GC(seqinr::s2c(x)), mc.cores = 8) %>% unlist(.)
+peaks.gr$gc_content_rounded <- round(peaks.gr$gc_content, 2)
+
+#Generate distribution object
+# acc_peaks_gc_content.dist<-ecdf(acc_peaks.gr$gc_content)
+```
+
+Next, we plan on training a Tn5 bias model on the latest timepoint. Which timepoint doesn't really matter, but this would be the most likely timepoint to learn non-Tn5 dynamics, so we will use this to confirm in our downstream analysis that there is NO motif grammar embedded in this bias model (work with the hardest situation to be totally sure, so to speak).
+
+## Identify nonpeak regions.
+
+```{r}
+#Pad the edges of accessibility peaks for finding edges.
+start(peaks.gr)<-start(peaks.gr)-200
+end(peaks.gr)<-end(peaks.gr) + 200
+
+#Identify genome
+genome.gr<-GRanges(seqnames(bsgenome), IRanges(1, seqlengths(bsgenome)), strand = '*') %>%
+  keepStandardChromosomes(pruning.mode = 'coarse')
+
+#Identify genome gaps as metadata
+peaks.gr$flank_down<-end(peaks.gr) + 1
+peaks.gr$flank_up<-start(peaks.gr) - 1
+peaks.gr$next_seqname<-c(seqnames(peaks.gr)[2:length(peaks.gr)] %>% as.character(), NA)
+peaks.gr$next_flank_up<-c(peaks.gr$flank_up[2:length(peaks.gr)], NA)
+
+#Filter out weird metadata
+collect_gaps.gr<-peaks.gr %>%
+  plyranges::filter(start > 1, 
+                next_seqname == seqnames,
+                flank_down<next_flank_up) %>%
+  check_chromosome_boundaries(gr = ., resize_boundary = 3000, genome = bsgenome)
+
+#Use gap boundaries to define new GRanges
+non_peaks.gr<-GRanges(seqnames(collect_gaps.gr), 
+        IRanges(start = collect_gaps.gr$flank_down, 
+                end = collect_gaps.gr$next_flank_up), 
+        strand = '*') %>%
+  plyranges::filter(width >= accessibility_input_seqlen) %>%
+  
+  #Now, tile the null regions until we have enough candidates (some null regions are >2*input_seqlen)
+  GenomicRanges::slidingWindows(., width=accessibility_input_seqlen, step=accessibility_input_seqlen) %>%
+  unlist() %>%
+  plyranges::filter(width==accessibility_input_seqlen) %>%
+  check_chromosome_boundaries(., resize_boundary = 3000, genome = bsgenome) %>%
+  plyranges::mutate(signalValue = 0, pValue= 0, qValue=0, peak = floor(accessibility_input_seqlen/2)) %>%
+  GenomicRanges::sort(.) %>%
+  plyranges::mutate(seq = getSeq(bsgenome, ., as.character=T))
+
+#Identify GC content 
+non_peaks.gr$gc_content <- mclapply(non_peaks.gr$seq, function(x) seqinr::GC(seqinr::s2c(x)), mc.cores = 8) %>% unlist(.)
+non_peaks.gr$gc_content_rounded <- round(non_peaks.gr$gc_content,2)
+
+#Identify total accessibility reads
+non_peaks.gr$acc_reads <- regionSums(non_peaks.gr, atac.bw.list$orer_25to3_atac_cutsites)
+
+#Export 
+plyranges::write_narrowpeaks(non_peaks.gr, '../data/narrowpeak/atac_orer_nonpeaks.narrowpeak')
+
+#Print length
+length(non_peaks.gr)
+```
+
+## Define low-count, non-peak regions for Tn5 ChromBPNet bias training.
+
+We will need the total cut sites per region to compare to the non-peaks later in this analysis. Here we will use regionMeans in order to accommodate for variable length regions specified in the code chunk above. Tn5 bias models are extremely stable across the same model system, it is only when you begin to train on different model systems that the Tn5 bias models are less high quality if you directly transfer them. Thus, we will use the "busiest" timepoint by which to train the Tn5 bias model to be totally sure that there is not any motif-driven or open accessibility grammar (2.5-3hrs, the latest timepoint).
+
+```{r}
+tn5_bias_coverage.gr<-rtracklayer::import('../data/narrowpeak/atac_orer_25to3_peaks.narrowpeak')
+tn5_bias_coverage.gr$acc_reads <- regionSums(tn5_bias_coverage.gr, atac.bw.list$orer_25to3_atac_cutsites)
+```
+
+
+In order to train the Tn5 bias model, we need to be extra sure that there isn't a "partial" peak in our non-peak regions. This is usually determined by a threshold relative to the minimum number of ATAC-seq reads in our accessible regions.
+
+```{r}
+#Show average reads per base in each region
+min(tn5_bias_coverage.gr$acc_reads)
+
+summary(tn5_bias_coverage.gr$acc_reads)
+summary(non_peaks.gr$acc_reads)
+```
+
+Plot what different numbers we would train on for increasing `--threshold-factor`. We need to balance this `--threshold-factor` with having sufficient regions to train.
+
+```{r}
+retained_regions.df<-lapply(c(seq(0, 10, .2)), function(x){
+  return(data.frame(retained_regions = sum(min(tn5_bias_coverage.gr$acc_reads)*x > non_peaks.gr$acc_reads),
+                    threshold = x))
+}) %>% rbindlist()
+
+counts.plot<-ggplot(retained_regions.df, aes(x = threshold, y = retained_regions))+
+  geom_line() + 
+  geom_point(data = retained_regions.df %>% dplyr::filter(threshold %% 1 == 0), color = 'red') + 
+  ggrepel::geom_text_repel(data = retained_regions.df %>% dplyr::filter(threshold %% 1 == 0), aes(label = retained_regions),
+                           point.padding = 0.2,
+                           nudge_x = .15,
+                           nudge_y = .5,
+                           segment.curvature = -1e-20,
+                           arrow = arrow(length = unit(0.015, "npc")))+
+  geom_vline(xintercept = 5, linetype = 'dashed')+
+  scale_x_continuous(breaks = seq(0, 10, .5))+
+  ggtitle('Candidate regions for bias model training')+
+  theme_classic()
+
+print(counts.plot)
+```
+
+Internal analysis in the lab has shown that we can train reliable Tn5 bias models on as few as 300 regions. So we will set our `threshold-factor=5`, which means that the minimum value will be 5x the minimum counts values for ATAC-seq. Keep in mind that these numbers are not exact, but will be determined approximately similarly in the actual `chrombpnet-lite` code base. This is just to get a sense so we are not undersampling.
+
+# Generate region sets without promoters
+
+In previous analysis done using ChromBPNet, we know that promoter opening sequence-grammar can operate under different rules than enhancer-based sequence grammar. We also know that factors such as Zld and GAF tend to open promoters at timepoints early during MZT. Because of this, we only want to train ChromBPNet on non-promoter regions. In this way, we will avoid learning "promoter element grammar" which can result in the model paying too much attention to non-consequential sequence patterns such as (in OUR scope of analysis, not necessarily nonconsequential as a whole, to be clear) TATA, DPE, DRE, Ohler1, etc. 
+
+First, we need to define promoters and the regions around promoters. Because the `jitter-length` of peak center augmentation of ChromBPnet is 500, we will define promoter regions as the central 500bp around each TSS.
+
+```{r}
+promoters.gr<-transcripts(TxDb.Dmelanogaster.UCSC.dm6.ensGene) %>% resize(., 1, 'start') %>% resize(., 1500, 'center')
+```
+
+Next, we need to filter all peaks from our peakset that contain overlaps with these promoter regions.
+
+```{r}
+acc_peaks_no_promoters.gr<-names(atac.peaks.list) %>%
+  
+  #Import the data
+  lapply(., function(x){
+    
+    gr<-rtracklayer::import(paste0('../data/narrowpeak/', tolower(x), '_peaks.narrowpeak')) %>%
+      .[!overlapsAny(., promoters.gr, ignore.strand = T)]
+    
+    plyranges::write_narrowpeaks(gr, paste0('../data/narrowpeak/', tolower(x), '_peaks_no_promoters.narrowpeak'))
+    return(gr)
+  }) %>%
+  GRangesList %>% 
+  unlist(use.names = FALSE) %>% 
+  
+  #Sort GRanges to work with later commands
+  GenomicRanges::sort(.)
+
+plyranges::write_narrowpeaks(acc_peaks_no_promoters.gr, '../data/narrowpeak/atac_orer_all_peaks_no_promoters.narrowpeak')
+```
+
+Then, we also need to filter our NONpeak regions to not contain promoters, such that this is a balanced set of representative negative sampling.
+
+```{r}
+rtracklayer::import('../data/narrowpeak/atac_orer_nonpeaks.narrowpeak') %>%
+  .[!overlapsAny(., promoters.gr, ignore.strand = T)] %>%
+  plyranges::write_narrowpeaks('../data/narrowpeak/atac_orer_nonpeaks_no_promoters.narrowpeak')
+```
+
+# Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```
+
+
+
+
+
+
+
+

@@ -1,0 +1,723 @@
+---
+title: 'Plot replicate correlations'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to plot replicate correlations for all genomics data sets used in this study. This markdown includs ChIP-nexus, ATAC-seq, ChIP-seq, and MNase-seq, included in various time points and/or mutants. Note that these replicate correlation plots will encompass various supplemental figures to show high data quality. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/1a_plot_rep_corr/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+library(GenomicFeatures)
+library(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+library(seqinr)
+bsgenome = BSgenome.Dmelanogaster.UCSC.dm6
+txdb<-TxDb.Dmelanogaster.UCSC.dm6.ensGene
+
+```
+
+# 3. Load relevant data
+
+## 3.1. Load in replicate coverage files
+
+```{r coverage}
+
+# ChIP-nexus
+
+zld_mbt_bw.list <- list(zld_mbt_rep1 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_zld_mbt_nexus_1_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_zld_mbt_nexus_1_negative.bw"),
+                        zld_mbt_rep3 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_zld_mbt_nexus_3_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_zld_mbt_nexus_3_negative.bw"),
+                        zld_mbt_rep4 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_zld_mbt_nexus_4_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_zld_mbt_nexus_4_negative.bw"))
+bcd_mbt_bw.list <- list(bcd_mbt_rep1 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_bcd_mbt_nexus_1_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_bcd_mbt_nexus_1_negative.bw"),
+                        bcd_mbt_rep2 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_bcd_mbt_nexus_2_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_bcd_mbt_nexus_2_negative.bw"),
+                        bcd_mbt_rep3 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_bcd_mbt_nexus_3_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_bcd_mbt_nexus_3_negative.bw"))
+cad_mbt_bw.list <- list(cad_mbt_rep1 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_cad_mbt_nexus_1_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_cad_mbt_nexus_1_negative.bw"),
+                        cad_mbt_rep2 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_cad_mbt_nexus_2_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_cad_mbt_nexus_2_negative.bw"),
+                        cad_mbt_rep3 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_cad_mbt_nexus_3_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_cad_mbt_nexus_3_negative.bw"))
+dl_mbt_bw.list <- list(dl_mbt_rep1 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_dl_mbt_nexus_1_positive.bw",
+                                           neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_dl_mbt_nexus_1_negative.bw"),
+                        dl_mbt_rep2 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_dl_mbt_nexus_2_positive.bw",
+                                           neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_dl_mbt_nexus_2_negative.bw"),
+                        dl_mbt_rep3 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_dl_mbt_nexus_3_positive.bw",
+                                           neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_dl_mbt_nexus_3_negative.bw"))
+twi_mbt_bw.list <- list(twi_mbt_rep1 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_twi_mbt_nexus_1_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_twi_mbt_nexus_1_negative.bw"),
+                        twi_mbt_rep2 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_twi_mbt_nexus_2_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_twi_mbt_nexus_2_negative.bw"),
+                        twi_mbt_rep3 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_twi_mbt_nexus_3_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_twi_mbt_nexus_3_negative.bw"))
+gaf_mbt_bw.list <- list(gaf_mbt_rep1 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_gaf_mbt_nexus_1_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_gaf_mbt_nexus_1_negative.bw"),
+                        gaf_mbt_rep3 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_gaf_mbt_nexus_3_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_gaf_mbt_nexus_3_negative.bw"),
+                        gaf_mbt_rep4 = list(pos = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_gaf_mbt_nexus_4_positive.bw",
+                                            neg = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/individual/orer_gaf_mbt_nexus_4_negative.bw"))
+
+# ATAC-seq
+
+orer_1to15_bw.list <- list(orer_1to15_rep4 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_4.bw",
+                          orer_1to15_rep6 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_6.bw",
+                          orer_1to15_rep7 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_7.bw")
+orer_15to2_bw.list <- list(orer_15to2_rep4 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_4.bw",
+                          orer_15to2_rep6 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_6.bw",
+                          orer_15to2_rep7 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_7.bw")
+orer_2to25_bw.list <- list(orer_2to25_rep4 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_4.bw",
+                          orer_2to25_rep6 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_6.bw",
+                          orer_2to25_rep7 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_7.bw")
+orer_25to3_bw.list <- list(orer_25to3_rep4 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_4.bw",
+                          orer_25to3_rep6 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_6.bw",
+                          orer_25to3_rep7 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_7.bw")
+gd7_1to15_bw.list <- list(gd7_1to15_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_1to15_atac_3.bw",
+                          gd7_1to15_rep5 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_1to15_atac_5.bw",
+                          gd7_1to15_rep6 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_1to15_atac_6.bw")
+gd7_15to2_bw.list <- list(gd7_15to2_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_15to2_atac_3.bw",
+                          gd7_15to2_rep5 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_15to2_atac_5.bw",
+                          gd7_15to2_rep6 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_15to2_atac_6.bw")
+gd7_2to25_bw.list <- list(gd7_2to25_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to25_atac_3.bw",
+                          gd7_2to25_rep5 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to25_atac_5.bw",
+                          gd7_2to25_rep6 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to25_atac_6.bw")
+gd7_25to3_bw.list <- list(gd7_25to3_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_25to3_atac_3.bw",
+                          gd7_25to3_rep5 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_25to3_atac_5.bw",
+                          gd7_25to3_rep6 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_25to3_atac_6.bw")
+zldrnai_1to15_bw.list <- list(zldrnai_1to15_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_1to15_atac_1.bw",
+                              zldrnai_1to15_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_1to15_atac_2.bw",
+                              zldrnai_1to15_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_1to15_atac_3.bw")
+zldrnai_15to2_bw.list <- list(zldrnai_15to2_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_15to2_atac_1.bw",
+                              zldrnai_15to2_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_15to2_atac_2.bw",
+                              zldrnai_15to2_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_15to2_atac_3.bw")
+zldrnai_2to25_bw.list <- list(zldrnai_2to25_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_2to25_atac_1.bw",
+                              zldrnai_2to25_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_2to25_atac_2.bw",
+                              zldrnai_2to25_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_2to25_atac_3.bw")
+zldrnai_25to3_bw.list <- list(zldrnai_25to3_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_25to3_atac_1.bw",
+                              zldrnai_25to3_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_25to3_atac_2.bw",
+                              zldrnai_25to3_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_25to3_atac_3.bw")
+cic6_2to25_bw.list <- list(cic6_2to25_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_2to25_atac_1.bw",
+                           cic6_2to25_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_2to25_atac_2.bw",
+                           cic6_2to25_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_2to25_atac_3.bw")
+cic6_25to3_bw.list <- list(cic6_25to3_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_1.bw",
+                           cic6_25to3_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_2.bw",
+                           cic6_25to3_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_3.bw")
+gd7_2to4_bw.list <- list(gd7_2to4_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to4_atac_1.bw",
+                         gd7_2to4_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to4_atac_2.bw")
+toll10b_2to4_bw.list <- list(toll10b_2to4_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/toll10b_2to4_atac_1.bw",
+                         toll10b_2to4_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/toll10b_2to4_atac_2.bw")
+
+# ChIP-seq
+
+h3k27ac_mbt_bw.list <- list(h3k27ac_mbt_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/seq/individual/orer_h3k27ac_mbt_seq_1.bw",
+                            h3k27ac_mbt_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/seq/individual/orer_h3k27ac_mbt_seq_2.bw")
+h3k4me1_mbt_bw.list <- list(h3k4me1_mbt_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/seq/individual/orer_h3k4me1_mbt_seq_1.bw",
+                            h3k4me1_mbt_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/seq/individual/orer_h3k4me1_mbt_seq_2.bw")
+
+# MNase-seq
+
+orer_mbt_100u_mnase_bw.list <- list(orer_mbt_100u_mnase_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_1.bw",
+                                    orer_mbt_100u_mnase_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_2.bw",
+                                    orer_mbt_100u_mnase_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_3.bw")
+gd7_mnase_bw.list <- list(gd7_mnase_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/gd7_2to4_mono_mnase_1.bw",
+                          gd7_mnase_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/gd7_2to4_mono_mnase_2.bw")
+toll10b_mnase_bw.list <- list(toll10b_mnase_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/toll10b_2to4_mono_mnase_1.bw",
+                          toll10b_mnase_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/toll10b_2to4_mono_mnase_2.bw")
+
+```
+
+## 3.2. Load in peak region sets for comparisons
+
+```{r peaks}
+
+# ChIP-nexus 
+
+zld_mbt_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/nexus/combined/orer_zld_mbt_nexus_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+bcd_mbt_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+cad_mbt_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/nexus/combined/orer_cad_mbt_nexus_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+dl_mbt_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/nexus/combined/orer_dl_mbt_nexus_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+twi_mbt_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/nexus/combined/orer_twi_mbt_nexus_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+gaf_mbt_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+
+# ATAC-seq
+
+orer_1to15_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/orer_1to15_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+orer_15to2_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/orer_15to2_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+orer_2to25_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/orer_2to25_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+orer_25to3_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/orer_25to3_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+gd7_1to15_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/gd7_1to15_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+gd7_15to2_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/gd7_15to2_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+gd7_2to25_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/gd7_2to25_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+gd7_25to3_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/gd7_25to3_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+zldrnai_1to15_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/zldrnai_1to15_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+zldrnai_15to2_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/zldrnai_15to2_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+zldrnai_2to25_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/zldrnai_2to25_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+zldrnai_25to3_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/zldrnai_25to3_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+cic6_2to25_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/cic6_2to25_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+cic6_25to3_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/cic6_25to3_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+gd7_2to4_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/gd7_2to4_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+toll10b_2to4_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/toll10b_2to4_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+
+# ChIP-seq
+
+h3k27ac_mbt_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+h3k4me1_mbt_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
+
+# MNase-seq: use Drosophila TSSs
+
+tss.gr <- transcripts(TxDb.Dmelanogaster.UCSC.dm6.ensGene) %>% resize(., 1, 'start') %>% keepStandardChromosomes(pruning.mode="coarse")
+
+```
+
+# 4. Determine Pearson correlation values between replicates
+
+## 4.1. Calculate replicate correlation values
+
+```{r calculate}
+
+# ChIP-nexus 
+
+zld_mbt_peaks$rep1signal <- abs(regionSums(resize(zld_mbt_peaks, 400, 'center'), zld_mbt_bw.list$zld_mbt_rep1$pos)) + abs(regionSums(resize(zld_mbt_peaks, 400, 'center'), zld_mbt_bw.list$zld_mbt_rep1$neg))
+zld_mbt_peaks$rep3signal <- abs(regionSums(resize(zld_mbt_peaks, 400, 'center'), zld_mbt_bw.list$zld_mbt_rep3$pos)) + abs(regionSums(resize(zld_mbt_peaks, 400, 'center'), zld_mbt_bw.list$zld_mbt_rep3$neg))
+zld_mbt_peaks$rep4signal <- abs(regionSums(resize(zld_mbt_peaks, 400, 'center'), zld_mbt_bw.list$zld_mbt_rep4$pos)) + abs(regionSums(resize(zld_mbt_peaks, 400, 'center'), zld_mbt_bw.list$zld_mbt_rep4$neg))
+
+bcd_mbt_peaks$rep1signal <- abs(regionSums(resize(bcd_mbt_peaks, 400, 'center'), bcd_mbt_bw.list$bcd_mbt_rep1$pos)) + abs(regionSums(resize(bcd_mbt_peaks, 400, 'center'), bcd_mbt_bw.list$bcd_mbt_rep1$neg))
+bcd_mbt_peaks$rep2signal <- abs(regionSums(resize(bcd_mbt_peaks, 400, 'center'), bcd_mbt_bw.list$bcd_mbt_rep2$pos)) + abs(regionSums(resize(bcd_mbt_peaks, 400, 'center'), bcd_mbt_bw.list$bcd_mbt_rep2$neg))
+bcd_mbt_peaks$rep3signal <- abs(regionSums(resize(bcd_mbt_peaks, 400, 'center'), bcd_mbt_bw.list$bcd_mbt_rep3$pos)) + abs(regionSums(resize(bcd_mbt_peaks, 400, 'center'), bcd_mbt_bw.list$bcd_mbt_rep3$neg))
+
+cad_mbt_peaks$rep1signal <- abs(regionSums(resize(cad_mbt_peaks, 400, 'center'), cad_mbt_bw.list$cad_mbt_rep1$pos)) + abs(regionSums(resize(cad_mbt_peaks, 400, 'center'), cad_mbt_bw.list$cad_mbt_rep1$neg))
+cad_mbt_peaks$rep2signal <- abs(regionSums(resize(cad_mbt_peaks, 400, 'center'), cad_mbt_bw.list$cad_mbt_rep2$pos)) + abs(regionSums(resize(cad_mbt_peaks, 400, 'center'), cad_mbt_bw.list$cad_mbt_rep2$neg))
+cad_mbt_peaks$rep3signal <- abs(regionSums(resize(cad_mbt_peaks, 400, 'center'), cad_mbt_bw.list$cad_mbt_rep3$pos)) + abs(regionSums(resize(cad_mbt_peaks, 400, 'center'), cad_mbt_bw.list$cad_mbt_rep3$neg))
+
+dl_mbt_peaks$rep1signal <- abs(regionSums(resize(dl_mbt_peaks, 400, 'center'), dl_mbt_bw.list$dl_mbt_rep1$pos)) + abs(regionSums(resize(dl_mbt_peaks, 400, 'center'), dl_mbt_bw.list$dl_mbt_rep1$neg))
+dl_mbt_peaks$rep2signal <- abs(regionSums(resize(dl_mbt_peaks, 400, 'center'), dl_mbt_bw.list$dl_mbt_rep2$pos)) + abs(regionSums(resize(dl_mbt_peaks, 400, 'center'), dl_mbt_bw.list$dl_mbt_rep2$neg))
+dl_mbt_peaks$rep3signal <- abs(regionSums(resize(dl_mbt_peaks, 400, 'center'), dl_mbt_bw.list$dl_mbt_rep3$pos)) + abs(regionSums(resize(dl_mbt_peaks, 400, 'center'), dl_mbt_bw.list$dl_mbt_rep3$neg))
+
+twi_mbt_peaks$rep1signal <- abs(regionSums(resize(twi_mbt_peaks, 400, 'center'), twi_mbt_bw.list$twi_mbt_rep1$pos)) + abs(regionSums(resize(twi_mbt_peaks, 400, 'center'), twi_mbt_bw.list$twi_mbt_rep1$neg))
+twi_mbt_peaks$rep2signal <- abs(regionSums(resize(twi_mbt_peaks, 400, 'center'), twi_mbt_bw.list$twi_mbt_rep2$pos)) + abs(regionSums(resize(twi_mbt_peaks, 400, 'center'), twi_mbt_bw.list$twi_mbt_rep2$neg))
+twi_mbt_peaks$rep3signal <- abs(regionSums(resize(twi_mbt_peaks, 400, 'center'), twi_mbt_bw.list$twi_mbt_rep3$pos)) + abs(regionSums(resize(twi_mbt_peaks, 400, 'center'), twi_mbt_bw.list$twi_mbt_rep3$neg))
+
+gaf_mbt_peaks$rep1signal <- abs(regionSums(resize(gaf_mbt_peaks, 400, 'center'), gaf_mbt_bw.list$gaf_mbt_rep1$pos)) + abs(regionSums(resize(gaf_mbt_peaks, 400, 'center'), gaf_mbt_bw.list$gaf_mbt_rep1$neg))
+gaf_mbt_peaks$rep3signal <- abs(regionSums(resize(gaf_mbt_peaks, 400, 'center'), gaf_mbt_bw.list$gaf_mbt_rep3$pos)) + abs(regionSums(resize(gaf_mbt_peaks, 400, 'center'), gaf_mbt_bw.list$gaf_mbt_rep3$neg))
+gaf_mbt_peaks$rep4signal <- abs(regionSums(resize(gaf_mbt_peaks, 400, 'center'), gaf_mbt_bw.list$gaf_mbt_rep4$pos)) + abs(regionSums(resize(gaf_mbt_peaks, 400, 'center'), gaf_mbt_bw.list$gaf_mbt_rep4$neg))
+
+# ATAC-seq
+
+orer_1to15_peaks$rep4signal <- regionSums(resize(orer_1to15_peaks, 400, 'center'), orer_1to15_bw.list$orer_1to15_rep4)
+orer_1to15_peaks$rep6signal <- regionSums(resize(orer_1to15_peaks, 400, 'center'), orer_1to15_bw.list$orer_1to15_rep6)
+orer_1to15_peaks$rep7signal <- regionSums(resize(orer_1to15_peaks, 400, 'center'), orer_1to15_bw.list$orer_1to15_rep7)
+
+orer_15to2_peaks$rep4signal <- regionSums(resize(orer_15to2_peaks, 400, 'center'), orer_15to2_bw.list$orer_15to2_rep4)
+orer_15to2_peaks$rep6signal <- regionSums(resize(orer_15to2_peaks, 400, 'center'), orer_15to2_bw.list$orer_15to2_rep6)
+orer_15to2_peaks$rep7signal <- regionSums(resize(orer_15to2_peaks, 400, 'center'), orer_15to2_bw.list$orer_15to2_rep7)
+
+orer_2to25_peaks$rep4signal <- regionSums(resize(orer_2to25_peaks, 400, 'center'), orer_2to25_bw.list$orer_2to25_rep4)
+orer_2to25_peaks$rep6signal <- regionSums(resize(orer_2to25_peaks, 400, 'center'), orer_2to25_bw.list$orer_2to25_rep6)
+orer_2to25_peaks$rep7signal <- regionSums(resize(orer_2to25_peaks, 400, 'center'), orer_2to25_bw.list$orer_2to25_rep7)
+
+orer_25to3_peaks$rep4signal <- regionSums(resize(orer_25to3_peaks, 400, 'center'), orer_25to3_bw.list$orer_25to3_rep4)
+orer_25to3_peaks$rep6signal <- regionSums(resize(orer_25to3_peaks, 400, 'center'), orer_25to3_bw.list$orer_25to3_rep6)
+orer_25to3_peaks$rep7signal <- regionSums(resize(orer_25to3_peaks, 400, 'center'), orer_25to3_bw.list$orer_25to3_rep7)
+
+gd7_1to15_peaks$rep3signal <- regionSums(resize(gd7_1to15_peaks, 400, 'center'), gd7_1to15_bw.list$gd7_1to15_rep3)
+gd7_1to15_peaks$rep5signal <- regionSums(resize(gd7_1to15_peaks, 400, 'center'), gd7_1to15_bw.list$gd7_1to15_rep5)
+gd7_1to15_peaks$rep6signal <- regionSums(resize(gd7_1to15_peaks, 400, 'center'), gd7_1to15_bw.list$gd7_1to15_rep6)
+
+gd7_15to2_peaks$rep3signal <- regionSums(resize(gd7_15to2_peaks, 400, 'center'), gd7_15to2_bw.list$gd7_15to2_rep3)
+gd7_15to2_peaks$rep5signal <- regionSums(resize(gd7_15to2_peaks, 400, 'center'), gd7_15to2_bw.list$gd7_15to2_rep5)
+gd7_15to2_peaks$rep6signal <- regionSums(resize(gd7_15to2_peaks, 400, 'center'), gd7_15to2_bw.list$gd7_15to2_rep6)
+
+gd7_2to25_peaks$rep3signal <- regionSums(resize(gd7_2to25_peaks, 400, 'center'), gd7_2to25_bw.list$gd7_2to25_rep3)
+gd7_2to25_peaks$rep5signal <- regionSums(resize(gd7_2to25_peaks, 400, 'center'), gd7_2to25_bw.list$gd7_2to25_rep5)
+gd7_2to25_peaks$rep6signal <- regionSums(resize(gd7_2to25_peaks, 400, 'center'), gd7_2to25_bw.list$gd7_2to25_rep6)
+
+gd7_25to3_peaks$rep3signal <- regionSums(resize(gd7_25to3_peaks, 400, 'center'), gd7_25to3_bw.list$gd7_25to3_rep3)
+gd7_25to3_peaks$rep5signal <- regionSums(resize(gd7_25to3_peaks, 400, 'center'), gd7_25to3_bw.list$gd7_25to3_rep5)
+gd7_25to3_peaks$rep6signal <- regionSums(resize(gd7_25to3_peaks, 400, 'center'), gd7_25to3_bw.list$gd7_25to3_rep6)
+
+zldrnai_1to15_peaks$rep1signal <- regionSums(resize(zldrnai_1to15_peaks, 400, 'center'), zldrnai_1to15_bw.list$zldrnai_1to15_rep1)
+zldrnai_1to15_peaks$rep2signal <- regionSums(resize(zldrnai_1to15_peaks, 400, 'center'), zldrnai_1to15_bw.list$zldrnai_1to15_rep2)
+zldrnai_1to15_peaks$rep3signal <- regionSums(resize(zldrnai_1to15_peaks, 400, 'center'), zldrnai_1to15_bw.list$zldrnai_1to15_rep3)
+
+zldrnai_15to2_peaks$rep1signal <- regionSums(resize(zldrnai_15to2_peaks, 400, 'center'), zldrnai_15to2_bw.list$zldrnai_15to2_rep1)
+zldrnai_15to2_peaks$rep2signal <- regionSums(resize(zldrnai_15to2_peaks, 400, 'center'), zldrnai_15to2_bw.list$zldrnai_15to2_rep2)
+zldrnai_15to2_peaks$rep3signal <- regionSums(resize(zldrnai_15to2_peaks, 400, 'center'), zldrnai_15to2_bw.list$zldrnai_15to2_rep3)
+
+zldrnai_2to25_peaks$rep1signal <- regionSums(resize(zldrnai_2to25_peaks, 400, 'center'), zldrnai_2to25_bw.list$zldrnai_2to25_rep1)
+zldrnai_2to25_peaks$rep2signal <- regionSums(resize(zldrnai_2to25_peaks, 400, 'center'), zldrnai_2to25_bw.list$zldrnai_2to25_rep2)
+zldrnai_2to25_peaks$rep3signal <- regionSums(resize(zldrnai_2to25_peaks, 400, 'center'), zldrnai_2to25_bw.list$zldrnai_2to25_rep3)
+
+zldrnai_25to3_peaks$rep1signal <- regionSums(resize(zldrnai_25to3_peaks, 400, 'center'), zldrnai_25to3_bw.list$zldrnai_25to3_rep1)
+zldrnai_25to3_peaks$rep2signal <- regionSums(resize(zldrnai_25to3_peaks, 400, 'center'), zldrnai_25to3_bw.list$zldrnai_25to3_rep2)
+zldrnai_25to3_peaks$rep3signal <- regionSums(resize(zldrnai_25to3_peaks, 400, 'center'), zldrnai_25to3_bw.list$zldrnai_25to3_rep3)
+
+cic6_2to25_peaks$rep1signal <- regionSums(resize(cic6_2to25_peaks, 400, 'center'), cic6_2to25_bw.list$cic6_2to25_rep1)
+cic6_2to25_peaks$rep2signal <- regionSums(resize(cic6_2to25_peaks, 400, 'center'), cic6_2to25_bw.list$cic6_2to25_rep2)
+cic6_2to25_peaks$rep3signal <- regionSums(resize(cic6_2to25_peaks, 400, 'center'), cic6_2to25_bw.list$cic6_2to25_rep3)
+
+cic6_25to3_peaks$rep1signal <- regionSums(resize(cic6_25to3_peaks, 400, 'center'), cic6_25to3_bw.list$cic6_25to3_rep1)
+cic6_25to3_peaks$rep2signal <- regionSums(resize(cic6_25to3_peaks, 400, 'center'), cic6_25to3_bw.list$cic6_25to3_rep2)
+cic6_25to3_peaks$rep3signal <- regionSums(resize(cic6_25to3_peaks, 400, 'center'), cic6_25to3_bw.list$cic6_25to3_rep3)
+
+gd7_2to4_peaks$rep1signal <- regionSums(resize(gd7_2to4_peaks, 400, 'center'), gd7_2to4_bw.list$gd7_2to4_rep1)
+gd7_2to4_peaks$rep2signal <- regionSums(resize(gd7_2to4_peaks, 400, 'center'), gd7_2to4_bw.list$gd7_2to4_rep2)
+
+toll10b_2to4_peaks$rep1signal <- regionSums(resize(toll10b_2to4_peaks, 400, 'center'), toll10b_2to4_bw.list$toll10b_2to4_rep1)
+toll10b_2to4_peaks$rep2signal <- regionSums(resize(toll10b_2to4_peaks, 400, 'center'), toll10b_2to4_bw.list$toll10b_2to4_rep2)
+
+# ChIP-seq
+
+h3k27ac_mbt_peaks$rep1signal <- regionSums(resize(h3k27ac_mbt_peaks, 1000, 'center'), h3k27ac_mbt_bw.list$h3k27ac_mbt_rep1)
+h3k27ac_mbt_peaks$rep2signal <- regionSums(resize(h3k27ac_mbt_peaks, 1000, 'center'), h3k27ac_mbt_bw.list$h3k27ac_mbt_rep2)
+
+h3k4me1_mbt_peaks$rep1signal <- regionSums(resize(h3k4me1_mbt_peaks, 1000, 'center'), h3k4me1_mbt_bw.list$h3k4me1_mbt_rep1)
+h3k4me1_mbt_peaks$rep2signal <- regionSums(resize(h3k4me1_mbt_peaks, 1000, 'center'), h3k4me1_mbt_bw.list$h3k4me1_mbt_rep2)
+
+# MNase-seq 
+
+tss.gr$orer_rep1signal <- regionSums(resize(tss.gr, 1000, 'center'), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep1)
+tss.gr$orer_rep2signal <- regionSums(resize(tss.gr, 1000, 'center'), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep2)
+tss.gr$orer_rep3signal <- regionSums(resize(tss.gr, 1000, 'center'), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep3)
+tss.gr$gd7_rep1signal <- regionSums(resize(tss.gr, 1000, 'center'), gd7_mnase_bw.list$gd7_mnase_rep1)
+tss.gr$gd7_rep2signal <- regionSums(resize(tss.gr, 1000, 'center'), gd7_mnase_bw.list$gd7_mnase_rep2)
+tss.gr$toll_rep1signal <- regionSums(resize(tss.gr, 1000, 'center'), toll10b_mnase_bw.list$toll10b_mnase_rep1)
+tss.gr$toll_rep2signal <- regionSums(resize(tss.gr, 1000, 'center'), toll10b_mnase_bw.list$toll10b_mnase_rep2)
+
+```
+
+## 4.2. Generate Pearson correlation values
+
+```{r generate}
+
+# ChIP-nexus
+
+## Zld
+
+cor(as.data.frame(log(zld_mbt_peaks$rep1signal+1)), as.data.frame(log(zld_mbt_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(zld_mbt_peaks$rep1signal+1)), as.data.frame(log(zld_mbt_peaks$rep4signal+1)), method = "pearson")
+cor(as.data.frame(log(zld_mbt_peaks$rep3signal+1)), as.data.frame(log(zld_mbt_peaks$rep4signal+1)), method = "pearson")
+
+## Bcd
+
+cor(as.data.frame(log(bcd_mbt_peaks$rep1signal+1)), as.data.frame(log(bcd_mbt_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(bcd_mbt_peaks$rep1signal+1)), as.data.frame(log(bcd_mbt_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(bcd_mbt_peaks$rep2signal+1)), as.data.frame(log(bcd_mbt_peaks$rep3signal+1)), method = "pearson")
+
+## Cad
+
+cor(as.data.frame(log(cad_mbt_peaks$rep1signal+1)), as.data.frame(log(cad_mbt_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(cad_mbt_peaks$rep1signal+1)), as.data.frame(log(cad_mbt_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(cad_mbt_peaks$rep2signal+1)), as.data.frame(log(cad_mbt_peaks$rep3signal+1)), method = "pearson")
+
+## Dl
+
+cor(as.data.frame(log(dl_mbt_peaks$rep1signal+1)), as.data.frame(log(dl_mbt_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(dl_mbt_peaks$rep1signal+1)), as.data.frame(log(dl_mbt_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(dl_mbt_peaks$rep2signal+1)), as.data.frame(log(dl_mbt_peaks$rep3signal+1)), method = "pearson")
+
+## Twi
+
+cor(as.data.frame(log(twi_mbt_peaks$rep1signal+1)), as.data.frame(log(twi_mbt_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(twi_mbt_peaks$rep1signal+1)), as.data.frame(log(twi_mbt_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(twi_mbt_peaks$rep2signal+1)), as.data.frame(log(twi_mbt_peaks$rep3signal+1)), method = "pearson")
+
+## GAF
+
+cor(as.data.frame(log(gaf_mbt_peaks$rep1signal+1)), as.data.frame(log(gaf_mbt_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(gaf_mbt_peaks$rep1signal+1)), as.data.frame(log(gaf_mbt_peaks$rep4signal+1)), method = "pearson")
+cor(as.data.frame(log(gaf_mbt_peaks$rep3signal+1)), as.data.frame(log(gaf_mbt_peaks$rep4signal+1)), method = "pearson")
+
+# ATAC-seq
+
+## Ore-R 1-1.5
+
+cor(as.data.frame(log(orer_1to15_peaks$rep4signal+1)), as.data.frame(log(orer_1to15_peaks$rep6signal+1)), method = "pearson")
+cor(as.data.frame(log(orer_1to15_peaks$rep4signal+1)), as.data.frame(log(orer_1to15_peaks$rep7signal+1)), method = "pearson")
+cor(as.data.frame(log(orer_1to15_peaks$rep6signal+1)), as.data.frame(log(orer_1to15_peaks$rep7signal+1)), method = "pearson")
+
+## Ore-R 1.5-2
+
+cor(as.data.frame(log(orer_15to2_peaks$rep4signal+1)), as.data.frame(log(orer_15to2_peaks$rep6signal+1)), method = "pearson")
+cor(as.data.frame(log(orer_15to2_peaks$rep4signal+1)), as.data.frame(log(orer_15to2_peaks$rep7signal+1)), method = "pearson")
+cor(as.data.frame(log(orer_15to2_peaks$rep6signal+1)), as.data.frame(log(orer_15to2_peaks$rep7signal+1)), method = "pearson")
+
+## Ore-R 2-2.5
+
+cor(as.data.frame(log(orer_2to25_peaks$rep4signal+1)), as.data.frame(log(orer_2to25_peaks$rep6signal+1)), method = "pearson")
+cor(as.data.frame(log(orer_2to25_peaks$rep4signal+1)), as.data.frame(log(orer_2to25_peaks$rep7signal+1)), method = "pearson")
+cor(as.data.frame(log(orer_2to25_peaks$rep6signal+1)), as.data.frame(log(orer_2to25_peaks$rep7signal+1)), method = "pearson")
+
+## Ore-R 2.5-3
+
+cor(as.data.frame(log(orer_25to3_peaks$rep4signal+1)), as.data.frame(log(orer_25to3_peaks$rep6signal+1)), method = "pearson")
+cor(as.data.frame(log(orer_25to3_peaks$rep4signal+1)), as.data.frame(log(orer_25to3_peaks$rep7signal+1)), method = "pearson")
+cor(as.data.frame(log(orer_25to3_peaks$rep6signal+1)), as.data.frame(log(orer_25to3_peaks$rep7signal+1)), method = "pearson")
+
+## Gd7 1-1.5
+
+cor(as.data.frame(log(gd7_1to15_peaks$rep3signal+1)), as.data.frame(log(gd7_1to15_peaks$rep5signal+1)), method = "pearson")
+cor(as.data.frame(log(gd7_1to15_peaks$rep3signal+1)), as.data.frame(log(gd7_1to15_peaks$rep6signal+1)), method = "pearson")
+cor(as.data.frame(log(gd7_1to15_peaks$rep5signal+1)), as.data.frame(log(gd7_1to15_peaks$rep6signal+1)), method = "pearson")
+
+## Gd7 1.5-2
+
+cor(as.data.frame(log(gd7_15to2_peaks$rep3signal+1)), as.data.frame(log(gd7_15to2_peaks$rep5signal+1)), method = "pearson")
+cor(as.data.frame(log(gd7_15to2_peaks$rep3signal+1)), as.data.frame(log(gd7_15to2_peaks$rep6signal+1)), method = "pearson")
+cor(as.data.frame(log(gd7_15to2_peaks$rep5signal+1)), as.data.frame(log(gd7_15to2_peaks$rep6signal+1)), method = "pearson")
+
+## Gd7 2-2.5
+
+cor(as.data.frame(log(gd7_2to25_peaks$rep3signal+1)), as.data.frame(log(gd7_2to25_peaks$rep5signal+1)), method = "pearson")
+cor(as.data.frame(log(gd7_2to25_peaks$rep3signal+1)), as.data.frame(log(gd7_2to25_peaks$rep6signal+1)), method = "pearson")
+cor(as.data.frame(log(gd7_2to25_peaks$rep5signal+1)), as.data.frame(log(gd7_2to25_peaks$rep6signal+1)), method = "pearson")
+
+## Gd7 2.5-3
+
+cor(as.data.frame(log(gd7_25to3_peaks$rep3signal+1)), as.data.frame(log(gd7_25to3_peaks$rep5signal+1)), method = "pearson")
+cor(as.data.frame(log(gd7_25to3_peaks$rep3signal+1)), as.data.frame(log(gd7_25to3_peaks$rep6signal+1)), method = "pearson")
+cor(as.data.frame(log(gd7_25to3_peaks$rep5signal+1)), as.data.frame(log(gd7_25to3_peaks$rep6signal+1)), method = "pearson")
+
+## Zld RNAi 1-1.5
+
+cor(as.data.frame(log(zldrnai_1to15_peaks$rep1signal+1)), as.data.frame(log(zldrnai_1to15_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(zldrnai_1to15_peaks$rep1signal+1)), as.data.frame(log(zldrnai_1to15_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(zldrnai_1to15_peaks$rep2signal+1)), as.data.frame(log(zldrnai_1to15_peaks$rep3signal+1)), method = "pearson")
+
+## Zld RNAi 1.5-2
+
+cor(as.data.frame(log(zldrnai_15to2_peaks$rep1signal+1)), as.data.frame(log(zldrnai_15to2_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(zldrnai_15to2_peaks$rep1signal+1)), as.data.frame(log(zldrnai_15to2_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(zldrnai_15to2_peaks$rep2signal+1)), as.data.frame(log(zldrnai_15to2_peaks$rep3signal+1)), method = "pearson")
+
+## Zld RNAi 2-2.5
+
+cor(as.data.frame(log(zldrnai_2to25_peaks$rep1signal+1)), as.data.frame(log(zldrnai_2to25_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(zldrnai_2to25_peaks$rep1signal+1)), as.data.frame(log(zldrnai_2to25_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(zldrnai_2to25_peaks$rep2signal+1)), as.data.frame(log(zldrnai_2to25_peaks$rep3signal+1)), method = "pearson")
+
+## Zld RNAi 2.5-3
+
+cor(as.data.frame(log(zldrnai_25to3_peaks$rep1signal+1)), as.data.frame(log(zldrnai_25to3_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(zldrnai_25to3_peaks$rep1signal+1)), as.data.frame(log(zldrnai_25to3_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(zldrnai_25to3_peaks$rep2signal+1)), as.data.frame(log(zldrnai_25to3_peaks$rep3signal+1)), method = "pearson")
+
+## Cic6 2-2.5
+
+cor(as.data.frame(log(cic6_2to25_peaks$rep1signal+1)), as.data.frame(log(cic6_2to25_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(cic6_2to25_peaks$rep1signal+1)), as.data.frame(log(cic6_2to25_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(cic6_2to25_peaks$rep2signal+1)), as.data.frame(log(cic6_2to25_peaks$rep3signal+1)), method = "pearson")
+
+## Cic6 2.5-3
+
+cor(as.data.frame(log(cic6_25to3_peaks$rep1signal+1)), as.data.frame(log(cic6_25to3_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(cic6_25to3_peaks$rep1signal+1)), as.data.frame(log(cic6_25to3_peaks$rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(cic6_25to3_peaks$rep2signal+1)), as.data.frame(log(cic6_25to3_peaks$rep3signal+1)), method = "pearson")
+
+## Gd7 2-4
+cor(as.data.frame(log(gd7_2to4_peaks$rep1signal+1)), as.data.frame(log(gd7_2to4_peaks$rep2signal+1)), method = "pearson")
+
+## Toll10b 2-4 
+cor(as.data.frame(log(toll10b_2to4_peaks$rep1signal+1)), as.data.frame(log(toll10b_2to4_peaks$rep2signal+1)), method = "pearson")
+
+# ChIP-seq 
+
+cor(as.data.frame(log(h3k27ac_mbt_peaks$rep1signal+1)), as.data.frame(log(h3k27ac_mbt_peaks$rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(h3k4me1_mbt_peaks$rep1signal+1)), as.data.frame(log(h3k4me1_mbt_peaks$rep2signal+1)), method = "pearson")
+
+# MNase-seq
+
+cor(as.data.frame(log(tss.gr$orer_rep1signal+1)), as.data.frame(log(tss.gr$orer_rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(tss.gr$orer_rep1signal+1)), as.data.frame(log(tss.gr$orer_rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(tss.gr$orer_rep2signal+1)), as.data.frame(log(tss.gr$orer_rep3signal+1)), method = "pearson")
+cor(as.data.frame(log(tss.gr$gd7_rep1signal+1)), as.data.frame(log(tss.gr$gd7_rep2signal+1)), method = "pearson")
+cor(as.data.frame(log(tss.gr$toll_rep1signal+1)), as.data.frame(log(tss.gr$toll_rep2signal+1)), method = "pearson")
+
+```
+
+## 4.3. Plot correlation plots 
+
+```{r plot}
+
+library(ggrastr)
+
+# Define plotting function
+
+plot_cor<- function(peaks, signal1 = signal1, signal2 = signal2, name = name, colour = colour){
+  x <- ggplot(as.data.frame(peaks), aes(log(signal1+1), log(signal2+1)))+ 
+  #geom_vline(xintercept = 0, linetype = "dotted") + 
+  #geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_point_rast(colour = colour, size = 0.2)+
+  #geom_hex(bins = 100) +
+  ggtitle(name) +
+  xlab("Log(Replicate 1 + 1)") +
+  ylab("Log(Replicate 2 + 1)") +
+  stat_cor(method="pearson") +
+  theme_cowplot()
+  
+  x
+
+}
+
+# Plot
+
+## ChIP-nexus
+
+z_1 <- plot_cor(zld_mbt_peaks, signal1 = zld_mbt_peaks$rep1signal, signal2 = zld_mbt_peaks$rep3signal, name = "Zld ChIP-nexus Replicate Correlation: rep 1 vs 2", colour = "#059AB1")
+z_2 <- plot_cor(zld_mbt_peaks, signal1 = zld_mbt_peaks$rep1signal, signal2 = zld_mbt_peaks$rep4signal, name = "Zld ChIP-nexus Replicate Correlation: rep 1 vs 3", colour = "#059AB1")
+z_3 <- plot_cor(zld_mbt_peaks, signal1 = zld_mbt_peaks$rep3signal, signal2 = zld_mbt_peaks$rep4signal, name = "Zld ChIP-nexus Replicate Correlation: rep 2 vs 3", colour = "#059AB1")
+zelda.plot <- z_1 + z_2 + z_3 +
+  plot_layout(ncol=3)
+
+ggsave("zld_corr_plots.pdf", plot = zelda.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("zld_corr_plots.png", plot = zelda.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+b_1 <- plot_cor(bcd_mbt_peaks, signal1 = bcd_mbt_peaks$rep1signal, signal2 = bcd_mbt_peaks$rep2signal, name = "Bcd ChIP-nexus Replicate Correlation: rep 1 vs 2", colour = "#500EB1")
+b_2 <- plot_cor(bcd_mbt_peaks, signal1 = bcd_mbt_peaks$rep1signal, signal2 = bcd_mbt_peaks$rep3signal, name = "Bcd ChIP-nexus Replicate Correlation: rep 1 vs 3", colour = "#500EB1")
+b_3 <- plot_cor(bcd_mbt_peaks, signal1 = bcd_mbt_peaks$rep2signal, signal2 = bcd_mbt_peaks$rep3signal, name = "Bcd ChIP-nexus Replicate Correlation: rep 2 vs 3", colour = "#500EB1")
+bicoid.plot <- b_1 + b_2 + b_3 +
+  plot_layout(ncol=3)
+ggsave("bcd_corr_plots.pdf", plot = bicoid.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("bcd_corr_plots.png", plot = bicoid.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+c_1 <- plot_cor(cad_mbt_peaks, signal1 = cad_mbt_peaks$rep1signal, signal2 = cad_mbt_peaks$rep2signal, name = "Cad ChIP-nexus Replicate Correlation: rep 1 vs 2", colour = "#B17A0E")
+c_2 <- plot_cor(cad_mbt_peaks, signal1 = cad_mbt_peaks$rep1signal, signal2 = cad_mbt_peaks$rep3signal, name = "Cad ChIP-nexus Replicate Correlation: rep 1 vs 3", colour = "#B17A0E")
+c_3 <- plot_cor(cad_mbt_peaks, signal1 = cad_mbt_peaks$rep2signal, signal2 = cad_mbt_peaks$rep3signal, name = "Cad ChIP-nexus Replicate Correlation: rep 2 vs 3", colour = "#B17A0E")
+caudal.plot <- c_1 + c_2 + c_3 +
+  plot_layout(ncol=3)
+ggsave("cad_corr_plots.pdf", plot = caudal.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("cad_corr_plots.png", plot = caudal.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+d_1 <- plot_cor(dl_mbt_peaks, signal1 = dl_mbt_peaks$rep1signal, signal2 = dl_mbt_peaks$rep2signal, name = "Dl ChIP-nexus Replicate Correlation: rep 1 vs 2", colour = "#B90088")
+d_2 <- plot_cor(dl_mbt_peaks, signal1 = dl_mbt_peaks$rep1signal, signal2 = dl_mbt_peaks$rep3signal, name = "Dl ChIP-nexus Replicate Correlation: rep 1 vs 3", colour = "#B90088")
+d_3 <- plot_cor(dl_mbt_peaks, signal1 = dl_mbt_peaks$rep2signal, signal2 = dl_mbt_peaks$rep3signal, name = "Dl ChIP-nexus Replicate Correlation: rep 2 vs 3", colour = "#B90088")
+dorsal.plot <- d_1 + d_2 + d_3 +
+  plot_layout(ncol=3) 
+ggsave("dl_corr_plots.pdf", plot = dorsal.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("dl_corr_plots.png", plot = dorsal.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+t_1 <- plot_cor(twi_mbt_peaks, signal1 = twi_mbt_peaks$rep1signal, signal2 = twi_mbt_peaks$rep2signal, name = "Twi ChIP-nexus Replicate Correlation: rep 1 vs 2", colour = "#5EB105")
+t_2 <- plot_cor(twi_mbt_peaks, signal1 = twi_mbt_peaks$rep1signal, signal2 = twi_mbt_peaks$rep3signal, name = "Twi ChIP-nexus Replicate Correlation: rep 1 vs 3", colour = "#5EB105")
+t_3 <- plot_cor(twi_mbt_peaks, signal1 = twi_mbt_peaks$rep2signal, signal2 = twi_mbt_peaks$rep3signal, name = "Twi ChIP-nexus Replicate Correlation: rep 2 vs 3", colour = "#5EB105")
+twist.plot <- t_1 + t_2 + t_3 +
+  plot_layout(ncol=3) 
+ggsave("twi_corr_plots.pdf", plot = twist.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("twi_corr_plots.png", plot = twist.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+g_1 <- plot_cor(gaf_mbt_peaks, signal1 = gaf_mbt_peaks$rep1signal, signal2 = gaf_mbt_peaks$rep3signal, name = "GAF ChIP-nexus Replicate Correlation: rep 1 vs 2", colour = "#9E1C1F")
+g_2 <- plot_cor(gaf_mbt_peaks, signal1 = gaf_mbt_peaks$rep1signal, signal2 = gaf_mbt_peaks$rep4signal, name = "GAF ChIP-nexus Replicate Correlation: rep 1 vs 3", colour = "#9E1C1F")
+g_3 <- plot_cor(gaf_mbt_peaks, signal1 = gaf_mbt_peaks$rep3signal, signal2 = gaf_mbt_peaks$rep4signal, name = "GAF ChIP-nexus Replicate Correlation: rep 2 vs 3", colour = "#9E1C1F")
+gaf.plot <- g_1 + g_2 + g_3 +
+  plot_layout(ncol=3) 
+ggsave("gaf_corr_plots.pdf", plot = gaf.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("gaf_corr_plots.png", plot = gaf.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+## ATAC-seq
+
+o_t1_1 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep6signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#31218C")
+o_t1_2 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep7signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#31218C")
+o_t1_3 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep6signal, signal2 = orer_1to15_peaks$rep7signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#31218C")
+o_t1.plot <- o_t1_1 + o_t1_2 + o_t1_3 +
+  plot_layout(ncol=3)
+ggsave("orer_1to15_atac_corr_plots.pdf", plot = o_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("orer_1to15_atac_corr_plots.png", plot = o_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+o_t2_1 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep6signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#232996")
+o_t2_2 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep7signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#232996")
+o_t2_3 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep6signal, signal2 = orer_15to2_peaks$rep7signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#232996")
+o_t2.plot <- o_t2_1 + o_t2_2 + o_t2_3 +
+  plot_layout(ncol=3)
+ggsave("orer_15to2_atac_corr_plots.pdf", plot = o_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("orer_15to2_atac_corr_plots.png", plot = o_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+o_t3_1 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep6signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#236E96")
+o_t3_2 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep7signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#236E96")
+o_t3_3 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep6signal, signal2 = orer_2to25_peaks$rep7signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#236E96")
+o_t3.plot <- o_t3_1 + o_t3_2 + o_t3_3 +
+  plot_layout(ncol=3)
+ggsave("orer_2to25_atac_corr_plots.pdf", plot = o_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("orer_2to25_atac_corr_plots.png", plot = o_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+o_t4_1 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep6signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#218C89")
+o_t4_2 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep7signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#218C89")
+o_t4_3 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep6signal, signal2 = orer_25to3_peaks$rep7signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#218C89")
+o_t4.plot <- o_t4_1 + o_t4_2 + o_t4_3 +
+  plot_layout(ncol=3)
+ggsave("orer_25to3_atac_corr_plots.pdf", plot = o_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("orer_25to3_atac_corr_plots.png", plot = o_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+g_t1_1 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep5signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#31218C")
+g_t1_2 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep6signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#31218C")
+g_t1_3 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep5signal, signal2 = gd7_1to15_peaks$rep6signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#31218C")
+g_t1.plot <- g_t1_1 + g_t1_2 + g_t1_3 +
+  plot_layout(ncol=3)
+ggsave("gd7_1to15_atac_corr_plots.pdf", plot = g_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("gd7_1to15_atac_corr_plots.png", plot = g_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+g_t2_1 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep5signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#232996")
+g_t2_2 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep6signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#232996")
+g_t2_3 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep5signal, signal2 = gd7_15to2_peaks$rep6signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#232996")
+g_t2.plot <- g_t2_1 + g_t2_2 + g_t2_3 +
+  plot_layout(ncol=3)
+ggsave("gd7_15to2_atac_corr_plots.pdf", plot = g_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("gd7_15to2_atac_corr_plots.png", plot = g_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+g_t3_1 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep5signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#236E96")
+g_t3_2 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep6signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#236E96")
+g_t3_3 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep5signal, signal2 = gd7_2to25_peaks$rep6signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#236E96")
+g_t3.plot <- g_t3_1 + g_t3_2 + g_t3_3 +
+  plot_layout(ncol=3)
+ggsave("gd7_2to25_atac_corr_plots.pdf", plot = g_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("gd7_2to25_atac_corr_plots.png", plot = g_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+g_t4_1 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep5signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#218C89")
+g_t4_2 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep6signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#218C89")
+g_t4_3 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep5signal, signal2 = gd7_25to3_peaks$rep6signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#218C89")
+g_t4.plot <- g_t4_1 + g_t4_2 + g_t4_3 +
+  plot_layout(ncol=3)
+ggsave("gd7_25to3_atac_corr_plots.pdf", plot = g_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("gd7_25to3_atac_corr_plots.png", plot = g_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+z_t1_1 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep2signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#31218C")
+z_t1_2 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#31218C")
+z_t1_3 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep2signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#31218C")
+z_t1.plot <- z_t1_1 + z_t1_2 + z_t1_3 +
+  plot_layout(ncol=3)
+ggsave("zldrnai_1to15_atac_corr_plots.pdf", plot = z_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("zldrnai_1to15_atac_corr_plots.png", plot = z_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+z_t2_1 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep2signal, name = "Zld- 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#232996")
+z_t2_2 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = "Zld-i 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#232996")
+z_t2_3 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep2signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = "Zld- 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#232996")
+z_t2.plot <- z_t2_1 + z_t2_2 + z_t2_3 +
+  plot_layout(ncol=3)
+ggsave("zldrnai_15to2_atac_corr_plots.pdf", plot = z_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("zldrnai_15to2_atac_corr_plots.png", plot = z_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+z_t3_1 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep2signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#236E96")
+z_t3_2 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#236E96")
+z_t3_3 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep2signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#236E96")
+z_t3.plot <- z_t3_1 + z_t3_2 + z_t3_3 +
+  plot_layout(ncol=3)
+ggsave("zldrnai_2to25_atac_corr_plots.pdf", plot = z_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("zldrnai_2to25_atac_corr_plots.png", plot = z_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+z_t4_1 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep2signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#218C89")
+z_t4_2 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#218C89")
+z_t4_3 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep2signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#218C89")
+z_t4.plot <- z_t4_1 + z_t4_2 + z_t4_3 +
+  plot_layout(ncol=3)
+ggsave("zldrnai_25to3_atac_corr_plots.pdf", plot = z_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("zldrnai_25to3_atac_corr_plots.png", plot = z_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+c_t3_1 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep2signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#236E96")
+c_t3_2 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep3signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#236E96")
+c_t3_3 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep2signal, signal2 = cic6_2to25_peaks$rep3signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#236E96")
+c_t3.plot <- c_t3_1 + c_t3_2 + c_t3_3 +
+  plot_layout(ncol=3)
+ggsave("cic6_2to25_atac_corr_plots.pdf", plot = c_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("cic6_2to25_atac_corr_plots.png", plot = c_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+c_t4_1 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep2signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#218C89")
+c_t4_2 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep3signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#218C89")
+c_t4_3 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep2signal, signal2 = cic6_25to3_peaks$rep3signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#218C89")
+c_t4.plot <- c_t4_1 + c_t4_2 + c_t4_3 +
+  plot_layout(ncol=3)
+ggsave("cic6_25to3_atac_corr_plots.pdf", plot = c_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("cic6_25to3_atac_corr_plots.png", plot = c_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+g_2to4 <- plot_cor(gd7_2to4_peaks, signal1 = gd7_2to4_peaks$rep1signal, signal2 = gd7_2to4_peaks$rep2signal, name = "Gd7 2-4 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#FCB13C")
+ggsave("gd7_atac_2to4_corr_plots.pdf", plot = g_2to4, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+ggsave("dl_corr_plots.png", plot = g_2to4, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+
+t_2to4 <- plot_cor(toll10b_2to4_peaks, signal1 = toll10b_2to4_peaks$rep1signal, signal2 = toll10b_2to4_peaks$rep2signal, name = "Toll10b 2-4 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#3535A8")
+ggsave("toll10b_atac_2to4_corr_plots.pdf", plot = t_2to4, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+ggsave("toll10b_atac_2to4_corr_plots.png", plot = t_2to4, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+
+## ChIP-seq
+
+h3k27ac_corr <- plot_cor(h3k27ac_mbt_peaks, signal1 = h3k27ac_mbt_peaks$rep1signal, signal2 = h3k27ac_mbt_peaks$rep2signal, name = "H3K27ac ChIP-seq Replicate Correlation: rep 1 vs 2", colour = "#EE6352")
+ggsave("h3k287ac_seq_corr_plots.pdf", plot = h3k27ac_corr, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+ggsave("h3k287ac_seq_corr_plots.png", plot = h3k27ac_corr, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+
+h3k4me1_corr <- plot_cor(h3k4me1_mbt_peaks, signal1 = h3k4me1_mbt_peaks$rep1signal, signal2 = h3k4me1_mbt_peaks$rep2signal, name = "H3K4me1 ChIP-seq Replicate Correlation: rep 1 vs 2", colour = "#FAC05E")
+ggsave("h3k4me1_seq_corr_plots.pdf", plot = h3k4me1_corr, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+ggsave("h3k4me1_seq_corr_plots.png", plot = h3k4me1_corr, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+
+## MNase-seq
+
+o_mnase_1 <- plot_cor(tss.gr, signal1 = tss.gr$orer_rep1signal, signal2 = tss.gr$orer_rep2signal, name = "Orer MNase Replicate Correlation: rep 1 vs 2", colour = "#75485E")
+o_mnase_2 <- plot_cor(tss.gr, signal1 = tss.gr$orer_rep1signal, signal2 = tss.gr$orer_rep3signal, name = "Orer MNase Replicate Correlation: rep 1 vs 3", colour = "#75485E")
+o_mnase_3 <- plot_cor(tss.gr, signal1 = tss.gr$orer_rep2signal, signal2 = tss.gr$orer_rep3signal, name = "Orer MNase Replicate Correlation: rep 2 vs 3", colour = "#75485E")
+o_mnase.plot <- o_mnase_1 + o_mnase_2 + o_mnase_3 +
+  plot_layout(ncol=3)
+ggsave("orer_mnase_corr_plots.pdf", plot = o_mnase.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+ggsave("orer_mnase_corr_plots.png", plot = o_mnase.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
+
+g_mnase <- plot_cor(tss.gr, signal1 = tss.gr$gd7_rep1signal, signal2 = tss.gr$gd7_rep2signal, name = "Gd7 MNase Replicate Correlation: rep 1 vs 2", colour = "#FCB13C")
+ggsave("gd7_mnase_corr_plots.pdf", plot = g_mnase, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+ggsave("gd7_mnase_corr_plots.png", plot = g_mnase, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+t_mnase <- plot_cor(tss.gr, signal1 = tss.gr$toll_rep1signal, signal2 = tss.gr$toll_rep2signal, name = "Toll10b MNase Replicate Correlation: rep 1 vs 2", colour = "#3535A8")
+ggsave("toll10b_mnase_corr_plots.pdf", plot = t_mnase, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+ggsave("toll10b_mnase_corr_plots.png", plot = t_mnase, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
+
+```
+
+# 5. Conclusions
+
+Here we can see that replicates for all data types correlate very nicely. 
+
+# Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

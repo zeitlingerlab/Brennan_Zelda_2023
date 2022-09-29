@@ -1,0 +1,457 @@
+---
+title: 'ZDTBCG motif summaries'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to show summaries for the motifs discovered by BPNet in the ZDTBCG model. We will plot motif logos (both CWMs and PWMs), average binding profiles, and motif counts contribution. We will also plot observed and predicted binding at enhancers. In total, this analysis covers most of Figure 1 (b-e).  
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/10_binding_motif_summaries_w_preds/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data
+
+```{r import}
+
+ZDTBCG.tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+ZDTBCG.color.vec<-c('#059AB1','#B90088','#5EB105','#500EB1','#B17A0E','#9E1C1F')
+names(ZDTBCG.color.vec)<-ZDTBCG.tasks
+
+#Count contribution filepaths
+
+ZDTBCG.contrib.counts.bws<-lapply(ZDTBCG.tasks, function(x){
+  paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/', 
+         x, '.contrib.counts.bw')
+})
+names(ZDTBCG.contrib.counts.bws)<-ZDTBCG.tasks
+
+# Actual ChIP-nexus filepaths
+
+ZDTBCG.actual.norm.bws<-lapply(ZDTBCG.tasks, function(x){
+  list(
+    pos = paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_', tolower(x),'_mbt_nexus_combined_normalized_positive.bw'),
+    neg = paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_', tolower(x),'_mbt_nexus_combined_normalized_negative.bw')
+  )
+})
+names(ZDTBCG.actual.norm.bws)<-ZDTBCG.tasks
+
+ZDTBCG.actual.bws<-lapply(ZDTBCG.tasks, function(x){
+  list(
+    pos = paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_', tolower(x),'_mbt_nexus_combined_positive.bw'),
+    neg = paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_', tolower(x),'_mbt_nexus_combined_negative.bw')
+  )
+})
+names(ZDTBCG.actual.bws)<-ZDTBCG.tasks
+
+# Predicted ChIP-nexus filepaths
+
+ZDTBCG.pred.bws<-lapply(ZDTBCG.tasks, function(x){
+  list(
+    pos = paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/', 
+                 x,'.preds.pos.bw'),
+    neg = paste0('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/', 
+                 x,'.preds.neg.bw')
+  )
+})
+names(ZDTBCG.pred.bws)<-ZDTBCG.tasks
+
+# Motifs
+
+motifs.gr<-readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>% 
+  GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F)
+
+```
+
+# 4. Extract information for metaplot
+
+## 4.1. Function for extraction
+
++ Inputs:
+  + motif_name: string naming motif to filter `motifs.gr` from
+  + motifs.gr: GRanges object with `motif_name` pattern as a `pattern_name` column
+  + motif_logo_h5_path: path to .h5 object that is compatible with code to extract logos at `/n/projects/mw2098/shared_code/bpnet/bpnet_extract_modisco_logos.py`
+  + footprint_window: window width to extract metapeaks around [default = 400]
++ Output: list of following elements:
+  + motif_name: motif
+  + motif_count: number of motifs mapped using CWM scanning
+  + actual_metapeaks.df: df of metapeak of averaged motifs
+  + contrib_averages.df: df of metapeak of averaged contribution across motifs
+  + ppm.mat: motif PPM
+  + cwm.mat: motif CWM
+
+```{r}
+extract_metaplot_information<-function(motif_name, motifs.gr, motif_logo_h5_path, footprint_window = 400, threads = 6){
+  library(rhdf5)
+  
+  motif.gr<-motifs.gr %>% plyranges::filter(pattern_name==motif_name)
+  
+  #Extract average task contribution
+  contrib_averages.df<-lapply(ZDTBCG.contrib.counts.bws, function(x){
+    regionMeans(regions = motif.gr, cvg = x) %>% mean(., na.rm = T)
+  }) %>% as.data.frame() %>% data.table() %>% 
+    melt.data.table(variable.name = 'task_name', value.name = 'contrib') %>% 
+    dplyr::mutate(motif = motif_name)
+  
+  #Extract average task counts
+  actual_metapeaks.df<-mclapply(names(ZDTBCG.actual.norm.bws), function(x){
+    mp.df<-exo_metapeak(gr = motif.gr %>% resize(1, "center"), sample = ZDTBCG.actual.norm.bws[[x]], 
+                        upstream = floor(footprint_window/2), downstream = ceiling(footprint_window/2)) %>%
+      dplyr::mutate(task_name = x)
+  }, mc.cores = threads) %>% rbindlist() %>% dplyr::mutate(motif = motif_name)
+  
+  #Extract PPMs and CWMs
+  testit::assert('This motif set has varying pattern identifiers.', (motif.gr$pattern %>% unique %>% length)==1)
+  testit::assert('This motif set has varying modisco tasks.', (motif.gr$modisco_task %>% unique %>% length)==1)
+
+  ppm.mat<-rhdf5::h5read(motif_logo_h5_path, paste0('/', motif.gr$pattern[1], '/PPM/trimmed'))
+  cwm.mat<-rhdf5::h5read(motif_logo_h5_path, paste0('/', motif.gr$pattern[1], '/CWM/trimmed/', motif.gr$modisco_task[1]))
+
+  return(list(motif_name = motif_name, motif_count = length(motif.gr),
+              contrib_averages.df = contrib_averages.df, 
+              actual_metapeaks.df = actual_metapeaks.df, 
+              ppm.mat = ppm.mat, cwm.mat = cwm.mat))
+  
+}
+```
+
+## 4.2. Extract information from relevant .bw files and .h5 files.
+
+```{r}
+metaplot.list<-lapply(motifs.gr$pattern_name %>% unique, function(x){
+  message(x)
+  motif.gr<-motifs.gr %>% plyranges::filter(pattern_name==x)
+  info.list<-extract_metaplot_information(motif_name = x, motifs.gr = motifs.gr, 
+                                          motif_logo_h5_path = paste0(modisco_dir, motif.gr$modisco_task[1], '_counts/modisco_logos.h5'), 
+                                          footprint_window = 500)
+
+})
+names(metaplot.list)<-motifs.gr$pattern_name %>% unique
+
+```
+
+# 5. Plot motif summaries 
+
+Here, in order to properly categorize the PWMs in terms of entropy, we will extract count frequency information directly.
+
+```{r}
+seq.list<-lapply(names(metaplot.list), function(x){ 
+  motif.gr<-motifs.gr %>% plyranges::filter(pattern_name==x)
+  seqlet.gr<-rtracklayer::import(paste0(modisco_dir, '/', motif.gr$modisco_task[1], '_counts/seqlets/', motif.gr$pattern[1], '.bed.gz'))
+  seqlet.seq<-getSeq(BSgenome.Dmelanogaster.UCSC.dm6, seqlet.gr, as.character = T)
+})
+names(seq.list)<-names(metaplot.list)
+
+#Collect other information
+cwm.list<-lapply(metaplot.list, function(x) {
+  mat<-x$cwm.mat
+  rownames(mat)<-c('A','C','G','T')
+  return(mat)
+})
+
+metapeaks.df<-lapply(metaplot.list, function(x) x$actual_metapeaks.df) %>% rbindlist
+contribs.df<-lapply(metaplot.list, function(x) x$contrib_averages.df) %>% rbindlist
+labels.df<-lapply(metaplot.list, function(x) data.frame(motif_name = x$motif_name, motif_count = x$motif_count)) %>% rbindlist
+```
+
+# 5.1. Plot metaplot
+
+```{r, fig.height = 8, fig.width = 30}
+motif_order<-c('Zld','GAF', 'Bcd','Cad','Dl','Twi')
+tf_order<-c('Zld', 'GAF', 'Bcd','Cad', 'Dl','Twi')
+
+labels.df$motif_name<-factor(labels.df$motif_name, levels = motif_order)
+label.plot<-ggplot(labels.df)+
+  geom_text(aes(x= .5, y = .5, label = paste0(motif_name, '\n(', motif_count, ')')))+
+  facet_grid(motif_name~.)+
+  ggtitle('Motif name')+
+  theme_classic()+theme(axis.line = element_blank(), axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank(), 
+                        strip.background = element_blank(), strip.text = element_blank())
+
+seq.list<-lapply(motif_order, function(x) seq.list[[x]])
+pwm.plot<-ggplot() + geom_logo(seq.list) + 
+  facet_grid(seq_group~., scales = 'fixed') +
+  theme_classic()+
+  ggtitle('PWM')+
+  theme(axis.line = element_blank(), axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank(), 
+        strip.background = element_blank(), strip.text = element_blank())
+
+cwm.list<-lapply(motif_order, function(x) cwm.list[[x]])
+cwm.plot<-ggplot() + geom_logo(cwm.list, method='custom', seq_type='dna') +
+  facet_grid(seq_group~., scales = 'free_y')+
+  theme_classic()+
+  ggtitle('CWM')+
+  theme(axis.line.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.title = element_blank(), 
+        strip.background = element_blank(), strip.text = element_blank())
+
+metapeaks.df$task_name<-factor(metapeaks.df$task_name, levels = tf_order)
+metapeaks.df$motif<-factor(metapeaks.df$motif, levels = motif_order)
+mp.plot<-ggplot(metapeaks.df, aes(x = tss_distance, y = reads, color = task_name, alpha = strand))+
+  geom_line(aes(group=strand))+
+  scale_color_manual(values = ZDTBCG.color.vec[tf_order], name = 'task')+
+  scale_alpha_manual(values = c(.7, 1))+
+  scale_x_continuous(name = 'Distance from motif center (bp)', breaks = seq(-500, 500, 250))+
+  scale_y_continuous(name = 'Actual ChIP-nexus RPM')+
+  facet_grid(motif ~ task_name, scales = 'free_y')+
+  ggtitle('Actual ChIP-nexus metapeaks (RPM)')+
+  theme_classic()+
+  theme(legend.position = 'none', strip.background = element_blank())
+
+contribs.df$task_name<-factor(contribs.df$task_name, levels = tf_order)
+contribs.df$motif<-factor(contribs.df$motif, levels = rev(motif_order))
+contrib.plot<-ggplot(contribs.df, aes(x = task_name, y = motif, fill = log2((contrib+1))))+       # note added a log2 + 1 here so that it is on the same scale as the ATAC contrib
+  geom_tile()+
+  scale_fill_gradient(low = 'white', high = '#1c5b78', name = 'Log2(Average\ncounts contrib + 1)')+
+  scale_x_discrete(name = 'TF')+
+  scale_y_discrete(name = 'Motif')+
+  ggtitle('DeepLIFT counts contribution')+
+  theme_classic()+
+  theme()
+
+g<-label.plot + pwm.plot + cwm.plot + mp.plot + contrib.plot + patchwork::plot_layout(nrow = 1, widths = c(.1, .4, .4, 1.2, .4))
+ggsave('figures/10_binding_motif_summaries_w_preds/curated_motif_metaplot.png', g, height = 8, width = 30)
+ggsave('figures/10_binding_motif_summaries_w_preds/curated_motif_metaplot.pdf', g, height = 8, width = 30)
+
+```
+
+# 6. Plot observed and predicted TF binding at enhancers of interest
+
+## 6.1. Import enhancers of interest and process motifs from above
+
+```{r enhancers}
+
+enhancers.gr <- rtracklayer::import("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/enhancers/enhancers_for_models.bed")
+
+motifs.gr <- motifs.gr %>%
+  plyranges::mutate(motif = pattern_name,
+                    name = pattern_name) %>%
+  GenomicRanges::sort(ignore.strand = T)
+
+```
+
+## 6.2. Import observed and predicted coverage
+
+Note that we have enhancer-specific BPNet predictions to compensate for any stitching issues that may occur across enhancers. 
+
+```{r}
+
+bw.list <- list(Zld_o_pos = ZDTBCG.actual.bws$Zld$pos,
+                Zld_o_neg = ZDTBCG.actual.bws$Zld$neg,
+                Zld_pr_pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Zld.preds.pos.bw',
+                Zld_pr_neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Zld.preds.neg.bw',
+                Dl_o_pos = ZDTBCG.actual.bws$Dl$pos,
+                Dl_o_neg = ZDTBCG.actual.bws$Dl$neg,
+                Dl_pr_pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Dl.preds.pos.bw',
+                Dl_pr_neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Dl.preds.neg.bw',
+                Twi_o_pos = ZDTBCG.actual.bws$Twi$pos,
+                Twi_o_neg = ZDTBCG.actual.bws$Twi$neg,
+                Twi_pr_pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Twi.preds.pos.bw',
+                Twi_pr_neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Twi.preds.neg.bw',
+                Bcd_o_pos = ZDTBCG.actual.bws$Bcd$pos,
+                Bcd_o_neg = ZDTBCG.actual.bws$Bcd$neg,
+                Bcd_pr_pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Bcd.preds.pos.bw',
+                Bcd_pr_neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Bcd.preds.neg.bw',
+                Cad_o_pos = ZDTBCG.actual.bws$Cad$pos,
+                Cad_o_neg = ZDTBCG.actual.bws$Cad$neg,
+                Cad_pr_pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Cad.preds.pos.bw',
+                Cad_pr_neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.Cad.preds.neg.bw',
+                GAF_o_pos = ZDTBCG.actual.bws$GAF$pos,
+                GAF_o_neg = ZDTBCG.actual.bws$GAF$neg,
+                GAF_pr_pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.GAF.preds.pos.bw',
+                GAF_pr_neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/enhancers_only/enhancer_preds_.GAF.preds.neg.bw')
+
+
+```
+
+## 6.3. Define variables and function
+
+```{r}
+
+#Specific variables
+
+library(RColorBrewer)
+n_motifs<-motifs.gr$name %>% unique %>% length
+colors <- colorRampPalette(brewer.pal(n_motifs, "Accent"))(n_motifs)
+names(colors)<-motifs.gr$name %>% unique
+motif.colors.list<-as.list(colors)
+
+
+# Define function
+
+plot_coverage_and_enhancer<-function(enhancer.gr, motifs.gr, bw.list, motif.colors.list, title, region_width = 1000, 
+                                     cores = 6, scales = 'fixed', rounding_margin = 50, label_margin = 200){
+  
+  #Assertion requirements to make the function run correctly.
+  testit::assert("Input enhancer GRanges needs to contain only 1 region.", length(enhancer.gr)==1)
+  testit::assert("Motifs need to be a GRanges object", is(motifs.gr, "GRanges"))
+  testit::assert("Enhancers need to be a GRanges object", is(enhancer.gr, "GRanges"))
+  testit::assert("Region width should be larger than enhancer width.", width(enhancer.gr)<=region_width)
+  testit::assert("Bigwig object needs to be a list of samples. If samples are ChIP-nexus/double-stranded samples, they need to be in a nested list.", 
+                 is(bw.list, "list") & all(!(names(bw.list) %in% c("pos", "neg"))))
+  testit::assert("Motif object needs a column titled pattern_name, motif_name, or name to distinguish motifs apart.", 
+                 any(grepl("pattern_name|name|motif_name", colnames(motifs.gr@elementMetadata))))
+  
+  #Find overlaps between motif set and enhancer
+  motifs_in_enhancer.gr<-subsetByOverlaps(motifs.gr, resize(enhancer.gr, region_width, "center"), ignore.strand = T)
+  if("pattern_name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$pattern_name
+  }
+  if("name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$name
+  }
+  
+  #Extract colors for enhancer
+  fills_in_order<-lapply(motifs_in_enhancer.gr$motif_name, function(x) motif.colors.list[[x]]) %>% unlist %>% unique %>% as.character
+  motifs_in_order<-motifs_in_enhancer.gr$motif_name %>% unique %>% as.character
+  motifs_in_enhancer.df<-motifs_in_enhancer.gr %>% as.data.frame
+  motifs_in_enhancer.df$motif_name<-factor(motifs_in_enhancer.df$motif_name, levels = motifs_in_order)
+  
+  #Convert enhancer coordinates to df
+  enhancer.df<-enhancer.gr %>% as.data.frame
+  
+  #Get half of the enhancer
+  enh_half<-floor(width(enhancer.gr)/2)
+  lower_bounds<-plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor)
+  upper_bounds<-plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling)
+  
+  enhancer.plot<-ggplot()+
+    geom_hline(yintercept = .5, color = "gray 85")+
+    geom_rect(data = enhancer.df, aes(xmin = start, xmax = end, ymin = 0, ymax = 1), fill = "gray 85")+
+    geom_text(data = enhancer.df, aes(x = ((start - end)/2 + start), y = .5, label = paste0(seqnames, ":", start, "-", end)), 
+              color = "black")
+  if(nrow(motifs_in_enhancer.df)>0){
+    enhancer.plot<-enhancer.plot + geom_rect(data = motifs_in_enhancer.df, 
+                                             aes(xmin = start, xmax = end, ymin = 1.1, ymax = 2, fill = motif_name), color = 'black', size = .1)
+  }
+  enhancer.plot<-enhancer.plot+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    scale_y_continuous(breaks = c(.5, 1.75), labels = c("Enhancer", "Motif(s)"), position = "right")+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line = element_blank(), axis.ticks.y = element_blank(),
+          legend.position = "none")
+  
+  # Get coverage across bigwig list
+  coverage.df<-mclapply(names(bw.list), function(x){
+    if(length(bw.list[[x]])==1){
+      df<-standard_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = floor(region_width/2) + rounding_margin, downstream = floor(region_width/2)+300) %>% 
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(resize(enhancer.gr, 1, "center")), sample_name = x)
+    }
+    if(length(bw.list[[x]])==2){
+      df<-exo_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = region_width/2 + rounding_margin, downstream = region_width/2+rounding_margin) %>%
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(enhancer.gr), sample_name = x)
+    }
+    return(df)
+  }, mc.cores = cores) %>% rbindlist() %>%
+    dplyr::filter(position >= lower_bounds, position <= upper_bounds) %>%
+    dplyr::mutate(sample_name = factor(sample_name, levels = names(bw.list)))
+  
+  #Check for strand if there are no 2-channeled samples.
+  if(!("strand" %in% colnames(coverage.df))){
+    coverage.df$strand<-NA
+  }
+  
+  #Plot the enhancer coverage.
+  coverage.plot<-ggplot(coverage.df)
+  if(nrow(motifs_in_enhancer.df)>0){
+    coverage.plot<-coverage.plot + geom_rect(data = motifs_in_enhancer.df, aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = motif_name), alpha = .2)
+  }
+  coverage.plot<-coverage.plot +
+    geom_line(aes(x = position, y = reads, group = strand), fill = "black")+
+    geom_text(aes(x = Inf, y = Inf, label = sample_name), hjust = -.01)+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    facet_grid(sample_name ~ ., scales = scales)+
+    ggtitle(title)+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line.x = element_blank(), strip.background = element_blank())  
+  
+  g<-coverage.plot + enhancer.plot + plot_layout(ncol = 1, heights = c(5, 1))
+  return(g)
+}
+```
+
+## 6.4. Plot
+
+```{r, eval=FALSE}
+
+filler <- mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'free_y')
+  ggsave(paste0("figures/10_binding_motif_summaries_w_preds/obs_v_pred/", enhancer.gr$name,"_single_example_nexus.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/10_binding_motif_summaries_w_preds/obs_v_pred/", enhancer.gr$name,"_single_example_nexus.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+```
+
+# 7. Conclusions
+
+Here, we have generated summaries for the motifs discoered by BPNet. We plot their contribution and frequency-based logos, their observed binding by TFs, and compare BPNet predictions to observed experimental data at enhancers of interest. The figures encompasses most of Figure 1 in the Zelda manuscript. 
+
+# 8. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```
+

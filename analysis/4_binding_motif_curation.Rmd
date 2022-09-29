@@ -1,0 +1,334 @@
+---
+title: 'Curation of ZDTBCG motifs'
+author: "Melanie (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+The goal of this analysis is to curate motifs found by the `ZDTBCG` TF-MoDISco run such that there are no redundancies due palindromes, sequence similarity, overlapping peak regions etc. 
+
+Here, we will use the `fold1` optimized model trained to map the TF-MoDISco logos of each motif that is relevant to the TFs trained on the model.
+
+# Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/4_binding_motif_curation", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+modisco_tasks<-paste0(tasks, '_counts')
+threads <- 5
+dir.create('bed/mapped_motifs', recursive = T, showWarnings = F)
+dir.create('tsv/mapped_motifs', recursive = T, showWarnings = F)
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+atac_peaks<-'../data/narrowpeak/atac_orer_all_peaks_no_promoters.narrowpeak'
+```
+
+# Summary of motifs of interest
+
+Based on the TF-MoDISco model computed above, the following motifs are of interest to us:
+
++ Zld
+    + pattern 0: canonical CAGGTAG (Zld)
++ Dl
+    + pattern 0: canonical Dorsal motif (Dl)
++ Twi
+    + pattern 0: canonical Twist motif (Twi)
++ Bcd
+    + pattern 0: canonical Bicoid motif (Bcd)
++ Cad
+    + pattern 0: canonical Caudal motif (Cad)
++ Gaf
+    + pattern 2: canonical GAGA motif (Gaf)
+    + we selected the longer motif due to knowing that there are many GAGA sites that are longer than pattern0, therefore redundant mapping would be far higher.
+
+Additionally, there were recurring occurrences of the STAT at promoters, DRE promoter element, the Ohler1 promoter element, and many lower-affinity sequences reminiscent of promoters. There were also repetitive elements such as LTRs. We chose to leave these out of the current analysis as there is no evidence to suggest that Zelda directly binds or interacts with these promoter elements in the context of ENHANCER accessibility cooperativity dynamics.
+
+```{r}
+#Fold1 patterns
+motifs_of_interest.df <- data.frame(
+  name = c('Zld','Dl','Twi','Bcd','Cad','GAF'),
+  task = c('Zld','Dl','Twi','Bcd','Cad','GAF'),
+  pattern = c(0,0,0,0,0,2)
+) %>%
+  dplyr::mutate(modisco_task = paste0(task, '_counts'))
+
+motifs_of_interest.df
+```
+
+# Collect motif instances
+
+First, extract each mapped set of instances from each pattern to allocate the non-curated set of motifs of interest. We will run the motif scanning on both default and lowered thresholds. 
+
+```{r, eval = F}
+cmds.vec<-lapply(1:nrow(motifs_of_interest.df), function(x){
+  info.df<-motifs_of_interest.df[x,]
+  cmd<-paste0('bpnet cwm-scan --patterns metacluster_0/pattern_', info.df$pattern, ' ', 
+         modisco_dir, '/', info.df$modisco_task, ' tsv/mapped_motifs/', 
+         info.df$name, '_instances_noncurated_0based.tsv.gz')
+  return(cmd)
+}) %>% unlist
+cmds.vec<-c('#!bin/bash', cmds.vec, '')
+
+readr::write_lines(cmds.vec, file = 'tmp/ZDTBCG_cwm_scan_indiv_instances.sh', sep = '\n')
+
+
+cmds.vec<-lapply(1:nrow(motifs_of_interest.df), function(x){
+  info.df<-motifs_of_interest.df[x,]
+  cmd<-paste0('bpnet cwm-scan --filters="match_weighted_p>=.1,contrib_weighted_p>=.005" --patterns metacluster_0/pattern_', info.df$pattern, ' ', 
+         modisco_dir, '/', info.df$modisco_task, ' tsv/mapped_motifs/', 
+         info.df$name, '_instances_noncurated_0based_match.1_contrib.005.tsv.gz')
+  return(cmd)
+}) %>% unlist
+cmds.vec<-c('#!bin/bash', cmds.vec, '')
+
+readr::write_lines(cmds.vec, file = 'tmp/ZDTBCG_cwm_scan_indiv_instances_match.1_contrib.005.sh', sep = '\n')
+```
+
+Run CWM-scanning to allocate.
+
+```{bash, eval = F}
+bash tmp/ZDTBCG_cwm_scan_indiv_instances.sh
+bash tmp/ZDTBCG_cwm_scan_indiv_instances_match.1_contrib.005.sh
+```
+
+Next import motifs. We will use the motif set that contains lowered thresholds as later in the manuscript we investigate the role of lower affinity motifs in the context of binding and accessibility. 
+
+```{r}
+motifs.df<-lapply(1:nrow(motifs_of_interest.df), function(x){
+  info.df<-motifs_of_interest.df[x,]
+  df<-readr::read_tsv(paste0('tsv/mapped_motifs/', info.df$name, '_instances_noncurated_0based_match.1_contrib.005.tsv.gz')) %>%
+    dplyr::mutate(pattern_name = info.df$name,
+                  modisco_task = info.df$task) 
+}) %>% rbindlist(fill = TRUE)
+
+# motifs.gr<-lapply(1:2, function(x){
+#   info.df<-motifs_of_interest.df[x,]
+#   gr<-readr::read_tsv(paste0('tsv/mapped_motifs/', info.df$name, '_instances_noncurated_0based_match.1_contrib.005.tsv.gz')) %>%
+#     dplyr::mutate(pattern_name = info.df$name,
+#                   modisco_task = info.df$task,
+#                   name = pattern_name) %>%
+#     makeGRangesFromDataFrame(df = ., seqnames.field = 'example_chrom', start.field = 'pattern_start_abs',
+#                              end.field = 'pattern_end_abs', keep.extra.columns = T, starts.in.df.are.0based = T)
+# }) %>% as('GRangesList') %>% unlist(.)
+# rtracklayer::export(motifs.gr, 'test_regions_fold1.bed')
+```
+
+Report number of motifs
+
+```{r}
+motifs.df$pattern_name %>% table
+```
+
+# Remove redundant palindromic mappings
+
+Motifs that are palindromic will be mapped on the positive and negative strand with almost identical ranges. Here, we will remove redundantly mapped motifs and select the unique motif maps that have the highest importance score.
+
+```{r}
+#Remove palindromic motifs for each pattern.
+motifs.gr<-lapply(motifs.df$pattern_name %>% unique, function(x){
+  message(x)
+  gr<-remove_palindromic_motifs_from_bpnet_instances(dfi = motifs.df, pattern_to_filter = x, starts.in.df.are.0based = T)
+}) %>% GRangesList %>% unlist
+```
+
+# Remove redundantly mapped motifs due to overlapping peaks
+
+When training with BPNet, peaks are found for each TF. If a genomic region has more than one peak, that region sequence is trained/mapped twice. This results in overreporting of motifs and redundancies in motif mapping. To filter these, we will resolve motifs by coordinate, strand, name, and select the motif that has the highest `contrib_weighted` score.
+
+```{r}
+motifs_unique.gr <- motifs.gr %>% 
+  as.data.frame %>%
+  #creating a proxy group_by due to bugs with dplyr's grouping at high values.
+  dplyr::mutate(coord_id = paste(seqnames, start, end, strand, pattern_name, sep = '-')) %>% 
+  dplyr::group_by(coord_id) %>%
+  dplyr::slice_max(order_by = contrib_weighted, n = 1) %>%
+  dplyr::ungroup() %>% 
+  dplyr::mutate(example_idx_deprecated = example_idx,
+                motif_unique_id = 1:nrow(.)) %>% #Mark an temporary identifier for subsequent filtering
+  dplyr::select(-example_idx, -coord_id) %>% #Remove because it cannot be grouped by example_idx 
+  GenomicRanges::makeGRangesFromDataFrame(df = ., keep.extra.columns = T, starts.in.df.are.0based = F)
+  
+assert("Filtering by peak redundancy did not work.", ((motifs_unique.gr %>% granges %>% unique %>% length) == (motifs_unique.gr  %>% length)))
+```
+
+# Measure %age of motifs across enhancer edges
+
+This is useful to know based on our understanding of where motifs are located as well as genomic perturbations/island analysis in the future.
+
+```{r}
+edge_motifs.vec<-motifs_unique.gr %>% plyranges::filter(pattern_center <=100 | pattern_center>=900) %>% .$pattern_name %>% table
+total_motifs.vec<-motifs_unique.gr$pattern_name %>% table
+round(edge_motifs.vec/total_motifs.vec, 2)
+```
+
+Less than 5% of all motifs are on mapped BPNet window edges.
+
+## Consolidate motifs.
+
+```{r}
+motifs_curated.gr<-motifs_unique.gr %>% plyranges::arrange(pattern_name)
+motifs_curated.gr<-motifs_curated.gr %>%
+  plyranges::select(-motif_unique_id) %>%
+  plyranges::mutate(motif_id = 0:(length(.)-1))
+```
+
+Plot a general summary of the motifs.
+
+```{r ZDTBCG_curated_motif_freq, fig.height = 3, fig.width=10}
+ggplot(motifs_curated.gr %>% as.data.frame, aes(x = pattern_name))+
+  geom_bar(aes(fill = factor(contrib_weighted_cat, levels = c('high','medium','low'))), color = 'black')+
+  scale_fill_manual(values = rev(c('#83adb5', '#c7bbc9', '#5e3c58')), name = 'contrib')+
+  scale_x_discrete(name = 'motifs')+
+  ggtitle('ZDTBCG curated motif frequencies')+
+  theme_classic()
+```
+
+## Double check motif overlaps
+
+Ensure that there isn't an overrepresentation of unexpected overlapping motif pairs. We expect some overlaps, but checking to make sure that our curations are consistent. Here, we will filter out the longer motifs because we know that those overlaps will be highly represented.
+
+```{r}
+short_motifs.gr<-motifs_curated.gr
+overlapping_motifs.gr<- short_motifs.gr %>% 
+  GenomicRanges::reduce(ignore.strand = T) %>% 
+  plyranges::mutate(motif_island_id = 1:length(.))
+overlapping_motifs.ov<-findOverlaps(short_motifs.gr, overlapping_motifs.gr, ignore.strand = T)
+assert('IDs do not allow indexing shortcut.', 1:length(short_motifs.gr)==overlapping_motifs.ov@from)
+short_motifs.gr$motif_island_id<-overlapping_motifs.ov@to
+
+#Group motifs by their island ID and display frequency of motif contents
+grouped_motif_content.df<-short_motifs.gr %>% as.data.frame %>% 
+  dplyr::group_by(motif_island_id) %>% 
+  dplyr::summarize(motif_content = paste0(sort(pattern_name), collapse = '_'))
+
+grouped_motif_content.df$motif_content %>% table() %>% sort(decreasing = T) %>% .[1:30]
+```
+
+Here we can see that the most frequent motif overlaps occur at very low rates which will not throw off analysis.
+
+# Annotate motifs by their collected regional grouping
+
+Because we took motifs based on their relative contribution and not the featured `example_idx` column, we need a new grouping annotation to define the motifs when we are conducting perturbations and other grouping systems. We will call this index `region_id`.
+
+```{r}
+islands.gr<-resize(motifs_curated.gr, 200, 'center') %>% 
+  GenomicRanges::reduce(ignore.strand = T) %>% 
+  plyranges::mutate(region_id = 0:(length(.)-1)) #Make region_id 0-based in order to be compatible with BPNet indexing properties.
+ov<-findOverlaps(motifs_curated.gr, islands.gr, ignore.strand = T)
+testit::assert(ov@from %>% unique %>% length == ov@from %>% length)
+
+#Show hoy many motifs there are per window
+ov@to %>% table %>% table
+
+#Assign region_id to these motifs
+motifs_curated.gr$region_id<-islands.gr$region_id[ov@to]
+motifs_curated.gr$region_start_1based<-islands.gr[ov@to] %>% resize(., 1000, 'center') %>% start()
+motifs_curated.gr$region_end_1based<-islands.gr[ov@to] %>% resize(., 1000, 'center') %>% end()
+
+#Assert that all motifs are incorporated.
+testit::assert('All motifs have a correct region', all(overlapsAny(motifs_curated.gr, resize(islands.gr, 1000, 'center'))))
+
+#Export regions in 0-based coordinates
+islands.gr<-islands.gr %>% resize(., 1000, 'center') 
+rtracklayer::export(islands.gr %>% plyranges::mutate(name = region_id), 'bed/mapped_motifs/all_grouped_regions_0based.bed', format = 'BED')
+```
+
+# Export curated motifs
+
+In the subsequent .bed file it will be the `[task]_[motif_id]_[region_id]` naming convention.
+
+```{r}
+motifs_curated.df<-motifs_curated.gr %>% as.data.frame()
+readr::write_tsv(motifs_curated.df, 'tsv/mapped_motifs/all_instances_curated_1based.tsv.gz')
+rtracklayer::export(motifs_curated.gr %>% 
+                      plyranges::mutate(name = paste0(pattern_name, '_', motif_id, '_', region_id)) %>%
+                      GenomicRanges::sort(ignore.strand = T), 
+                    'bed/mapped_motifs/all_instances_curated_0based.bed', format = 'BED')
+```
+
+In conclusion, motifs were curated based on redundancies and saved to 1-based and 0-based coordinates. These will be the reference motifs that we base subsequent analysis on.
+
+# Export Zelda motif sequences
+
+In order to further investigate Zelda motif sequences, generate the underlying sequences across Zelda binding motifs mapped.
+
+```{r}
+zld_seqs.df<-motifs.gr %>% dplyr::filter(pattern_name == 'Zld') %>%
+  getSeq(bsgenome, ., as.character = TRUE) %>%
+  table(.) %>% 
+  sort(., decreasing = T) %>%
+  as.data.frame
+colnames(zld_seqs.df)<-c('seq', 'freq')
+readr::write_tsv(zld_seqs.df, 'tsv/binding_zld_seq_freqs.tsv')
+```
+
+# Export motifs that overlap with ATAC-seq regions
+
+In order to investigate the effects of motifs across accessible regions, export motifs that are overlapping with ATAC-seq peaks.
+
+```{r}
+motifs_curated.gr %>% 
+  .[overlapsAny(., rtracklayer::import(atac_peaks), type = 'within', ignore.strand = T)] %>%
+  as.data.frame(.) %>%
+  readr::write_tsv(., 'tsv/mapped_motifs/atac_overlapping_instances_curated_1based.tsv.gz')
+```
+
+# Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+

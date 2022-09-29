@@ -1,0 +1,247 @@
+---
+title: 'Plot BPNet model training metrics'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+Here we will plot some of the performance metrics from the ZDTBCG BPNet TF binding model. Note that these plots are included in supplemental figure 1.
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/2a_plot_performance/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data for this analysis
+
+```{r import}
+
+performance.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/optimization/bpnet_counts_across_model_folds.tsv.gz') %>% 
+  as.data.frame()
+
+```
+
+# 4. Plot counts correlations
+
+```{r plot}
+
+library(ggrastr)
+
+# Calculate pearson and spearman correlation
+
+corrs.df <- performance.df %>%
+  dplyr::group_by(fold, task) %>%
+  dplyr::summarize(p_corr = round(cor(obs, pred, method = 'pearson'), 2),
+                   s_corr = round(cor(obs, pred, method = 'spearman'), 2)) 
+
+# Plot
+
+tf.colors <- c("#500EB1", "#B17A0E", "#B90088", "#9E1C1F", "#5EB105", "#059AB1")
+
+corr.plot <- ggplot()+
+  geom_point_rast(data = performance.df, 
+                  aes(y = pred, x = obs, color = task),
+                  size = .2)+
+  geom_text(data = corrs.df, 
+            aes(x = Inf, y = Inf, 
+                label = paste0('p_corr: ', p_corr, '\n', 
+                               's_corr: ', s_corr)),
+            vjust = 1, hjust = 1)+
+  scale_y_continuous('log(pred_counts + 1)')+
+  scale_x_continuous('log(obs_counts + 1)')+
+  scale_color_manual(values = tf.colors) +
+  facet_grid(task~fold) +
+  theme_classic()
+
+ggsave("corr_test_regions.pdf", plot = corr.plot, path = "figures/2a_plot_performance", width = 9, height = 16)
+ggsave("corr_test_regions.png", plot = corr.plot, path = "figures/2a_plot_performance", width = 9, height = 16)
+
+```
+
+# 5. Plot BPNet-mapped motifs from all three fold validations
+
+## 5.1. Gather motif h5 files to collect motif logos
+
+```{r gather}
+
+# Fold 1
+
+bcd_f1 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Bcd_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+cad_f1 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Cad_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+dl_f1 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Dl_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+gaf_f1 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/GAF_counts/modisco_logos.h5', name = '/metacluster_0/pattern_2/CWM/trimmed')
+twi_f1 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Twi_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+zld_f1 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Zld_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+
+# Fold 2
+
+bcd_f2 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Bcd_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+cad_f2 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Cad_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+dl_f2 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Dl_counts/modisco_logos.h5', name = '/metacluster_0/pattern_1/CWM/trimmed')
+gaf_f2 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/GAF_counts/modisco_logos.h5', name = '/metacluster_0/pattern_1/CWM/trimmed')
+twi_f2 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Twi_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+zld_f2 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Zld_counts/modisco_logos.h5', name = '/metacluster_0/pattern_1/CWM/trimmed')
+
+# Fold 3
+
+bcd_f3 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold3/Bcd_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+cad_f3 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold3/Cad_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+dl_f3 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold3/Dl_counts/modisco_logos.h5', name = '/metacluster_0/pattern_3/CWM/trimmed')
+gaf_f3 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold3/GAF_counts/modisco_logos.h5', name = '/metacluster_0/pattern_2/CWM/trimmed')
+twi_f3 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold3/Twi_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+zld_f3 <- rhdf5::h5read('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold3/Zld_counts/modisco_logos.h5', name = '/metacluster_0/pattern_0/CWM/trimmed')
+  
+```
+
+## 5.2. Some motifs need to be reverse complemented 
+
+```{r reverse}
+
+# Provide rownames for plotting
+
+rownames(bcd_f1$Bcd) <- c('A','C','G','T')
+rownames(cad_f1$Cad) <- c('A','C','G','T')
+rownames(dl_f1$Dl) <- c('A','C','G','T')
+rownames(gaf_f1$GAF) <- c('A','C','G','T')
+rownames(twi_f1$Twi) <- c('A','C','G','T')
+rownames(zld_f1$Zld) <- c('A','C','G','T')
+rownames(dl_f2$Dl) <- c('A','C','G','T')
+rownames(gaf_f2$GAF) <- c('A','C','G','T')
+rownames(twi_f2$Twi) <- c('A','C','G','T')
+rownames(bcd_f3$Bcd) <- c('A','C','G','T')
+rownames(cad_f3$Cad) <- c('A','C','G','T')
+rownames(gaf_f3$GAF) <- c('A','C','G','T')
+rownames(twi_f3$Twi) <- c('A','C','G','T')
+
+# Some motifs need to be reverse complemented for providing rownames
+
+bcd_f2_rev <- bcd_f2$Bcd[,ncol(bcd_f2$Bcd):1]
+rownames(bcd_f2_rev) <- c('T','G','C','A')
+
+cad_f2_rev <- cad_f2$Cad[,ncol(cad_f2$Cad):1]
+rownames(cad_f2_rev) <- c('T','G','C','A')
+
+zld_f2_rev <- zld_f2$Zld[,ncol(zld_f2$Zld):1]
+rownames(zld_f2_rev) <- c('T','G','C','A')
+
+dl_f3_rev <- dl_f3$Dl[,ncol(dl_f3$Dl):1]
+rownames(dl_f3_rev) <- c('T','G','C','A')
+
+zld_f3_rev <- zld_f3$Zld[,ncol(zld_f3$Zld):1]
+rownames(zld_f3_rev) <- c('T','G','C','A')
+
+```
+
+## 5.3. Plot
+
+```{r logos}
+
+library(ggseqlogo)
+
+bcd_f1.plot <- ggplot() + geom_logo(bcd_f1$Bcd, method='custom', seq_type='dna') + ggtitle("Bcd: fold 1") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+cad_f1.plot <- ggplot() + geom_logo(cad_f1$Cad, method='custom', seq_type='dna') + ggtitle("Cad: fold 1") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+dl_f1.plot <- ggplot() + geom_logo(dl_f1$Dl, method='custom', seq_type='dna') + ggtitle("Dl: fold 1") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+gaf_f1.plot <- ggplot() + geom_logo(gaf_f1$GAF, method='custom', seq_type='dna') + ggtitle("GAF: fold 1") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+twi_f1.plot <- ggplot() + geom_logo(twi_f1$Twi, method='custom', seq_type='dna') + ggtitle("Twi: fold 1") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+zld_f1.plot  <- ggplot() + geom_logo(zld_f1$Zld, method='custom', seq_type='dna') + ggtitle("Zld: fold 1") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+bcd_f2.plot <- ggplot() + geom_logo(bcd_f2_rev, method='custom', seq_type='dna') + ggtitle("Bcd: fold 2") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+cad_f2.plot <- ggplot() + geom_logo(cad_f2_rev, method='custom', seq_type='dna') + ggtitle("Cad: fold 2") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+dl_f2.plot <- ggplot() + geom_logo(dl_f2$Dl, method='custom', seq_type='dna') + ggtitle("Dl: fold 2") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+gaf_f2.plot <- ggplot() + geom_logo(gaf_f2$GAF, method='custom', seq_type='dna') + ggtitle("GAF: fold 2") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+twi_f2.plot <- ggplot() + geom_logo(twi_f2$Twi, method='custom', seq_type='dna') + ggtitle("Twi: fold 2") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+zld_f2.plot  <- ggplot() + geom_logo(zld_f2_rev, method='custom', seq_type='dna') + ggtitle("Zld: fold 2") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+bcd_f3.plot <- ggplot() + geom_logo(bcd_f3$Bcd, method='custom', seq_type='dna') + ggtitle("Bcd: fold 3") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+cad_f3.plot <- ggplot() + geom_logo(cad_f3$Cad, method='custom', seq_type='dna') + ggtitle("Cad: fold 3") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+dl_f3.plot <- ggplot() + geom_logo(dl_f3_rev, method='custom', seq_type='dna') + ggtitle("Dl: fold 3") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+gaf_f3.plot <- ggplot() + geom_logo(gaf_f3$GAF, method='custom', seq_type='dna') + ggtitle("GAF: fold 3") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+twi_f3.plot <- ggplot() + geom_logo(twi_f3$Twi, method='custom', seq_type='dna') + ggtitle("Twi: fold 3") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+zld_f3.plot  <- ggplot() + geom_logo(zld_f3_rev, method='custom', seq_type='dna') + ggtitle("Zld: fold 3") + theme_logo() +
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank())
+
+fold_validation.logos <- bcd_f1.plot + bcd_f2.plot + bcd_f3.plot + cad_f1.plot + cad_f2.plot + cad_f3.plot +
+  dl_f1.plot + dl_f2.plot + dl_f3.plot + gaf_f1.plot + gaf_f2.plot + gaf_f3.plot +
+  twi_f1.plot + twi_f2.plot + twi_f3.plot + zld_f1.plot + zld_f2.plot + zld_f3.plot + 
+  plot_layout(ncol = 3)
+
+ggsave("fold_validation.logos.pdf", plot = fold_validation.logos, path = "figures/2a_plot_performance", width = 12, height = 20)
+ggsave("fold_validation.logos.png", plot = fold_validation.logos, path = "figures/2a_plot_performance", width = 12, height = 20)
+
+
+```
+
+# 6. Conclusions
+
+We can see that the three folds agree very nicely and that the correlation values are high for all factors. We can also see that irrespective of fold, BPNet identifies the same motifs, which are the known motifs for all TFs. 
+
+# 7. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

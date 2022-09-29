@@ -1,0 +1,650 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 6
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	24	combined_bam_to_combined_bw
+	66	fastq_to_processed_bam
+	23	individual_bam_to_combined_bam
+	68	individual_bam_to_individual_bw
+	182
+
+[Wed Jun 29 14:14:07 2022]
+Job 104: Aligning FASTQ to BAM
+
+[Wed Jun 29 14:14:07 2022]
+Job 107: Aligning FASTQ to BAM
+
+[Wed Jun 29 14:14:07 2022]
+Job 111: Aligning FASTQ to BAM
+
+[Wed Jun 29 14:14:07 2022]
+Job 120: Aligning FASTQ to BAM
+
+[Wed Jun 29 14:14:07 2022]
+Job 141: Aligning FASTQ to BAM
+
+[Wed Jun 29 14:14:07 2022]
+Job 112: Aligning FASTQ to BAM
+
+[Wed Jun 29 14:56:20 2022]
+Finished job 141.
+1 of 182 steps (0.55%) done
+
+[Wed Jun 29 14:56:20 2022]
+Job 153: Aligning FASTQ to BAM
+
+[Wed Jun 29 15:36:12 2022]
+Finished job 153.
+2 of 182 steps (1%) done
+
+[Wed Jun 29 15:36:12 2022]
+Job 117: Aligning FASTQ to BAM
+
+[Wed Jun 29 15:38:28 2022]
+Finished job 107.
+3 of 182 steps (2%) done
+
+[Wed Jun 29 15:38:28 2022]
+Job 127: Aligning FASTQ to BAM
+
+[Wed Jun 29 16:16:15 2022]
+Finished job 111.
+4 of 182 steps (2%) done
+
+[Wed Jun 29 16:16:15 2022]
+Job 151: Aligning FASTQ to BAM
+
+[Wed Jun 29 16:25:47 2022]
+Finished job 112.
+5 of 182 steps (3%) done
+
+[Wed Jun 29 16:25:47 2022]
+Job 131: Aligning FASTQ to BAM
+
+[Wed Jun 29 16:27:17 2022]
+Finished job 117.
+6 of 182 steps (3%) done
+
+[Wed Jun 29 16:27:17 2022]
+Job 147: Aligning FASTQ to BAM
+
+[Wed Jun 29 16:41:23 2022]
+Finished job 151.
+7 of 182 steps (4%) done
+
+[Wed Jun 29 16:41:23 2022]
+Job 99: Aligning FASTQ to BAM
+
+[Wed Jun 29 16:45:49 2022]
+Finished job 104.
+8 of 182 steps (4%) done
+
+[Wed Jun 29 16:45:49 2022]
+Job 108: Aligning FASTQ to BAM
+
+[Wed Jun 29 17:00:20 2022]
+Finished job 147.
+9 of 182 steps (5%) done
+
+[Wed Jun 29 17:00:20 2022]
+Job 96: Aligning FASTQ to BAM
+
+[Wed Jun 29 17:08:52 2022]
+Finished job 120.
+10 of 182 steps (5%) done
+
+[Wed Jun 29 17:08:52 2022]
+Job 148: Aligning FASTQ to BAM
+
+[Wed Jun 29 17:33:10 2022]
+Finished job 148.
+11 of 182 steps (6%) done
+
+[Wed Jun 29 17:33:10 2022]
+Job 126: Aligning FASTQ to BAM
+
+[Wed Jun 29 17:44:49 2022]
+Finished job 127.
+12 of 182 steps (7%) done
+
+[Wed Jun 29 17:44:49 2022]
+Job 159: Aligning FASTQ to BAM
+
+[Wed Jun 29 17:55:19 2022]
+Finished job 159.
+13 of 182 steps (7%) done
+
+[Wed Jun 29 17:55:19 2022]
+Job 133: Aligning FASTQ to BAM
+
+[Wed Jun 29 18:24:36 2022]
+Finished job 131.
+14 of 182 steps (8%) done
+
+[Wed Jun 29 18:24:36 2022]
+Job 135: Aligning FASTQ to BAM
+
+[Wed Jun 29 19:05:01 2022]
+Finished job 99.
+15 of 182 steps (8%) done
+
+[Wed Jun 29 19:05:01 2022]
+Job 114: Aligning FASTQ to BAM
+
+[Wed Jun 29 19:27:25 2022]
+Finished job 108.
+16 of 182 steps (9%) done
+
+[Wed Jun 29 19:27:25 2022]
+Job 154: Aligning FASTQ to BAM
+
+[Wed Jun 29 19:35:16 2022]
+Finished job 126.
+17 of 182 steps (9%) done
+
+[Wed Jun 29 19:35:16 2022]
+Job 143: Aligning FASTQ to BAM
+
+[Wed Jun 29 20:00:51 2022]
+Finished job 133.
+18 of 182 steps (10%) done
+
+[Wed Jun 29 20:00:51 2022]
+Job 140: Aligning FASTQ to BAM
+
+[Wed Jun 29 20:07:22 2022]
+Finished job 154.
+19 of 182 steps (10%) done
+
+[Wed Jun 29 20:07:22 2022]
+Job 93: Aligning FASTQ to BAM
+
+[Wed Jun 29 20:12:24 2022]
+Finished job 143.
+20 of 182 steps (11%) done
+
+[Wed Jun 29 20:12:24 2022]
+Job 129: Aligning FASTQ to BAM
+
+[Wed Jun 29 20:30:17 2022]
+Finished job 96.
+21 of 182 steps (12%) done
+
+[Wed Jun 29 20:30:17 2022]
+Job 150: Aligning FASTQ to BAM
+
+[Wed Jun 29 20:47:47 2022]
+Finished job 140.
+22 of 182 steps (12%) done
+
+[Wed Jun 29 20:47:48 2022]
+Job 100: Aligning FASTQ to BAM
+
+[Wed Jun 29 20:48:37 2022]
+Finished job 114.
+23 of 182 steps (13%) done
+
+[Wed Jun 29 20:48:37 2022]
+Job 125: Aligning FASTQ to BAM
+
+[Wed Jun 29 20:50:03 2022]
+Finished job 150.
+24 of 182 steps (13%) done
+
+[Wed Jun 29 20:50:03 2022]
+Job 136: Aligning FASTQ to BAM
+
+[Wed Jun 29 21:14:27 2022]
+Finished job 129.
+25 of 182 steps (14%) done
+
+[Wed Jun 29 21:14:27 2022]
+Job 137: Aligning FASTQ to BAM
+
+[Wed Jun 29 21:24:07 2022]
+Finished job 135.
+26 of 182 steps (14%) done
+
+[Wed Jun 29 21:24:07 2022]
+Job 156: Aligning FASTQ to BAM
+
+[Wed Jun 29 21:39:35 2022]
+Finished job 125.
+27 of 182 steps (15%) done
+
+[Wed Jun 29 21:39:35 2022]
+Job 101: Aligning FASTQ to BAM
+
+[Wed Jun 29 21:40:00 2022]
+Finished job 156.
+28 of 182 steps (15%) done
+
+[Wed Jun 29 21:40:00 2022]
+Job 103: Aligning FASTQ to BAM
+
+[Wed Jun 29 21:57:44 2022]
+Finished job 93.
+29 of 182 steps (16%) done
+
+[Wed Jun 29 21:57:44 2022]
+Job 128: Aligning FASTQ to BAM
+
+[Wed Jun 29 23:22:13 2022]
+Finished job 100.
+30 of 182 steps (16%) done
+
+[Wed Jun 29 23:22:13 2022]
+Job 155: Aligning FASTQ to BAM
+
+[Thu Jun 30 00:10:40 2022]
+Finished job 155.
+31 of 182 steps (17%) done
+
+[Thu Jun 30 00:10:40 2022]
+Job 181: Converting bam to merged bam
+
+[Thu Jun 30 00:16:26 2022]
+Finished job 103.
+32 of 182 steps (18%) done
+
+[Thu Jun 30 00:16:26 2022]
+Job 134: Aligning FASTQ to BAM
+
+[Thu Jun 30 00:18:34 2022]
+Finished job 136.
+33 of 182 steps (18%) done
+
+[Thu Jun 30 00:18:34 2022]
+Job 158: Aligning FASTQ to BAM
+
+[Thu Jun 30 00:20:54 2022]
+Finished job 181.
+34 of 182 steps (19%) done
+
+[Thu Jun 30 00:20:54 2022]
+Job 144: Aligning FASTQ to BAM
+
+[Thu Jun 30 00:28:31 2022]
+Finished job 101.
+35 of 182 steps (19%) done
+
+[Thu Jun 30 00:28:31 2022]
+Job 163: Converting bam to merged bam
+
+[Thu Jun 30 00:33:12 2022]
+Finished job 158.
+36 of 182 steps (20%) done
+
+[Thu Jun 30 00:33:12 2022]
+Job 183: Converting bam to merged bam
+
+[Thu Jun 30 00:43:12 2022]
+Finished job 183.
+37 of 182 steps (20%) done
+
+[Thu Jun 30 00:43:12 2022]
+Job 132: Aligning FASTQ to BAM
+
+[Thu Jun 30 00:43:23 2022]
+Finished job 137.
+38 of 182 steps (21%) done
+
+[Thu Jun 30 00:43:23 2022]
+Job 175: Converting bam to merged bam
+
+[Thu Jun 30 00:45:42 2022]
+Finished job 144.
+39 of 182 steps (21%) done
+
+[Thu Jun 30 00:45:42 2022]
+Job 146: Aligning FASTQ to BAM
+
+[Thu Jun 30 00:47:18 2022]
+Finished job 128.
+40 of 182 steps (22%) done
+
+[Thu Jun 30 00:47:18 2022]
+Job 145: Aligning FASTQ to BAM
+
+[Thu Jun 30 01:16:51 2022]
+Finished job 134.
+41 of 182 steps (23%) done
+
+[Thu Jun 30 01:16:51 2022]
+Job 113: Aligning FASTQ to BAM
+
+[Thu Jun 30 01:17:17 2022]
+Finished job 163.
+42 of 182 steps (23%) done
+
+[Thu Jun 30 01:17:17 2022]
+Job 110: Aligning FASTQ to BAM
+
+[Thu Jun 30 01:17:18 2022]
+Finished job 146.
+43 of 182 steps (24%) done
+
+[Thu Jun 30 01:17:18 2022]
+Job 95: Aligning FASTQ to BAM
+
+[Thu Jun 30 01:24:20 2022]
+Finished job 145.
+44 of 182 steps (24%) done
+
+[Thu Jun 30 01:24:20 2022]
+Job 178: Converting bam to merged bam
+
+[Thu Jun 30 01:33:04 2022]
+Finished job 178.
+45 of 182 steps (25%) done
+
+[Thu Jun 30 01:33:04 2022]
+Job 121: Aligning FASTQ to BAM
+
+[Thu Jun 30 02:20:01 2022]
+Finished job 175.
+46 of 182 steps (25%) done
+
+[Thu Jun 30 02:20:01 2022]
+Job 118: Aligning FASTQ to BAM
+
+[Thu Jun 30 02:41:34 2022]
+Finished job 132.
+47 of 182 steps (26%) done
+
+[Thu Jun 30 02:41:34 2022]
+Job 174: Converting bam to merged bam
+
+[Thu Jun 30 03:16:34 2022]
+Finished job 95.
+48 of 182 steps (26%) done
+
+[Thu Jun 30 03:16:34 2022]
+Job 123: Aligning FASTQ to BAM
+
+[Thu Jun 30 03:26:54 2022]
+Finished job 174.
+49 of 182 steps (27%) done
+
+[Thu Jun 30 03:26:54 2022]
+Job 124: Aligning FASTQ to BAM
+
+[Thu Jun 30 03:27:10 2022]
+Finished job 121.
+50 of 182 steps (27%) done
+
+[Thu Jun 30 03:27:10 2022]
+Job 169: Converting bam to merged bam
+
+[Thu Jun 30 03:28:42 2022]
+Finished job 113.
+51 of 182 steps (28%) done
+
+[Thu Jun 30 03:28:42 2022]
+Job 167: Converting bam to merged bam
+
+[Thu Jun 30 03:31:24 2022]
+Finished job 110.
+52 of 182 steps (29%) done
+
+[Thu Jun 30 03:31:24 2022]
+Job 166: Converting bam to merged bam
+
+[Thu Jun 30 03:46:02 2022]
+Finished job 169.
+53 of 182 steps (29%) done
+
+[Thu Jun 30 03:46:02 2022]
+Job 149: Aligning FASTQ to BAM
+
+[Thu Jun 30 04:11:42 2022]
+Finished job 167.
+54 of 182 steps (30%) done
+
+[Thu Jun 30 04:11:42 2022]
+Job 102: Aligning FASTQ to BAM
+
+[Thu Jun 30 04:16:49 2022]
+Finished job 166.
+55 of 182 steps (30%) done
+
+[Thu Jun 30 04:16:49 2022]
+Job 105: Aligning FASTQ to BAM
+
+[Thu Jun 30 04:22:54 2022]
+Finished job 149.
+56 of 182 steps (31%) done
+
+[Thu Jun 30 04:22:54 2022]
+Job 179: Converting bam to merged bam
+
+[Thu Jun 30 04:29:55 2022]
+Finished job 179.
+57 of 182 steps (31%) done
+
+[Thu Jun 30 04:29:55 2022]
+Job 115: Aligning FASTQ to BAM
+
+[Thu Jun 30 04:39:49 2022]
+Finished job 118.
+58 of 182 steps (32%) done
+
+[Thu Jun 30 04:39:49 2022]
+Job 98: Aligning FASTQ to BAM
+
+[Thu Jun 30 05:03:22 2022]
+Finished job 123.
+59 of 182 steps (32%) done
+
+[Thu Jun 30 05:03:22 2022]
+Job 152: Aligning FASTQ to BAM
+
+[Thu Jun 30 05:19:55 2022]
+Finished job 105.
+60 of 182 steps (33%) done
+
+[Thu Jun 30 05:19:55 2022]
+Job 139: Aligning FASTQ to BAM
+
+[Thu Jun 30 05:21:42 2022]
+Finished job 124.
+61 of 182 steps (34%) done
+
+[Thu Jun 30 05:21:42 2022]
+Job 172: Converting bam to merged bam
+
+[Thu Jun 30 05:40:09 2022]
+Finished job 152.
+62 of 182 steps (34%) done
+
+[Thu Jun 30 05:40:09 2022]
+Job 180: Converting bam to merged bam
+
+[Thu Jun 30 05:46:34 2022]
+Finished job 180.
+63 of 182 steps (35%) done
+
+[Thu Jun 30 05:46:34 2022]
+Job 142: Aligning FASTQ to BAM
+
+[Thu Jun 30 05:56:22 2022]
+Finished job 139.
+64 of 182 steps (35%) done
+
+[Thu Jun 30 05:56:22 2022]
+Job 157: Aligning FASTQ to BAM
+
+[Thu Jun 30 06:10:21 2022]
+Finished job 102.
+65 of 182 steps (36%) done
+
+[Thu Jun 30 06:10:21 2022]
+Job 164: Converting bam to merged bam
+
+[Thu Jun 30 06:11:10 2022]
+Finished job 157.
+66 of 182 steps (36%) done
+
+[Thu Jun 30 06:11:10 2022]
+Job 182: Converting bam to merged bam
+
+[Thu Jun 30 06:12:25 2022]
+Finished job 172.
+67 of 182 steps (37%) done
+
+[Thu Jun 30 06:12:25 2022]
+Job 119: Aligning FASTQ to BAM
+
+[Thu Jun 30 06:23:01 2022]
+Finished job 182.
+68 of 182 steps (37%) done
+
+[Thu Jun 30 06:23:01 2022]
+Job 116: Aligning FASTQ to BAM
+
+[Thu Jun 30 06:27:28 2022]
+Finished job 142.
+69 of 182 steps (38%) done
+
+[Thu Jun 30 06:27:28 2022]
+Job 177: Converting bam to merged bam
+
+[Thu Jun 30 06:36:56 2022]
+Finished job 177.
+70 of 182 steps (38%) done
+
+[Thu Jun 30 06:36:56 2022]
+Job 122: Aligning FASTQ to BAM
+
+[Thu Jun 30 06:40:43 2022]
+Finished job 115.
+71 of 182 steps (39%) done
+
+[Thu Jun 30 06:40:43 2022]
+Job 97: Aligning FASTQ to BAM
+
+[Thu Jun 30 07:01:35 2022]
+Finished job 164.
+72 of 182 steps (40%) done
+
+[Thu Jun 30 07:01:35 2022]
+Job 130: Aligning FASTQ to BAM
+
+[Thu Jun 30 07:29:38 2022]
+Finished job 98.
+73 of 182 steps (40%) done
+
+[Thu Jun 30 07:29:38 2022]
+Job 138: Aligning FASTQ to BAM
+
+[Thu Jun 30 08:03:24 2022]
+Finished job 138.
+74 of 182 steps (41%) done
+
+[Thu Jun 30 08:03:24 2022]
+Job 176: Converting bam to merged bam
+
+[Thu Jun 30 08:12:52 2022]
+Finished job 176.
+75 of 182 steps (41%) done
+
+[Thu Jun 30 08:12:52 2022]
+Job 94: Aligning FASTQ to BAM
+
+[Thu Jun 30 08:20:15 2022]
+Finished job 119.
+76 of 182 steps (42%) done
+
+[Thu Jun 30 08:20:15 2022]
+Job 171: Converting bam to merged bam
+
+[Thu Jun 30 08:34:44 2022]
+Finished job 116.
+77 of 182 steps (42%) done
+
+[Thu Jun 30 08:34:44 2022]
+Job 168: Converting bam to merged bam
+
+[Thu Jun 30 08:54:52 2022]
+Finished job 130.
+78 of 182 steps (43%) done
+
+[Thu Jun 30 08:54:52 2022]
+Job 173: Converting bam to merged bam
+
+[Thu Jun 30 09:01:25 2022]
+Finished job 97.
+79 of 182 steps (43%) done
+
+[Thu Jun 30 09:01:25 2022]
+Job 162: Converting bam to merged bam
+
+[Thu Jun 30 09:02:48 2022]
+Finished job 171.
+80 of 182 steps (44%) done
+
+[Thu Jun 30 09:02:48 2022]
+Job 106: Aligning FASTQ to BAM
+
+[Thu Jun 30 09:11:49 2022]
+Finished job 122.
+81 of 182 steps (45%) done
+
+[Thu Jun 30 09:11:49 2022]
+Job 170: Converting bam to merged bam
+
+[Thu Jun 30 09:16:24 2022]
+Finished job 168.
+82 of 182 steps (45%) done
+
+[Thu Jun 30 09:16:24 2022]
+Job 83: Computing coverage of .bam file...
+
+[Thu Jun 30 09:33:30 2022]
+Finished job 173.
+83 of 182 steps (46%) done
+
+[Thu Jun 30 09:33:30 2022]
+Job 80: Computing coverage of .bam file...
+
+[Thu Jun 30 09:51:21 2022]
+Finished job 94.
+84 of 182 steps (46%) done
+
+[Thu Jun 30 09:51:21 2022]
+Job 161: Converting bam to merged bam
+
+[Thu Jun 30 09:54:50 2022]
+Finished job 162.
+85 of 182 steps (47%) done
+
+[Thu Jun 30 09:54:50 2022]
+Job 70: Computing coverage of .bam file...
+
+[Thu Jun 30 09:55:17 2022]
+Finished job 170.
+86 of 182 steps (47%) done
+
+[Thu Jun 30 09:55:17 2022]
+Job 72: Computing coverage of .bam file...
+
+[Thu Jun 30 10:09:36 2022]
+Finished job 106.
+87 of 182 steps (48%) done
+
+[Thu Jun 30 10:09:36 2022]
+Job 165: Converting bam to merged bam
+
+[Thu Jun 30 10:28:30 2022]
+Finished job 161.
+88 of 182 steps (48%) done
+[Thu Jun 30 10:35:13 2022]
+Finished job 165.
+89 of 182 steps (49%) done
+Will exit after finishing currently running jobs.
+Will exit after finishing currently running jobs.
+Shutting down, this might take some time.
+Complete log: /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/.snakemake/log/2022-06-29T141404.981145.snakemake.log

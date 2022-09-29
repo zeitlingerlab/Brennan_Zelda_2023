@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Session genome="dm6" hasGeneTrack="true" hasSequenceTrack="true" locus="chrX:15646725-15647264" path="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/igv/sog_w_ZD.xml" version="8">
+    <Resources>
+        <Resource path="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/Zld.contrib.counts.bw"/>
+        <Resource path="/Volumes/projects/mw2098/analysis/zelda/analysis/ZDTBCG/bed/mapped_motifs/all_instances_curated_0based.bed"/>
+        <Resource path="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold2/bw/Dl.contrib.counts.bw"/>
+        <Resource path="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/test_regions_fold2.bed"/>
+        <Resource path="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold2/bw/Zld.contrib.counts.bw"/>
+        <Resource path="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/Dl.contrib.counts.bw"/>
+    </Resources>
+    <Panel height="504" name="DataPanel" width="1133">
+        <Track clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" fontSize="10" id="/Volumes/projects/mw2098/analysis/zelda/analysis/ZDTBCG/bed/mapped_motifs/all_instances_curated_0based.bed" name="all_instances_curated_0based.bed" visible="true"/>
+        <Track autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" fontSize="10" id="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/Zld.contrib.counts.bw" name="Zld.contrib.counts.bw" renderer="BAR_CHART" visible="true" windowFunction="mean">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="0.7100744" minimum="-0.22576113" type="LINEAR"/>
+        </Track>
+        <Track altColor="153,0,0" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,0,0" fontSize="10" id="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold2/bw/Zld.contrib.counts.bw" name="Zld.contrib.counts.bw" renderer="BAR_CHART" visible="true" windowFunction="mean">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="0.4423667" minimum="-0.12189094" type="LINEAR"/>
+        </Track>
+        <Track autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" fontSize="10" id="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/Dl.contrib.counts.bw" name="Dl.contrib.counts.bw" renderer="BAR_CHART" visible="true" windowFunction="mean">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="0.39869624" minimum="-0.19066055" type="LINEAR"/>
+        </Track>
+        <Track altColor="153,0,0" autoScale="true" clazz="org.broad.igv.track.DataSourceTrack" color="153,0,0" fontSize="10" id="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold2/bw/Dl.contrib.counts.bw" name="Dl.contrib.counts.bw" renderer="BAR_CHART" visible="true" windowFunction="mean">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="0.37407094" minimum="-0.15562631" type="LINEAR"/>
+        </Track>
+        <Track clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" fontSize="10" id="/Volumes/zeitlingerlab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/test_regions_fold2.bed" name="test_regions_fold2.bed" visible="true"/>
+    </Panel>
+    <Panel height="71" name="FeaturePanel" width="1133">
+        <Track clazz="org.broad.igv.track.SequenceTrack" fontSize="10" id="Reference sequence" name="Reference sequence" visible="true"/>
+        <Track clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" colorScale="ContinuousColorScale;0.0;817.0;255,255,255;0,0,178" fontSize="10" height="35" id="dm6_genes" name="Gene" visible="true"/>
+    </Panel>
+    <PanelLayout dividerFractions="0.8694158075601375"/>
+    <HiddenAttributes>
+        <Attribute name="DATA FILE"/>
+        <Attribute name="DATA TYPE"/>
+        <Attribute name="NAME"/>
+    </HiddenAttributes>
+</Session>

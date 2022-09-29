@@ -1,0 +1,33 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 6
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	20	combined_bam_to_combined_bw
+	68	individual_bam_to_individual_bw
+	89
+
+[Thu Jun 30 15:38:02 2022]
+Job 83: Computing coverage of .bam file...
+
+[Thu Jun 30 15:38:02 2022]
+Job 70: Computing coverage of .bam file...
+
+[Thu Jun 30 15:38:02 2022]
+Job 82: Computing coverage of .bam file...
+
+[Thu Jun 30 15:38:02 2022]
+Job 76: Computing coverage of .bam file...
+
+[Thu Jun 30 15:38:02 2022]
+Job 78: Computing coverage of .bam file...
+
+[Thu Jun 30 15:38:02 2022]
+Job 75: Computing coverage of .bam file...
+
+Will exit after finishing currently running jobs.
+Will exit after finishing currently running jobs.
+Shutting down, this might take some time.
+Complete log: /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/.snakemake/log/2022-06-30T153753.392825.snakemake.log

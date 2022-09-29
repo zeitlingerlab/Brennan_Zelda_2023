@@ -1,0 +1,167 @@
+---
+title: 'Perturbations across enhancers'
+author: "Melanie (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+For each enhancer defined to show AP/DV patterning by Kaelan, plot predictions upon mutation of each motif and the corresponding contribution.
+
+# Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools)
+library(dplyr); library(data.table)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+figure_filepath<-"figures/5c_binding_enhancer_plots"
+options(knitr.figure_dir=figure_filepath, java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(patchwork)
+library(readr)
+library(ggseqlogo)
+
+enhancer.path<-'bed/enhancers/enhancers_for_models.bed'
+
+#TFs have a one-to-many association with motifs.
+motif_specs.list<-list(
+  Zld = list(color = '#38B6F1', tf = "Zld"),
+  Dl = list(color = '#D9A404', tf = "Dl"),
+  Twi = list(color = '#ef3f54', tf = "Twi"),
+  Bcd = list(color = '#1BB04C', tf = "Bcd"),
+  Cad = list(color = '#c4acb4', tf = "Cad"),
+  GAF = list(color = '#c4acb4', tf = "GAF")
+)
+
+tf.specs.list<-list(Zld = '#38B6F1', Dl = '#D9A404', Twi = '#ef3f54', Bcd = '#1BB04C', Cad = '#c4acb4', GAF = '#f47b2f')
+
+#Functions
+myceiling<-function(x, base = 10){
+  return( ceiling(x / base) * base)
+}
+myfloor<-function(x, base = 10){
+  return( floor(x / base) * base)
+}
+```
+
+# Functions
+
+Given a data.frame with `position`, `prediction`, `strand`, and `task` columns, plot the profiles across the desired window. 
+
+```{r}
+#With no orientation changes
+plot_prediction_scores<-function(wt_preds.df, mut_preds.df, motifs_across_window.df,
+                                  fill_hex = c('#6e828e', '#7f778c', '#b47382'), color_hex = c('#314d5e', '#493d5c','#94384d')){
+  g<-ggplot()
+  
+  #Add in motif boxes
+  for(row in 1:nrow(motifs_across_window.df)){
+    g<-g + annotate("rect", xmin = motifs_across_window.df$start[row], xmax = motifs_across_window.df$end[row],
+                    ymin = -Inf, ymax = Inf, alpha = .2)
+    g<-g + annotate("text", x = motifs_across_window.df$start[row], label = motifs_across_window.df$pattern[row], y = Inf, vjust = 1.5)
+  }
+
+  g<-g + geom_area(data = wt_preds.df, mapping = aes(genomic_position_0based, prediction, group = strand, fill = task), alpha = .3)+
+    geom_line(data = mut_preds.df, mapping = aes(genomic_position_0based, prediction, group = strand, color = task))+
+    facet_grid(task ~ ., scales = "free")+
+    scale_x_continuous(name = "Position (bp)")+
+    scale_y_continuous(name = "BPNet predictions")+
+    scale_fill_manual(values = fill_hex, name = "WT")+
+    scale_color_manual(values = color_hex, name = "Variant")+
+    theme_classic()
+}
+
+```
+
+# Plot enhancers
+
+Plot predictions, contribution, and motif information in order to show the effects of mutating a motif across an enhancer.
+
+```{r}
+enhancers_0based.df<-readr::read_tsv(enhancer.path, col_names = c('chrom','start','end','name','score','strand'))
+```
+
+## Read in predictions generated from the `.ipynb`
+
+```{r, eval = F}
+enhancers.vec<-list.files('tsv/perturbs/binding/enhancer/', pattern = '_motif_info_0based.csv.gz') %>% gsub('_motif_info_0based.csv.gz','',.)
+
+filler<-mclapply(enhancers.vec, function(x){
+  profile_preds.df<-readr::read_csv(paste0('tsv/perturbs/binding/enhancer/', x, '_predictions.tsv.gz'))
+  motifs.df<-readr::read_csv(paste0('tsv/perturbs/binding/enhancer/', x, '_motif_info_0based.csv.gz'))
+  
+  
+  profile_preds.df$task<-factor(profile_preds.df$task, levels = c(names(tf.specs.list)))
+  
+  #Read and filter information
+  wt_preds.df<-profile_preds.df %>% dplyr::filter(mut=='Reference')
+  mut_preds.df<-profile_preds.df %>% dplyr::filter(mut!='Reference')
+  
+  #Coordinate x-axis for predictions and contribution
+  # xlim_genomic<-c(min(myfloor(motifs.df$start, 50)-50), max(myceiling(motifs.df$end, 50)+50))
+  # xlim_window<-xlim_genomic-motifs.df$enhancer_start_0based[1] 
+  # motifs.df$contrib_start<-motifs.df$pattern_start - xlim_window[1]
+  # motifs.df$contrib_end<-motifs.df$pattern_end - xlim_window[1]
+  
+  #Plot predictions as compared to WT (genomic coordinates)
+  preds.plot.list<-lapply(unique(mut_preds.df$mut), function(x){
+    g<-plot_prediction_scores(wt_preds.df = wt_preds.df, mut_preds.df = mut_preds.df %>% dplyr::filter(mut == x), 
+                              motifs_across_window.df = motifs.df, 
+                              fill_hex = tf.specs.list %>% unlist, color_hex = tf.specs.list %>% unlist)
+    g<-g+ggtitle(x) + theme(legend.position = 'none')
+    return(g)
+  })
+  
+  #Create metaplot of the highest and lowest scores
+  g<-wrap_plots(preds.plot.list) + plot_layout(ncol = length(preds.plot.list)) + plot_annotation(title = paste0("Enhancer: ", x))
+  ggsave(paste0(figure_filepath, "/enh_", x, "_perturbs.pdf"), 
+         g, height = 10, width = nrow(motifs.df)*4, limitsize = FALSE)
+  ggsave(paste0(figure_filepath, "/enh_", x, "_perturbs.png"), 
+         g, height = 10, width = nrow(motifs.df)*4, limitsize = FALSE)
+  return(NULL)
+}, mc.cores = 8)
+
+```
+
+# Conclusions
+
+Perturbations of motifs result in varying cooperativity and decreased binding across TFs. 
+
+# Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

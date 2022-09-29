@@ -1,0 +1,4 @@
+TypeError in line 53 of /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/Snakefile:
+bad operand type for unary ~: 'float'
+  File "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/Snakefile", line 53, in <module>
+  File "/home/kb2009/anaconda3/lib/python3.7/site-packages/pandas/core/generic.py", line 1541, in __invert__

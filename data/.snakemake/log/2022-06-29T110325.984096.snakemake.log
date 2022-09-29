@@ -1,0 +1,3 @@
+NameError in line 100 of /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/Snakefile:
+name 'wildcards' is not defined
+  File "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/Snakefile", line 100, in <module>

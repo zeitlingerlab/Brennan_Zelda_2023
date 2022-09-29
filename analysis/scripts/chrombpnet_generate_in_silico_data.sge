@@ -1,0 +1,12 @@
+#$ -cwd
+#$ -S /bin/bash
+#$ -N generate_in_silico_data
+#$ -pe smp 80
+#$ -l h_vmem=2G
+#$ -l h_rt=24:00:00
+#$ -V
+
+LD_LIBRARY_PATH=/usr/lib64:/usr/local/cuda-11.5/lib64:/usr/local/cuda-11.5/extras/CUPTI/lib64:/lib/nccl/cuda-11.5:/usr/local/cuda-11.0/lib64:/usr/local/cuda-11.0/extras/CUPTI/lib64:/lib/nccl/cuda-11.0:/n/apps/CentOS7/install/rbenv-0.3.0/rbenv/libexec:/n/apps/CentOS7/lib64::/n/apps/CentOS7/install/guppy-2.3.1/lib:/n/apps/CentOS7/lib:/n/apps/CentOS7/proteomics/lib
+cd /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis
+conda activate /home/mw2098/anaconda3/envs/chrombpnet
+./scripts/chrombpnet_generate_in_silico_data.py

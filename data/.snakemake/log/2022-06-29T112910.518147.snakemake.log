@@ -1,0 +1,15 @@
+Building DAG of jobs...
+Job counts:
+	count	jobs
+	1	all
+	24	combined_bam_to_combined_bw
+	68	fastq_to_processed_bam
+	24	individual_bam_to_combined_bam
+	68	individual_bam_to_individual_bw
+	185
+InputFunctionException in line 91 of /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/Snakefile:
+AttributeError: 'float' object has no attribute 'replace'
+Wildcards:
+genome=dm6
+exp=seq
+sample=orer_h3k4me1_mbt_seq_2

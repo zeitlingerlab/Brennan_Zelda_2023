@@ -1,0 +1,939 @@
+---
+title: 'Anaylsis of ATAC-seq in embryos depleted for Zelda'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to compare ATAC-seq time course data generated in wild-type, OregonR embryos to the same experiments performed in embryos depleted for Zelda (Zelda RNAi). Note that UAS-zld-shRNA lines were provided by Christine Rushlow's lab and Zelda-depleted embryos were generated through crossing with an MTD-Gal4 line (see methods). We will specifically use this data to compare our experimental accessibility in the absence of Zelda to ChromBPNet model predictions, and we will also use this to investigate the differences between high and low affinity Zelda motifs mapped by BPNet. The plots generated here make up approxiamtely half of Figure 3, including d-g. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/14_zelda_depletion_atac/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data for this analysis
+
+```{r import}
+
+# motifs 
+
+motifs.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>% 
+  as.data.frame()
+
+# ATAC replicate coverage list: for DESeq2, we will use 3 replicates of all 4 time points, both in wt and Zld- embryos. 
+
+atac.bw.zld.list <- list(wt_1to15_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_4_cutsites.bw',
+                         wt_1to15_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_6_cutsites.bw',
+                         wt_1to15_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_1to15_atac_7_cutsites.bw',
+                         zldrnai_1to15_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_1to15_atac_1_cutsites.bw',
+                         zldrnai_1to15_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_1to15_atac_2_cutsites.bw',
+                         zldrnai_1to15_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_1to15_atac_3_cutsites.bw',
+                         wt_15to2_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_4_cutsites.bw',
+                         wt_15to2_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_6_cutsites.bw',
+                         wt_15to2_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_15to2_atac_7_cutsites.bw',
+                         zldrnai_15to2_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_15to2_atac_1_cutsites.bw',
+                         zldrnai_15to2_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_15to2_atac_2_cutsites.bw',
+                         zldrnai_15to2_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_15to2_atac_3_cutsites.bw',
+                         wt_2to25_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_4_cutsites.bw',
+                         wt_2to25_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_6_cutsites.bw',
+                         wt_2to25_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_2to25_atac_7_cutsites.bw',
+                         zldrnai_2to25_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_2to25_atac_1_cutsites.bw',
+                         zldrnai_2to25_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_2to25_atac_2_cutsites.bw',
+                         zldrnai_2to25_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_2to25_atac_3_cutsites.bw',
+                         wt_25to3_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_4_cutsites.bw',
+                         wt_25to3_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_6_cutsites.bw',
+                         wt_25to3_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/orer_25to3_atac_7_cutsites.bw',
+                         zldrnai_25to3_rep1 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_25to3_atac_1_cutsites.bw',
+                         zldrnai_25to3_rep2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_25to3_atac_2_cutsites.bw',
+                         zldrnai_25to3_rep3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/zldrnai_25to3_atac_3_cutsites.bw')
+
+```
+
+# 4. Determine differential accessibility using DESeq2
+
+## 4.1. Format and calculate counts using cutsite information
+
+```{r format}
+
+# Define peaks--these are non-overlapping and evenly-sized
+
+peaks.gr <- rtracklayer::import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/narrowpeak/atac_orer_all_peaks.narrowpeak') %>%
+  GenomicRanges::reduce(ignore.strand = T) %>%
+  GenomicRanges::resize(2114, 'center') %>%
+  plyranges::mutate(peak_id = 1:length(.))
+
+# Calculate the counts across all peaks
+
+counts.zld.df<-mclapply(atac.bw.zld.list, function(x){
+  regionSums(peaks.gr, x)
+}, mc.cores = 8) %>% as.data.frame()
+colnames(counts.zld.df)<-names(atac.bw.zld.list)
+
+# Set conditions for the DESeq2 model
+
+peak_condition_zld.df<-data.frame(condition = c(rep('wt_1to15', 3), rep('zldrnai_1to15', 3), rep('wt_15to2', 3), rep('zldrnai_15to2', 3), rep('wt_2to25', 3), rep('zldrnai_2to25', 3), rep('wt_25to3', 3), rep('zldrnai_25to3', 3)))
+peak_condition_zld.df$condition<- factor(peak_condition_zld.df$condition, levels = c("wt_1to15", "zldrnai_1to15", "wt_15to2","zldrnai_15to2", "wt_2to25","zldrnai_2to25", "wt_25to3","zldrnai_25to3"))
+rownames(peak_condition_zld.df)<-names(atac.bw.zld.list)
+
+```
+
+## 4.2. Set up differential model
+
+```{r setup}
+
+library(DESeq2)
+
+dds_zld <- DESeqDataSetFromMatrix(countData = counts.zld.df,
+                              colData = peak_condition_zld.df,
+                              design = ~ condition)
+model_zld <- DESeq(dds_zld)
+
+```
+
+## 4.3. Gather time point results 
+
+```{r time}
+
+t1_res.zld.df <- results(model_zld, contrast = c("condition","zldrnai_1to15","wt_1to15"), alpha = 0.05)
+plotMA(t1_res.zld.df, ylim=c(-3,3), ylab = 'log fold change log2(zldrnai_1to15/wt_1to15)')
+t1.zld.ma <- ggplot(as.data.frame(t1_res.zld.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(zldrnai_1to15/wt_1to15)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 1-1.5 hr") +
+  theme_cowplot()
+
+t2_res.zld.df <- results(model_zld, contrast = c("condition","zldrnai_15to2","wt_15to2"), alpha = 0.05)
+plotMA(t2_res.zld.df, ylim=c(-3,3), ylab = 'log fold change log2(zldrnai_15to2/wt_15to2)')
+t2.zld.ma <- ggplot(as.data.frame(t2_res.zld.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(zldrnai_15to2/wt_15to2)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 1.5-2 hr") +
+  theme_cowplot()
+
+t3_res.zld.df <- results(model_zld, contrast = c("condition","zldrnai_2to25","wt_2to25"), alpha = 0.05)
+plotMA(t3_res.zld.df, ylim=c(-3,3), ylab = 'log fold change log2(zldrnai_2to25/wt_2to25)')
+t3.zld.ma <- ggplot(as.data.frame(t3_res.zld.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(zldrnai_2to25/wt_2to25)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 2-2.5 hr") +
+  theme_cowplot()
+
+t4_res.zld.df <- results(model_zld, contrast = c("condition","zldrnai_25to3","wt_25to3"), alpha = 0.05)
+plotMA(t4_res.zld.df, ylim=c(-3,3), ylab = 'log fold change log2(zldrnai_25to3/wt_25to3)')
+t4.zld.ma <- ggplot(as.data.frame(t4_res.zld.df), aes(x = baseMean, y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(aes(color = padj <0.05), size = .2) +
+  #geom_point(color = 'gray', size = .2) +
+  scale_y_continuous(limits = c(-3, 3), name = 'log2(zldrnai_25to3/wt_25to3)')+
+  scale_x_continuous(limits = c(0,10000), breaks = c(0,2000,4000,6000,8000,10000))+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("MA plot at 2.5-3 hr") +
+  theme_cowplot()
+
+zld_maplots <- t1.zld.ma + t2.zld.ma + t3.zld.ma + t4.zld.ma
+ggsave("zld_effect_ma_plots.pdf", plot = zld_maplots, path = "figures/14_zelda_depletion_atac/", width = 25, height = 20, units = "cm")
+ggsave("zld_effect_ma_plots.png", plot = zld_maplots, path = "figures/14_zelda_depletion_atac/", width = 25, height = 20, units = "cm")
+
+```
+
+## 4.4. Plot results at enhancers
+
+```{r enhancers}
+
+# import enhancers and find overlaps 
+
+cus_enhancers.gr <- rtracklayer::import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/published/enhancers/cusanovich/cusanovich_dm6_enhancers.bed')
+
+peaks.gr$enhancer_name <- NA
+enhancer.ov <- findOverlaps(peaks.gr, cus_enhancers.gr, ignore.strand = T)
+peaks.gr$enhancer_name[enhancer.ov@from]<-cus_enhancers.gr$name[enhancer.ov@to]
+
+# use the 2.5-3 hr time point results here
+
+peaks_w_de.df <- cbind(peaks.gr %>% as.data.frame, t4_res.zld.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))    
+
+#Plot with DE results
+
+zld_effect_at_cus_enhancers <- ggplot(peaks_w_de.df, aes(x = log(baseMean), y = log2FoldChange))+
+  geom_hline(yintercept = 0, color = 'black', linetype = 'dotted')+
+  geom_point(color = 'gray', size = .2) +
+  geom_text(aes(label = enhancer_name), size = 4)+
+  #scale_y_continuous(limits = c(-2.5, 2.5), name = 'log2(zld_rnai_25to3/wt_25to3)')+
+  xlab("Mean normalized ATAC-seq signal") +
+  ggtitle("Zld RNAi effect at 2.5-3 hr at Cusanovich enhancers") +
+  theme_cowplot()
+zld_effect_at_cus_enhancers
+
+ggsave("zld_effect_at_cus_enhancers.pdf", plot = zld_effect_at_cus_enhancers, path = "figures/14_zelda_depletion_atac", width = 25, height = 20, units = "cm")
+ggsave("zld_effect_at_cus_enhancers.png", plot = zld_effect_at_cus_enhancers, path = "figures/14_zelda_depletion_atac", width = 25, height = 20, units = "cm")
+
+```
+
+## 4.5. Map DESeq2 results back to peaks 
+
+```{r map}
+
+# overlap with peaks
+
+peaks_w_de_t1.df <- cbind(peaks.gr %>% as.data.frame, t1_res.zld.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+peaks_w_de_t2.df <- cbind(peaks.gr %>% as.data.frame, t2_res.zld.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+peaks_w_de_t3.df <- cbind(peaks.gr %>% as.data.frame, t3_res.zld.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+peaks_w_de_t4.df <- cbind(peaks.gr %>% as.data.frame, t4_res.zld.df) %>%
+  dplyr::mutate(has_enhancer = ifelse(is.na(enhancer_name), 'no','yes'))
+
+# make GRanges for export
+
+peaks_w_de_t1.gr <- peaks_w_de_t1.df %>%
+  dplyr::mutate(timepoint = '1to15') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)    
+
+peaks_w_de_t2.gr <- peaks_w_de_t2.df %>%
+  dplyr::mutate(timepoint = '15to2') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+peaks_w_de_t3.gr <- peaks_w_de_t3.df %>%
+  dplyr::mutate(timepoint = '2to25') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+peaks_w_de_t4.gr <- peaks_w_de_t4.df %>%
+  dplyr::mutate(timepoint = '25to3') %>% 
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+
+```
+
+## 4.6. Save DESeq2 results
+
+```{r save}
+
+deseq_at_peaks.list <- list('zldrnai_1to15/wt_1to15' = peaks_w_de_t1.gr,
+                            'zldrnai_15to2/wt_15to2' = peaks_w_de_t2.gr,
+                            'zldrnai_2to25/wt_2to25' = peaks_w_de_t3.gr,
+                            'zldrnai_25to3/wt_25to3' = peaks_w_de_t4.gr)
+saveRDS(deseq_at_peaks.list, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/deseq_timepoints_at_orer_1to3_atac_peaks.RData')
+
+```
+
+# 5. Effects of Zelda depletion on chromatin accessibility
+
+## 5.1. Combine all time points effects with motifs
+
+```{r motifs}
+
+# Summarize from all time points into one total de onject
+
+peaks_w_de_t1.df$t1_log2FC <- peaks_w_de_t1.df$log2FoldChange
+peaks_w_de_t2.df$t2_log2FC <- peaks_w_de_t2.df$log2FoldChange
+peaks_w_de_t3.df$t3_log2FC <- peaks_w_de_t3.df$log2FoldChange
+peaks_w_de_t4.df$t4_log2FC <- peaks_w_de_t4.df$log2FoldChange
+
+peaks_w_all_time_de.df <- peaks_w_de_t4.df[,1:7]
+peaks_w_all_time_de.df$t1_log2FC <- peaks_w_de_t1.df$log2FoldChange
+peaks_w_all_time_de.df$t2_log2FC <- peaks_w_de_t2.df$log2FoldChange
+peaks_w_all_time_de.df$t3_log2FC <- peaks_w_de_t3.df$log2FoldChange
+peaks_w_all_time_de.df$t4_log2FC <- peaks_w_de_t4.df$log2FoldChange
+
+# Map peaks with DESeq information back to motifs 
+
+motifs_vs_peaks.ov<-findOverlaps(motifs.df %>% makeGRangesFromDataFrame(), peaks.gr, ignore.strand = T)
+motifs.df$peak_id<-NA
+motifs.df$peak_id[motifs_vs_peaks.ov@from]<-peaks.gr$peak_id[motifs_vs_peaks.ov@to]
+
+motifs_across_peaks.df<-motifs.df %>%
+  dplyr::filter(!is.na(peak_id)) %>%
+  dplyr::left_join(., peaks_w_all_time_de.df %>% dplyr::select(-c(seqnames, start, end, width, strand)), by = 'peak_id') %>%
+  as.data.frame()
+
+```
+
+## 5.2. Plot effects of Zelda depletion at regions with and without Zelda motifs 
+
+```{r effect}
+
+library(matrixStats)
+
+# Calculate mean and median log2FC and save this as a separate RDS
+
+peaks_w_all_time_de_med.df<- peaks_w_all_time_de.df
+med_log2fc <- rowMedians(as.matrix(peaks_w_all_time_de_med.df[,c(8:11)]))
+ave_log2fc <- rowMeans(as.matrix(peaks_w_all_time_de_med.df[,c(8:11)]))
+peaks_w_all_time_de_med.df$med_log2fc <- med_log2fc
+peaks_w_all_time_de_med.df$ave_log2fc <- ave_log2fc
+
+saveRDS(peaks_w_all_time_de_med.df, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/deseq_timepoints_at_orer_1to3_atac_peaks_consolidated_single_df_w_med.RData')
+
+# get motif information for the peaks
+
+motif_info_for_peaks.df <- peaks_w_all_time_de_med.df %>%
+  dplyr::left_join(., motifs.df %>% dplyr::select(c(pattern_name, peak_id)), by = 'peak_id') %>%
+  group_by(peak_id) %>%
+  dplyr::summarise(pattern_name = paste0(pattern_name, collapse = "-")) %>%
+  dplyr::mutate(contains_Zld = grepl(pattern = 'Zld', x = pattern_name)) %>%
+  as.data.frame 
+
+# merge peaks and motif information
+
+peaks_w_all_time_de_med_motifs.df <- peaks_w_all_time_de_med.df %>%
+  dplyr::left_join(., motif_info_for_peaks.df %>% dplyr::select(c(pattern_name, peak_id, contains_Zld)), by = 'peak_id') %>%
+  dplyr::mutate(contains_enhancer = !is.na(enhancer_name))
+
+# Plot
+
+peaks_zldrnai_effect.plot <- ggplot(peaks_w_all_time_de_med_motifs.df, aes(x=contains_Zld, y=med_log2fc)) +
+  geom_boxplot(aes(fill=contains_Zld), outlier.color = NA, outlier.fill = NA) +
+  scale_y_continuous(name = "Median Log2FC", limits = c(-2,2))+
+  geom_hline(yintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_jitter(width = 0.15, aes(color = contains_enhancer), size = 0.3, alpha = 0.3) +
+  stat_compare_means(method = "wilcox.test", label = "p.signif") +
+  stat_compare_means(method = "wilcox.test", label = "p.format") +
+  theme_cowplot()
+peaks_zldrnai_effect.plot
+
+ggsave("zldrnai_effect_at_all_atac_peaks.pdf", plot = peaks_zldrnai_effect.plot, path = "figures/14_zelda_depletion_atac", height = 10, width = 8)
+ggsave("zldrnai_effect_at_all_atac_peaks.png", plot = peaks_zldrnai_effect.plot, path = "figures/14_zelda_depletion_atac", height = 10, width = 8)
+
+```
+
+# 6. Correlate observed Zld depeltion effect from DESeq2 with ChromBPNet model predictions
+
+## 6.1. Import relevant data including island perturbations previously generated in 9_assign_genomic_perturb_scores.Rmd 
+
+```{r island_perturbs}
+
+# island perturbs
+
+islands_w_perturbs.gr <- readRDS("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/rdata/zld_containing_islands_w_zld_atac_perturbations.gr.rds")
+
+# Zld motifs
+
+zld_motifs.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/accessibility/genomic/atac_overlapping_zld_0based.tsv.gz') %>% 
+  dplyr::left_join(.,
+                   readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based_with_single_perturbs.tsv.gz') %>%
+                     dplyr::select(motif_id, seq_match_p, seq_match),
+                   by = 'motif_id')
+
+```
+
+## 6.2. Map AVERAGE Zelda PWM match %ile score across each island to account for multiple Zld motifs per island 
+
+```{r average}
+
+islands_w_perturbs.gr<-zld_motifs.df %>%
+  dplyr::group_by(region_id) %>%
+  dplyr::summarize(average_seq_match_p = mean(seq_match_p)) %>%
+  dplyr::select(region_id, average_seq_match_p) %>%
+  dplyr::left_join(islands_w_perturbs.gr %>% as.data.frame,
+                   ., 
+                   by = 'region_id') %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F)
+
+```
+
+## 6.3. Map DESeq2 Log2FC values onto islands
+
+```{r log2}
+
+islands_vs_deseq_peaks.ov <- findOverlaps(islands_w_perturbs.gr, peaks.gr, ignore.strand = T)
+islands_w_perturbs.gr$peak_id <- NA
+islands_w_perturbs.gr$peak_id[islands_vs_deseq_peaks.ov@from] <- peaks.gr$peak_id[islands_vs_deseq_peaks.ov@to]
+
+islands_w_perturbs_w_peaks.gr <- islands_w_perturbs.gr[!is.na(islands_w_perturbs.gr$peak_id)]
+
+islands_across_peaks.df<-islands_w_perturbs.gr %>%
+  as.data.frame() %>%
+  dplyr::filter(!is.na(peak_id)) %>%
+  dplyr::left_join(., peaks_w_all_time_de.df %>% dplyr::select(-c(seqnames, start, end, width, strand)), by = 'peak_id') %>%
+  as.data.frame()
+
+```
+
+## 6.4. Calculate and plot
+
+```{r calc_plot}
+
+# Calculate
+
+islands_across_peaks.df$t1_log2FC_perturb_pred <- log2(islands_across_peaks.df$mut_pred_1to15/islands_across_peaks.df$wt_pred_1to15)
+islands_across_peaks.df$t2_log2FC_perturb_pred <- log2(islands_across_peaks.df$mut_pred_15to2/islands_across_peaks.df$wt_pred_15to2)
+islands_across_peaks.df$t3_log2FC_perturb_pred <- log2(islands_across_peaks.df$mut_pred_2to25/islands_across_peaks.df$wt_pred_2to25)
+islands_across_peaks.df$t4_log2FC_perturb_pred <- log2(islands_across_peaks.df$mut_pred_25to3/islands_across_peaks.df$wt_pred_25to3)
+
+# Plot
+
+library(ggpubr)
+
+islands_w_deseq_t1.plot <- ggplot(islands_across_peaks.df, aes(t1_log2FC,t1_log2FC_perturb_pred))+
+  geom_hline(yintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_vline(xintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_point(aes(color = average_seq_match_p), size = .2)+
+  geom_smooth(method = "lm", se=FALSE) +
+  #stat_regline_equation(label.y = 0.2, aes(label = ..eq.label..)) +
+  stat_regline_equation(label.y = 0.1, aes(label = ..rr.label..)) +
+  ggpubr::stat_cor(method = 'pearson', label.x.npc = "right", label.y.npc = "bottom", hjust = 1, vjust = -.1)+
+  ggtitle("Zld island genomic perturbations vs. Zld RNAi effect") +
+  scale_x_continuous(name = 'log2(zldrnai_1to15/wt_1to15)')+
+  scale_y_continuous(name = 'Predicted log2(zld-/wt) 1-1.5 hr')+
+  scale_color_gradientn(colours = viridis::viridis(n=50, end = .95))+
+  theme_cowplot()
+
+islands_w_deseq_t2.plot <- ggplot(islands_across_peaks.df, aes(t2_log2FC,t2_log2FC_perturb_pred))+
+  geom_hline(yintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_vline(xintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_point(aes(color = average_seq_match_p), size = .2)+
+  geom_smooth(method = "lm", se=FALSE) +
+  #stat_regline_equation(label.y = 0.2, aes(label = ..eq.label..)) +
+  stat_regline_equation(label.y = 0.1, aes(label = ..rr.label..)) +
+  ggpubr::stat_cor(method = 'pearson', label.x.npc = "right", label.y.npc = "bottom", hjust = 1, vjust = -.1)+
+  ggtitle("Zld island genomic perturbations vs. Zld RNAi effect") +
+  scale_x_continuous(name = 'log2(zldrnai_15to2/wt_15to2)')+
+  scale_y_continuous(name = 'Predicted log2(zld-/wt) 1.5-2 hr')+
+  scale_color_gradientn(colours = viridis::viridis(n=50, end = .95))+
+  theme_cowplot()
+
+islands_w_deseq_t3.plot <- ggplot(islands_across_peaks.df, aes(t3_log2FC,t3_log2FC_perturb_pred))+
+  geom_hline(yintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_vline(xintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_point(aes(color = average_seq_match_p), size = .2)+
+  geom_smooth(method = "lm", se=FALSE) +
+  #stat_regline_equation(label.y = 0.2, aes(label = ..eq.label..)) +
+  stat_regline_equation(label.y = 0.1, aes(label = ..rr.label..)) +
+  ggpubr::stat_cor(method = 'pearson', label.x.npc = "right", label.y.npc = "bottom", hjust = 1, vjust = -.1)+
+  ggtitle("Zld island genomic perturbations vs. Zld RNAi effect") +
+  scale_x_continuous(name = 'log2(zldrnai_2to25/wt_2to25)')+
+  scale_y_continuous(name = 'Predicted log2(zld-/wt) 2-2.5 hr')+
+  scale_color_gradientn(colours = viridis::viridis(n=50, end = .95))+
+  theme_cowplot()
+
+islands_w_deseq_t4.plot <- ggplot(islands_across_peaks.df, aes(t4_log2FC,t4_log2FC_perturb_pred))+
+  geom_hline(yintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_vline(xintercept = 0, linetype = 'dotted', color = 'black')+
+  geom_point(aes(color = average_seq_match_p), size = .2)+
+  geom_smooth(method = "lm", se=FALSE) +
+  #stat_regline_equation(label.y = 0.2, aes(label = ..eq.label..)) +
+  stat_regline_equation(label.y = 0.1, aes(label = ..rr.label..)) +
+  ggpubr::stat_cor(method = 'pearson', label.x.npc = "right", label.y.npc = "bottom", hjust = 1, vjust = -.1)+
+  ggtitle("Zld island genomic perturbations vs. Zld RNAi effect") +
+  scale_x_continuous(name = 'log2(zldrnai_25to3/wt_25to3)')+
+  scale_y_continuous(name = 'Predicted log2(zld-/wt) 2.5-3 hr')+
+  scale_color_gradientn(colours = viridis::viridis(n=50, end = .95))+
+  theme_cowplot()
+
+islands_v_perturb.plot <- islands_w_deseq_t1.plot+islands_w_deseq_t2.plot+islands_w_deseq_t3.plot+islands_w_deseq_t4.plot
+
+ggsave("islands_w_atac_effect_and_genomic_perturb_pearson.pdf", plot = islands_v_perturb.plot, path = "figures/14_zelda_depletion_atac", height = 10, width = 16)
+ggsave("islands_w_atac_effect_and_genomic_perturb_pearson.png", plot = islands_v_perturb.plot, path = "figures/14_zelda_depletion_atac", height = 10, width = 16)
+
+```
+
+# 7. Compare time course ATAC-seq between Ore-R and Zld- embryos at variable affinity Zelda motifs
+
+## 7.1. Find regions with single Zld motifs or single GAF motifs
+
+```{r find}
+
+islands_with_all_info_filtered.gr <- readRDS("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData")
+zldonly <- islands_with_all_info_filtered.gr[islands_with_all_info_filtered.gr$island_content == "Zld-1"]
+gafonly <- islands_with_all_info_filtered.gr[islands_with_all_info_filtered.gr$island_content == "GAF-1"]
+
+# use motifs overlapping with atac: here, since we are comparing atac signal across motifs of interest, we want to make sure that we are using mthe approriate subsetted motifs that overlap with atac in the first place
+
+motifs_w_ov.gr <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/atac_overlapping_instances_curated_1based.tsv.gz') %>% makeGRangesFromDataFrame(starts.in.df.are.0based = F, keep.extra.columns = T)
+
+# use islands to get motifs from full motif list. Here, we are collecting regions with only 1 Zelda motif or only 1 GAF motif. 
+
+zmotif.gr <- motifs_w_ov.gr[motifs_w_ov.gr$pattern_name == "Zld"]
+zld_only.ov <- findOverlaps(zmotif.gr,zldonly)
+zld_only_affinities.gr <- zmotif.gr[zld_only.ov@from]
+
+gmotif.gr <- motifs_w_ov.gr[motifs_w_ov.gr$pattern_name == "GAF"]
+gaf_only.ov <- findOverlaps(gmotif.gr,gafonly)
+gaf_only_motifs.gr <- gmotif.gr[gaf_only.ov@from]
+
+```
+
+## 7.2. Separate single motif regions based on affinity and ranked by contribution
+
+```{r separate}
+
+# Take only the top and bottom high and low affinity motifs. I have selected affinity categories with the seq_match_cat column and then ordered them by binding contrib, and will take the top 400 using that 
+
+zld_high_top250_contrib.gr <- zld_only_affinities.gr[zld_only_affinities.gr$seq_match_cat == "high"] 
+zld_high_top250_contrib.gr <-zld_high_top250_contrib.gr[order(zld_high_top250_contrib.gr$contrib_weighted, decreasing = TRUE)][1:250]
+zld_high_top250_contrib_resized.gr <- zld_high_top250_contrib.gr %>% resize(.,1,"center")
+
+zld_low_btm250_contrib.gr <- zld_only_affinities.gr[zld_only_affinities.gr$seq_match_cat == "low"]
+zld_low_btm250_contrib.gr <- zld_low_btm250_contrib.gr[order(zld_low_btm250_contrib.gr$contrib_weighted, decreasing = FALSE)][1:240]    # note that here we used 240 instead of 250 that way we use every seq_match_cat == "low" motif instance
+zld_low_btm250_contrib_resized.gr <- zld_low_btm250_contrib.gr %>% resize(.,1,"center")
+
+gaf_only_motifs_format.gr <- gaf_only_motifs.gr %>% resize(.,1,"center")
+
+set.seed(10)
+
+gaf_subset.gr <- gaf_only_motifs.gr %>%
+  as.data.frame() %>%
+  dplyr::sample_n(size =250) %>%
+  makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+gaf_subset_resized.gr <- gaf_subset.gr %>% resize(.,1,"center")
+
+zld_aff.list <- list(high_aff = zld_high_top250_contrib_resized.gr,
+                     low_aff = zld_low_btm250_contrib_resized.gr,
+                     gaf = gaf_subset_resized.gr)
+
+```
+
+### 7.2.1. Export high and low Zld motifs for ChromBPNet interpretations
+
+```{r bed, eval=FALSE}
+
+low.bed <- as.data.frame(zld_low_btm250_contrib.gr) %>% .[,c(1:3,5)]
+low.bed$name <- "low"
+high.bed <- as.data.frame(zld_high_top250_contrib.gr) %>% .[,c(1:3,5)]
+high.bed$name <- "high"
+
+aff.bed <- rbind(low.bed, high.bed) 
+
+write_bed(aff.bed, "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/zld_affinities/zld_only_affinities.bed")
+
+test <- import("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bed/zld_affinities/zld_only_affinities.bed")
+
+```
+
+## 7.3. Plot average profiles
+
+```{r plot_average}
+
+source("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/scripts/r/metapeak_extra.r")
+
+# Define function 
+
+get_multi_gr_bw_standard_metapeak <- function(gr.list = gr.list, bw.list = bw.list, upstream = 250, downstream = 250, smooth = NA){
+  mclapply(names(gr.list), function(x){
+    gr <- gr.list[[x]]
+    get_multi_bw_standard_metapeak(gr,bw.list, upstream = upstream, downstream = downstream, smooth = smooth) %>% mutate(grange_name = x) # The sample_name will be the bw name
+  },mc.cores = 10) %>% bind_rows() %>% rename(bw_name = sample_name)
+}
+
+# Define coverage list
+
+bw.list<-list(`T1_wt` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_1to15_atac_combined_normalized.bw',
+              `T2_wt` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_15to2_atac_combined_normalized.bw',
+              `T3_wt` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined_normalized.bw',
+              `T4_wt` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_normalized.bw',
+              `T1_zld` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_1to15_atac_combined_normalized.bw',
+              `T2_zld` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_15to2_atac_combined_normalized.bw',
+              `T3_zld` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_2to25_atac_combined_normalized.bw',
+              `T4_zld` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_25to3_atac_combined_normalized.bw')
+
+# Plot
+
+atac_at_zld_aff.mp <- get_multi_gr_bw_standard_metapeak(gr.list = zld_aff.list, bw.list = bw.list, upstream = 250, downstream = 250, smooth = 2)
+
+atac_at_zld_aff.plot <- ggplot(atac_at_zld_aff.mp, aes(x=tss_distance, y=reads)) +
+         geom_area(position="identity", alpha = 0.2) +
+         geom_smooth(method = "loess", span = 0.3, color = "dodgerblue4")+
+         ggtitle("Average normalized ATAC-seq at motifs") +
+            facet_wrap(bw_name ~ grange_name, scales = "fixed", ncol = 3) +
+            theme(legend.position = "none") +
+            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            panel.background = element_blank(), axis.line.x = element_line(colour = "black"),
+            axis.line.y = element_line(colour = "black")) +
+            xlab("Distance from motif center") +
+            ylab("Normalized ATAC pileup")
+atac_at_zld_aff.plot
+
+ggsave("atacseq_over_time_average_plots_at_motifs_by_zld_affinity_250_motifs_only.pdf", plot = atac_at_zld_aff.plot, path = "figures/14_zelda_depletion_atac", width = 40, height = 20, units = "cm")
+ggsave("atacseq_over_time_average_plots_at_motifs_by_zld_affinity_250_motifs_only.png", plot = atac_at_zld_aff.plot, path = "figures/14_zelda_depletion_atac", width = 40, height = 20, units = "cm")
+
+```
+
+## 7.4. Plot boxplots for quantification 
+
+```{r box}
+
+# Calculate
+
+atac_across_high_aff_zld.df <- mclapply(names(bw.list), function(x){
+regionSums(zld_high_top250_contrib_resized.gr %>% resize(500, 'center'), bw.list[[x]])
+}, mc.cores = 4) %>% as.data.frame()
+names(atac_across_high_aff_zld.df)<-names(bw.list)
+
+atac_across_low_aff_zld.df <- mclapply(names(bw.list), function(x){
+regionSums(zld_low_btm250_contrib_resized.gr %>% resize(500, 'center'), bw.list[[x]])
+}, mc.cores = 4) %>% as.data.frame()
+names(atac_across_low_aff_zld.df)<-names(bw.list)
+
+atac_across_gaf.df <- mclapply(names(bw.list), function(x){
+regionSums(gaf_subset_resized.gr %>% resize(500, 'center'), bw.list[[x]])
+}, mc.cores = 4) %>% as.data.frame()
+names(atac_across_gaf.df)<-names(bw.list)
+
+# Merge with regions
+
+zld_high_top250_contrib_resized_w_calc.df <- cbind(zld_high_top250_contrib_resized.gr %>% as.data.frame, atac_across_high_aff_zld.df) %>%
+  dplyr::select(seq_match_cat, T1_wt, T2_wt, T3_wt, T4_wt, T1_zld, T2_zld, T3_zld, T4_zld) %>% 
+  as.data.table %>%
+  melt.data.table(id.vars = c('seq_match_cat'), variable.name = 'timepoint', value.name = 'ATAC_signal')
+
+zld_low_btm250_contrib_resized_w_calc.df <- cbind(zld_low_btm250_contrib_resized.gr %>% as.data.frame, atac_across_low_aff_zld.df) %>%
+  dplyr::select(seq_match_cat, T1_wt, T2_wt, T3_wt, T4_wt, T1_zld, T2_zld, T3_zld, T4_zld) %>% 
+  as.data.table %>%
+  melt.data.table(id.vars = c('seq_match_cat'), variable.name = 'timepoint', value.name = 'ATAC_signal')
+
+gaf_250_contrib_resized_w_calc.df <- cbind(gaf_subset_resized.gr %>% as.data.frame, atac_across_gaf.df) %>%
+  dplyr::select(pattern_name, T1_wt, T2_wt, T3_wt, T4_wt, T1_zld, T2_zld, T3_zld, T4_zld) %>% 
+  dplyr::rename(seq_match_cat = pattern_name) %>% 
+  as.data.table %>%
+  melt.data.table(id.vars = c('seq_match_cat'), variable.name = 'timepoint', value.name = 'ATAC_signal')
+
+# Combine
+
+aff_regions_for_boxplot.df <- rbind(zld_high_top250_contrib_resized_w_calc.df, zld_low_btm250_contrib_resized_w_calc.df, gaf_250_contrib_resized_w_calc.df)
+
+# Plot 
+
+aff_box_order <- c("T1_wt", "T1_zld", "T2_wt", "T2_zld", "T3_wt", "T3_zld", "T4_wt", "T4_zld")
+aff_regions_for_boxplot.df$timepoint <- factor(aff_regions_for_boxplot.df$timepoint, levels = aff_box_order)
+my_aff_comparisons <- list(c("T1_wt", "T1_zld"), c("T2_wt", "T2_zld"), 
+                       c("T3_wt", "T3_zld"), c("T4_wt", "T4_zld"))
+
+aff_box <- ggplot(aff_regions_for_boxplot.df, aes(x = timepoint, y = log2(ATAC_signal))) +
+  geom_boxplot(aes(fill = seq_match_cat)) +
+  facet_wrap(~seq_match_cat) +
+  stat_compare_means(comparisons = my_aff_comparisons, method = "wilcox.test", label = "p.signif", paired = FALSE, label.y = 13) +
+  theme_cowplot()
+
+ggsave("atacseq_over_time_average_plots_at_motifs_by_affinity_250_motifs_only_box.pdf", plot = aff_box, path = "figures/14_zelda_depletion_atac", width = 40, height = 20, units = "cm")
+ggsave("atacseq_over_time_average_plots_at_motifs_by_affinity_250_motifs_only_box.png", plot = aff_box, path = "figures/14_zelda_depletion_atac", width = 40, height = 20, units = "cm")
+
+# Calculate median values
+
+library(plyr)
+
+ddply(zld_high_top250_contrib_resized_w_calc.df, .(timepoint), summarise, med = median(log2(ATAC_signal)))
+ddply(zld_low_btm250_contrib_resized_w_calc.df, .(timepoint), summarise, med = median(log2(ATAC_signal)))
+ddply(gaf_250_contrib_resized_w_calc.df, .(timepoint), summarise, med = median(log2(ATAC_signal)))
+ddply(zld_high_top250_contrib_resized_w_calc.df, .(timepoint), summarise, med = median(ATAC_signal))
+ddply(zld_low_btm250_contrib_resized_w_calc.df, .(timepoint), summarise, med = median(ATAC_signal))
+ddply(gaf_250_contrib_resized_w_calc.df, .(timepoint), summarise, med = median(ATAC_signal))
+
+```
+
+## 7.5. Plot ChromBPNet predicted profiles at highest and lowest affinity Zelda motifs before and after motif mutation
+
+```{r chrombpnet}
+
+# Import ChromBPNet predictions generated in 7_acc_genomic_perturbs.ipynb and take only the center 500 bp since that's what we used for experimental plots
+
+chrom.pred.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/perturbs/accessibility/zld_only_affinities_metapeaks.tsv.gz') %>%
+  as.data.frame()
+chrom.pred.intermediate.df <- chrom.pred.df[chrom.pred.df$position > 249,]
+chrom.pred.sized.df <- chrom.pred.intermediate.df[chrom.pred.intermediate.df$position < 751,]
+# Plot metapeaks
+
+metapeaks.pred <- ggplot(chrom.pred.sized.df, aes(x = position, y = pred)) +
+  geom_line(aes(linetype = mut)) +
+  facet_grid(timepoint~motif_class) +
+  theme_cowplot()
+
+ggsave("atacseq_over_time_average_plots_at_motifs_by_zld_affinity_250_motifs_only_chrom_pred.pdf", plot = metapeaks.pred, path = "figures/14_zelda_depletion_atac", width = 40, height = 20, units = "cm")
+ggsave("atacseq_over_time_average_plots_at_motifs_by_zld_affinity_250_motifs_only_chrom_pred.png", plot = metapeaks.pred, path = "figures/14_zelda_depletion_atac", width = 40, height = 20, units = "cm")
+
+```
+
+## 7.6. Plot sequence logos for highest and lowest affinity Zelda motifs
+
+```{r logo}
+
+library(ggseqlogo)
+
+zld_high_top250_contrib.seq <- as.data.frame(getSeq(BSgenome.Dmelanogaster.UCSC.dm6, zld_high_top250_contrib.gr))
+zld_low_btm250_contrib.seq <- as.data.frame(getSeq(BSgenome.Dmelanogaster.UCSC.dm6, zld_low_btm250_contrib.gr))
+gaf_only_high_top250_contrib.seq <- as.data.frame(getSeq(BSgenome.Dmelanogaster.UCSC.dm6, gaf_subset.gr))
+
+zld_top_250_logo <- ggplot() + geom_logo(zld_high_top250_contrib.seq) + theme_logo() + ggtitle("seq_match_cat == high, top 250 ordered by contrib")
+zld_bottom_250_logo <- ggplot() + geom_logo(zld_low_btm250_contrib.seq) + theme_logo() + ggtitle("seq_match_cat == low, bottom 250 ordered by contrib")
+gaf_250_logo <- ggplot() + geom_logo(gaf_only_high_top250_contrib.seq) + theme_logo() + ggtitle("seq_match_cat == high, 250 motifs")
+
+zld_top_bottom.logo <- zld_top_250_logo + zld_bottom_250_logo + gaf_250_logo
+
+ggsave("single_zld_affinity_logos_top_bottom_250.pdf", plot = zld_top_bottom.logo, path = "figures/14_zelda_depletion_atac", height = 6, width = 28)
+ggsave("single_zld_affinity_logos_top_bottom_250.png", plot = zld_top_bottom.logo, path = "figures/14_zelda_depletion_atac", height = 6, width = 28)
+
+```
+
+## 7.7 Plot individual examples of high and low affinity Zelda motifs, with GAF as a control
+
+Here, we selected individual examples by looking at the associated bigwig files in the IGV genome browser and looking at individual high and low affinity motifs that were organized in the above code. The following at the genomic coordinates for our examples:
+
+Zelda high affinity: chr2R:16838950-16839450
+Zelda low affinity: chr2L:19636680-19637180
+GAF: chr3R:15,313,850-15,314,350
+
+```{r individual}
+
+# Define enhancers
+
+enhancers.gr<-c(
+  GRanges('chr2R', IRanges(start = 16838950, end = 16839450), strand = '*', name = 'High affinity Zld'),
+  GRanges('chr2L', IRanges(start = 19636680, end = 19637180), strand = '*', name = 'Low affinity Zld'),
+  GRanges('chr3R', IRanges(start = 15313850, end = 15314350), strand = '*', name = 'GAF'))
+
+# Process motifs
+
+motifs.gr<-readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F) %>%
+  plyranges::mutate(motif = pattern_name,
+                    name = pattern_name) %>%
+  GenomicRanges::sort(ignore.strand = T)
+
+#Specific variables
+library(RColorBrewer)
+n_motifs<-motifs.gr$name %>% unique %>% length
+colors <- colorRampPalette(brewer.pal(n_motifs, "Accent"))(n_motifs)
+# getPalette(colourCount)
+# getPalette = colorRampPalette(brewer.pal(n_motifs, "Set1"))
+# 
+# many_colors <- grDevices::colors()[grep('gr(a|e)y|white', grDevices::colors(), invert = T)]
+# many_colors <- many_colors[20:(length(many_colors)-20)]
+# step<-floor(length(many_colors) / n_motifs)
+# colors <- many_colors[seq(1, n_motifs*step, step)]
+names(colors)<-motifs.gr$name %>% unique
+motif.colors.list<-as.list(colors)
+
+# Function
+
+plot_coverage_and_enhancer<-function(enhancer.gr, motifs.gr, bw.list, motif.colors.list, title, region_width = 1000, 
+                                     cores = 6, scales = 'fixed', rounding_margin = 50, label_margin = 200){
+  
+  #Assertion requirements to make the function run correctly.
+  testit::assert("Input enhancer GRanges needs to contain only 1 region.", length(enhancer.gr)==1)
+  testit::assert("Motifs need to be a GRanges object", is(motifs.gr, "GRanges"))
+  testit::assert("Enhancers need to be a GRanges object", is(enhancer.gr, "GRanges"))
+  testit::assert("Region width should be larger than enhancer width.", width(enhancer.gr)<=region_width)
+  testit::assert("Bigwig object needs to be a list of samples. If samples are ChIP-nexus/double-stranded samples, they need to be in a nested list.", 
+                 is(bw.list, "list") & all(!(names(bw.list) %in% c("pos", "neg"))))
+  testit::assert("Motif object needs a column titled pattern_name, motif_name, or name to distinguish motifs apart.", 
+                 any(grepl("pattern_name|name|motif_name", colnames(motifs.gr@elementMetadata))))
+  
+  #Find overlaps between motif set and enhancer
+  motifs_in_enhancer.gr<-subsetByOverlaps(motifs.gr, resize(enhancer.gr, region_width, "center"), ignore.strand = T)
+  if("pattern_name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$pattern_name
+  }
+  if("name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$name
+  }
+  
+  #Extract colors for enhancer
+  fills_in_order<-lapply(motifs_in_enhancer.gr$motif_name, function(x) motif.colors.list[[x]]) %>% unlist %>% unique %>% as.character
+  motifs_in_order<-motifs_in_enhancer.gr$motif_name %>% unique %>% as.character
+  motifs_in_enhancer.df<-motifs_in_enhancer.gr %>% as.data.frame
+  motifs_in_enhancer.df$motif_name<-factor(motifs_in_enhancer.df$motif_name, levels = motifs_in_order)
+  
+  #Convert enhancer coordinates to df
+  enhancer.df<-enhancer.gr %>% as.data.frame
+  
+  #Get half of the enhancer
+  enh_half<-floor(width(enhancer.gr)/2)
+  lower_bounds<-plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor)
+  upper_bounds<-plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling)
+  
+  enhancer.plot<-ggplot()+
+    geom_hline(yintercept = .5, color = "gray 85")+
+    geom_rect(data = enhancer.df, aes(xmin = start, xmax = end, ymin = 0, ymax = 1), fill = "gray 85")+
+    geom_text(data = enhancer.df, aes(x = ((start - end)/2 + start), y = .5, label = paste0(seqnames, ":", start, "-", end)), 
+              color = "black")
+  if(nrow(motifs_in_enhancer.df)>0){
+    enhancer.plot<-enhancer.plot + geom_rect(data = motifs_in_enhancer.df, 
+                                             aes(xmin = start, xmax = end, ymin = 1.1, ymax = 2, fill = motif_name), color = 'black', size = .1)
+  }
+  enhancer.plot<-enhancer.plot+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    scale_y_continuous(breaks = c(.5, 1.75), labels = c("Enhancer", "Motif(s)"), position = "right")+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line = element_blank(), axis.ticks.y = element_blank(),
+          legend.position = "none")
+  
+  # Get coverage across bigwig list
+  coverage.df<-mclapply(names(bw.list), function(x){
+    if(length(bw.list[[x]])==1){
+      df<-standard_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = floor(region_width/2) + rounding_margin, downstream = floor(region_width/2)+300) %>% 
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(resize(enhancer.gr, 1, "center")), sample_name = x)
+    }
+    if(length(bw.list[[x]])==2){
+      df<-exo_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = region_width/2 + rounding_margin, downstream = region_width/2+rounding_margin) %>%
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(enhancer.gr), sample_name = x)
+    }
+    return(df)
+  }, mc.cores = cores) %>% rbindlist() %>%
+    dplyr::filter(position >= lower_bounds, position <= upper_bounds) %>%
+    dplyr::mutate(sample_name = factor(sample_name, levels = names(bw.list)))
+  
+  #Check for strand if there are no 2-channeled samples.
+  if(!("strand" %in% colnames(coverage.df))){
+    coverage.df$strand<-NA
+  }
+  
+  #Plot the enhancer coverage.
+  coverage.plot<-ggplot(coverage.df)
+  if(nrow(motifs_in_enhancer.df)>0){
+    coverage.plot<-coverage.plot + geom_rect(data = motifs_in_enhancer.df, aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = motif_name), alpha = .2)
+  }
+  coverage.plot<-coverage.plot +
+    geom_area(aes(x = position, y = reads, group = strand), fill = "black")+
+    geom_text(aes(x = Inf, y = Inf, label = sample_name), hjust = -.01)+
+    scale_fill_manual(values = fills_in_order)+
+    #scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    #plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       #limits = c(lower_bounds,upper_bounds))+
+    facet_grid(sample_name ~ .)+
+    ylim(0,5)+
+    ggtitle(title)+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line.x = element_blank(), strip.background = element_blank())  
+  
+  g<-coverage.plot + enhancer.plot + plot_layout(ncol = 1, heights = c(5, 1))
+  return(g)
+}
+
+# Plot regions
+
+mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'fixed')
+  ggsave(paste0("figures/14_zelda_depletion_atac/", enhancer.gr$name,"_single_example.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/14_zelda_depletion_atac/", enhancer.gr$name,"_single_example.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+```
+
+## 7.8. Plot average binding profiles at these same regions
+
+```{r binding}
+
+# Import relevant data
+
+binding.list <- list(zld_binding = list(pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_zld_mbt_nexus_combined_positive.bw',
+                                        neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_zld_mbt_nexus_combined_negative.bw'),
+                     gaf_binding = list(pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_positive.bw',
+                                        neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_gaf_mbt_nexus_combined_negative.bw'))
+
+# Define function
+
+get_multi_gr_bw_exo_metapeak <- function(gr.list = gr.list, bw = bw.list, upstream = 500, downstream = 500, smooth = NA){
+  mclapply(names(gr.list), function(x){
+    gr <- gr.list[[x]]
+    get_multi_bw_exo_metapeak(gr,bw.list, upstream = upstream, downstream = downstream, smooth = smooth) %>%mutate(grange_name = x)# The ample_name will be the bw name
+  },mc.cores = 10) %>% bind_rows() %>% rename(bw_name = sample_name)
+}
+
+# Calculate and plot
+
+metapeaks.df <- lapply(names(zld_aff.list), function(x){
+  gr <- zld_aff.list[[x]]
+  df_across_samples<-lapply(names(binding.list), function(y){
+    bw <- binding.list[[y]]  
+    df <- exo_metapeak(gr = resize(gr, 1, "center"), sample = bw, upstream = 500, downstream = 500)
+    df$regions <- x 
+    df$chip <- y 
+    return(df)
+  }) %>% rbindlist
+  return(df_across_samples) 
+}) %>% rbindlist
+
+binding.aff <- ggplot(metapeaks.df, aes(x=tss_distance, y=reads, fill=strand))+
+  geom_line(aes(group=strand))+
+  facet_grid(chip ~ regions, scales = "free_y")+
+  xlab("Distance from motif center")+
+  ylab("ChIP-nexus Reads")+
+  theme_cowplot()
+binding.aff
+
+ggsave("binding_at_affinity_regions.pdf", plot = binding.aff, path = "figures/14_zelda_depletion_atac", width = 40, height = 20, units = "cm")
+ggsave("binding_at_affinity_regions.png", plot = binding.aff, path = "figures/14_zelda_depletion_atac", width = 40, height = 20, units = "cm")
+
+```
+
+# 8. Conclusions
+
+Here we can see that there is a general decrease in accessibility at Zelda-motif containing regions, in agreement with what has been previously pubslished in regard to Zelda's known role as a pioneer. Additionally, we see that low affinity motifs also work for pioneering but that they aren't as strong as high affinity motifs, and we find this by comparing wt and zld- ATAC-seq time course data at individual Zelda motif instances. 
+
+# 9. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```

@@ -1,0 +1,422 @@
+"""
+Author: Melanie Weilert
+Affiliation: Stowers Institute
+Aim: Pipeline for processing generally useful data that is utilized across projects. These files usually begin from the .bam stage.
+Date: August 2020
+Run: snakemake
+
+Main target rules:
+------------------
+
+- fastq_to_bam: Align sequences to genome using fastq or SRA Accession information
+    - exo:
+- bam_to_bw: Convert BAM reads to BW coverage files
+    - nexus: (1) deduplicate BAM file (2) resize fragments to 1bp from stop base (3) separate strands (4) export to BW
+    - seq: (1) deduplicate BAM file (2) resize fragments based on extension length (3) export to bw
+    - atac: (1) deduplicate BAM file (2) correct for Tn5 nicks (3) export pileup and corrected cuts to bigwig
+    - mnase: (1) Size select BAM file to nucleosome-sized fragments 130-200bp (2) resize fragment to central 3bp [paired end required] (3) export to bw
+- normalized_bw: Generate normalized .bw files
+    - seq_bam_to_log2_normalized_seq_bw: Convert ChIP-seq BAM reads to normalized coverage files.
+        - (1) deduplicate BAM file, (2) resize fragments to desired extension length, (3) normalize over WCE
+- run_macs2: Find peaks of high coverage using MACS2 (BED, narrowPeak)
+    - nexus: (1) Create fragment of 150bp centered at each 1-bp read (2) Run MACS2 with no WCE
+    - seq: Use WCE for background removal and run MACS2
+    - atac: Run MACS2 on paired-end BAM (note, Tn5 bias is not corrected for, can do this later) if coverage is low.
+"""
+
+##########################################################################################
+#Setup
+##########################################################################################
+import csv
+import os
+import math
+import numpy as np
+import pandas as pd
+from itertools import product
+
+##########################################################################################
+#Import external data and prepare configuration parameters.
+##########################################################################################
+SAMPLES = pd.read_csv(f'setup/samples.csv').set_index("sample_name", drop=False) #match genome with right indexes
+SAMPLES.extension_length = SAMPLES.extension_length.fillna(0) #fill column with zeros for str(int(ext_length)) in macs2 rule
+SAMPLES_TO_COMBINE = SAMPLES[(SAMPLES['combined_sample_name'].notna())].reset_index(drop=True)
+SAMPLES_TO_COMBINE = SAMPLES_TO_COMBINE[['experiment', 'genome', 'combined_sample_name', 'combined_output_sample', 'extension_length']].drop_duplicates()
+
+SAMPLES_WITH_NO_WCE = SAMPLES[~SAMPLES['sample_name'].str.contains('wce|h3_|gdna')] #filter all rows that have "wce" in their name
+SAMPLES_TO_CALL_PEAKS = SAMPLES_WITH_NO_WCE[~SAMPLES_WITH_NO_WCE['experiment'].str.contains('rna|mnase')] #filter all rows that have "rna" or "wce" as their method
+SAMPLES_TO_GET_IDR =  SAMPLES_TO_CALL_PEAKS[(SAMPLES_TO_CALL_PEAKS['combined_sample_name'].notna())] #filter all rows that have "rna" or "wce" as their method
+SAMPLES_COMBINED_TO_CALL_PEAKS = SAMPLES_TO_GET_IDR.reset_index(drop=True) #filter all rows that have "rna" or "wce" as their method
+SAMPLES_COMBINED_TO_CALL_PEAKS = SAMPLES_COMBINED_TO_CALL_PEAKS[['experiment', 'genome', 'combined_sample_name', 'combined_output_sample', 'extension_length']].drop_duplicates()
+
+#Normalized seq samples
+SEQ_SAMPLES_TO_NORMALIZE = SAMPLES[(SAMPLES['experiment']=='seq') & (SAMPLES['normalize']=='yes')]
+SEQ_COMBINED_SAMPLES_TO_NORMALIZE = SAMPLES[(SAMPLES['experiment']=='seq') & (SAMPLES['normalize']=='yes') & (SAMPLES['combined_sample_name'].notna()) & (SAMPLES['sequencing_type']=='single')].reset_index(drop=True)
+SEQ_COMBINED_SAMPLES_TO_NORMALIZE = SEQ_COMBINED_SAMPLES_TO_NORMALIZE[['experiment', 'genome', 'combined_sample_name', 'combined_output_sample']].drop_duplicates()
+
+##########################################################################################
+# Request output files based on rules below
+##########################################################################################
+
+rule all:
+    input:
+        expand("bw/{genome}/{exp}/{state}/{output_sample}.bw", zip, output_sample = SAMPLES.output_sample, exp = SAMPLES.experiment, genome = SAMPLES.genome, state = ['individual'] * SAMPLES.shape[0]),
+        expand("bw/{genome}/{exp}/{state}/{output_sample}.bw", zip, output_sample = SAMPLES_TO_COMBINE.combined_output_sample, exp = SAMPLES_TO_COMBINE.experiment, genome = SAMPLES_TO_COMBINE.genome, state = ['combined'] * SAMPLES_TO_COMBINE.shape[0]),
+
+        expand("peaks/{genome}/{exp}/{state}/{sample}_peaks.narrowPeak", zip, sample = SAMPLES_TO_CALL_PEAKS.sample_name, exp = SAMPLES_TO_CALL_PEAKS.experiment, genome = SAMPLES_TO_CALL_PEAKS.genome, state = ['individual'] * SAMPLES_TO_CALL_PEAKS.shape[0]),
+        expand("peaks/{genome}/{exp}/{state}/{sample}_peaks.narrowPeak", zip, sample = SAMPLES_COMBINED_TO_CALL_PEAKS.combined_sample_name, exp = SAMPLES_COMBINED_TO_CALL_PEAKS.experiment, genome = SAMPLES_COMBINED_TO_CALL_PEAKS.genome, state = ['combined'] * SAMPLES_COMBINED_TO_CALL_PEAKS.shape[0]),
+
+        expand("idr/{genome}/{exp}/{condition}/{sample}.log", zip, sample = SAMPLES_TO_GET_IDR.sample_name, condition =  SAMPLES_TO_GET_IDR.combined_sample_name.str.replace('_combined',''), exp = SAMPLES_TO_GET_IDR.experiment, genome = SAMPLES_TO_GET_IDR.genome),
+
+        expand("bw/{genome}/{exp}/{state}/{sample}_log2_normalized.bw", zip, sample = SEQ_SAMPLES_TO_NORMALIZE.sample_name, exp = SEQ_SAMPLES_TO_NORMALIZE.experiment, genome = SEQ_SAMPLES_TO_NORMALIZE.genome, state = ['individual'] * SEQ_SAMPLES_TO_NORMALIZE.shape[0]),
+        expand("bw/{genome}/{exp}/{state}/{sample}_log2_normalized.bw", zip, sample = SEQ_COMBINED_SAMPLES_TO_NORMALIZE.combined_sample_name, exp = SEQ_COMBINED_SAMPLES_TO_NORMALIZE.experiment, genome = SEQ_COMBINED_SAMPLES_TO_NORMALIZE.genome, state = ['combined'] * SEQ_COMBINED_SAMPLES_TO_NORMALIZE.shape[0]),
+
+##########################################################################################
+# General sequencing rules
+##########################################################################################
+
+#Align the .fastq.gz file to the genome of interest depending on the sequencing data
+rule fastq_to_processed_bam:
+    priority: 10
+    output:'bam/{genome}/{exp}/individual/{sample}.bam'
+    params:
+        starting_file = lambda wildcards: SAMPLES.loc[wildcards.sample, 'starting_file'],
+        read2 = lambda wildcards: SAMPLES.loc[wildcards.sample, 'starting_file'].replace('_1.fastq.gz', '_2.fastq.gz'),
+        sequencing_type = lambda wildcards: SAMPLES.loc[wildcards.sample, 'sequencing_type'],
+        bowtie2_idx = 'indexes/bowtie2/{genome}',
+        ext_len = lambda wildcards: SAMPLES.loc[wildcards.sample, 'extension_length'],
+        nexus_fixed_barcodes = lambda wildcards: SAMPLES.loc[wildcards.sample, 'nexus_barcodes'].replace('_', ','),
+        nexus_intermediate_fastq_prefix = 'fastq/{genome}/{exp}/{sample}',
+        threads = 6,
+    message: 'Aligning FASTQ to BAM'
+    run:
+        if (wildcards.exp == 'seq') or (wildcards.exp == 'atac') or (wildcards.exp == 'mnase'):
+            if params.sequencing_type == 'single':
+                shell(
+                    """
+                    bowtie2 -x {params.bowtie2_idx} {params.starting_file} -p {params.threads} --no-unal --no-mixed | \
+                    samtools view -F 4 -S -b | samtools sort -@ {params.threads} -o {output} - ;
+                    """)
+            else:
+                shell(
+                    """
+                    bowtie2 -x {params.bowtie2_idx} -1 {params.starting_file} -2 {params.read2} -X {params.ext_len} \
+                    -p {params.threads} --no-unal --no-mixed | \
+                    samtools view -F 4 -S -b | samtools sort -@ {params.threads} -o {output} - ;
+                    """)
+        elif (wildcards.exp == 'nexus'):
+            shell(
+            """
+            #Preprocess the samples
+            Rscript scripts/nexus_preprocess_fastq.r -f {params.starting_file} -t 50 -k 20 -b {params.nexus_fixed_barcodes} -r 5 \
+            -o {params.nexus_intermediate_fastq_prefix}_preproc.fastq.gz -p {params.threads}
+
+            #Trim adapter fragments
+            cutadapt -m 22 -O 4 -e .22 --quiet -a AGATCGGAAGAGCACACGTCTG -a CTGTCTCTTATACACATCT \
+            -o {params.nexus_intermediate_fastq_prefix}_preproc_trim.fastq.gz {params.nexus_intermediate_fastq_prefix}_preproc.fastq.gz
+
+            #Align trimmed and preprocessed fastq file
+            bowtie2 -x {params.bowtie2_idx} {params.nexus_intermediate_fastq_prefix}_preproc_trim.fastq.gz -p {params.threads} --no-unal --no-mixed | \
+            samtools view -F 4 -S -b | samtools sort -@ {params.threads} -o {output} - ;
+
+            #Remove intermediate files
+            # rm {params.nexus_intermediate_fastq_prefix}_preproc.fastq.gz
+            # rm {params.nexus_intermediate_fastq_prefix}_preproc_trim.fastq.gz
+            """
+            )
+
+rule individual_bam_to_combined_bam:
+    priority: 10
+    input:
+        lambda wildcards: ['bam/{genome}/{exp}/individual/' + s + '.bam' for s in SAMPLES.sample_name[SAMPLES.combined_sample_name == wildcards.sample]]
+    output:
+        "bam/{genome}/{exp}/combined/{sample}.bam",
+    params:
+        genome = '{genome}',
+        exp = '{exp}',
+    message: "Converting bam to merged bam"
+    shell:
+        """
+        samtools merge {output} {input}
+        """
+
+rule individual_bam_to_individual_bw:
+    priority: 5
+    input:
+        lambda wildcards: 'bam/{genome}/{exp}/{state}/' + str(SAMPLES[SAMPLES.output_sample==wildcards.output_sample].sample_name[0]) + '.bam'
+    output:
+        "bw/{genome}/{exp}/{state}/{output_sample}.bw"
+    params:
+        extension_length = lambda wildcards: str(int(SAMPLES[SAMPLES.output_sample==wildcards.output_sample].extension_length[0])),
+        rdata_name = lambda wildcards: 'rdata/' + wildcards.genome + '/' + wildcards.exp + '/' + wildcards.state + '/' + str(SAMPLES[SAMPLES.output_sample==wildcards.output_sample].sample_name[0]),
+        cutsite_name = lambda wildcards: 'bw/' + wildcards.genome + '/' + wildcards.exp + '/' + wildcards.state  + '/' + str(SAMPLES[SAMPLES.output_sample==wildcards.output_sample].sample_name[0]) + '_cutsites',
+        bam_output_sample_prefix = 'bam/{genome}/{exp}/{state}/{output_sample}',
+        exp = '{exp}',
+        genome = '{genome}',
+        state = '{state}',
+        threads = 4,
+    message: "Computing coverage of .bam file..."
+    run:
+        if wildcards.exp == 'seq':
+            shell(
+                """
+                mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+                Rscript scripts/seq_process_bam.r -f {input} -e {params.extension_length} -n {params.rdata_name} -b {output} -c {params.threads}
+                """
+            )
+        elif wildcards.exp == 'atac':
+            if str(SAMPLES[SAMPLES.output_sample==wildcards.output_sample].sequencing_type[0]) == 'single':
+                shell(
+                    """
+                    mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+
+                    #Mark duplicates
+                    java -jar indexes/picard_v2.23.8.jar MarkDuplicates I={input} O={input}.temp.bam M={params.bam_output_sample_prefix}.dedup.txt ASSUME_SORT_ORDER=coordinate
+                    rm {input}
+                    mv {input}.temp.bam {input}
+
+                    samtools index {input}
+                    Rscript scripts/atac_process_bam.r \
+                           --single_ended --file {input} --bigwig_file_name_output {output} --r_file_name_output {params.rdata_name}.granges.rds \
+                           --deduplicate_file T --tn5_cut_correction T --minimum_fragment_size 10 --maximum_fragment_size 600
+                    Rscript scripts/atac_process_bam.r \
+                           --single_ended --file {input} --bigwig_file_name_output {params.cutsite_name}.bw \
+                           --deduplicate_file T --tn5_cut_correction T --minimum_fragment_size 10 --maximum_fragment_size 600 --cut_site_export T
+                    """
+                )
+            else:
+                shell(
+                    """
+                    mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+
+                    #Mark duplicates
+                    java -jar indexes/picard_v2.23.8.jar MarkDuplicates I={input} O={input}.temp.bam M={params.bam_output_sample_prefix}.dedup.txt ASSUME_SORT_ORDER=coordinate
+                    rm {input}
+                    mv {input}.temp.bam {input}
+
+                    samtools index {input}
+                    Rscript scripts/atac_process_bam.r \
+                           --file {input} --bigwig_file_name_output {output} --r_file_name_output {params.rdata_name}.granges.rds \
+                           --deduplicate_file T --tn5_cut_correction T --minimum_fragment_size 10 --maximum_fragment_size 600
+                    Rscript scripts/atac_process_bam.r \
+                           --file {input} --bigwig_file_name_output {params.cutsite_name}.bw \
+                           --deduplicate_file T --tn5_cut_correction T --minimum_fragment_size 10 --maximum_fragment_size 600 --cut_site_export T
+                    Rscript scripts/rpm_normalize_bws.r -f {params.rdata_name}.granges.rds -n {params.rdata_name}_normalized
+                    """
+                )
+        elif wildcards.exp == 'nexus':
+            shell(
+                """
+                mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+                samtools index {input}
+                Rscript scripts/nexus_process_bam.r -f {input} -n {params.rdata_name} -o FALSE -u TRUE
+                Rscript scripts/nexus_process_bw.r -r {params.rdata_name}.granges.rds
+                Rscript scripts/nexus_normalize_bw.r -f {params.rdata_name}.granges.rds -n {params.rdata_name}_normalized
+                mv {params.rdata_name}_*.bw bw/{params.genome}/{params.exp}/{params.state} -v
+                """
+            )
+        elif wildcards.exp == 'mnase':
+            shell(
+                """
+                mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+                samtools index {input}
+                Rscript scripts/seq_process_bam.r  -f {input} -n {params.rdata_name} -b {output} -p -c {params.threads}
+                Rscript scripts/rpm_normalize_bws.r -f {params.rdata_name}.ranges.RData -n {params.rdata_name}_normalized -t mnase
+                """
+            )
+
+rule combined_bam_to_combined_bw:
+    priority: 5
+    input:
+        lambda wildcards: 'bam/{genome}/{exp}/{state}/' + str(SAMPLES[SAMPLES.combined_output_sample==wildcards.output_sample].combined_sample_name[0]) + '.bam'
+    output:
+        "bw/{genome}/{exp}/{state}/{output_sample}.bw"
+    params:
+        extension_length = lambda wildcards: str(int(np.round(np.mean(SAMPLES[SAMPLES.combined_output_sample==wildcards.output_sample].extension_length.values)))),
+        rdata_name = lambda wildcards: 'rdata/' + wildcards.genome + '/' + wildcards.exp + '/' + wildcards.state + '/' + str(SAMPLES[SAMPLES.combined_output_sample==wildcards.output_sample].combined_sample_name[0]),
+        cutsite_name = lambda wildcards: 'bw/' + wildcards.genome + '/' + wildcards.exp + '/' + wildcards.state  + '/' + str(SAMPLES[SAMPLES.combined_output_sample==wildcards.output_sample].combined_sample_name[0]) + '_cutsites',
+        bam_output_sample_prefix = 'bam/{genome}/{exp}/{state}/{output_sample}',
+        exp = '{exp}',
+        genome = '{genome}',
+        state = '{state}',
+        threads = 4,
+    message: "Computing coverage of .bam file..."
+    run:
+        if wildcards.exp == 'seq':
+            shell(
+                """
+                mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+                Rscript scripts/seq_process_bam.r -f {input} -e {params.extension_length} -n {params.rdata_name} -b {output} -c {params.threads}
+                """
+            )
+        elif wildcards.exp == 'atac':
+            if str(SAMPLES[SAMPLES.combined_output_sample==wildcards.output_sample].sequencing_type[0]) == 'single':
+                shell(
+                    """
+                    mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+
+                    #Mark duplicates
+                    java -jar indexes/picard_v2.23.8.jar MarkDuplicates I={input} O={input}.temp.bam M={params.bam_output_sample_prefix}.dedup.txt ASSUME_SORT_ORDER=coordinate
+                    rm {input}
+                    mv {input}.temp.bam {input}
+
+                    samtools index {input}
+                    Rscript scripts/atac_process_bam.r \
+                           --single_ended --file {input} --bigwig_file_name_output {output} --r_file_name_output {params.rdata_name}.granges.rds \
+                           --deduplicate_file T --tn5_cut_correction T --minimum_fragment_size 10 --maximum_fragment_size 600
+                    Rscript scripts/atac_process_bam.r \
+                           --single_ended --file {input} --bigwig_file_name_output {params.cutsite_name}.bw \
+                           --deduplicate_file T --tn5_cut_correction T --minimum_fragment_size 10 --maximum_fragment_size 600 --cut_site_export T
+                    Rscript scripts/rpm_normalize_bws.r -f {params.rdata_name}.granges.rds -n {params.rdata_name}_normalized
+                    """
+                )
+            else:
+                shell(
+                    """
+                    mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+
+                    #Mark duplicates
+                    java -jar indexes/picard_v2.23.8.jar MarkDuplicates I={input} O={input}.temp.bam M={params.bam_output_sample_prefix}.dedup.txt ASSUME_SORT_ORDER=coordinate
+                    rm {input}
+                    mv {input}.temp.bam {input}
+
+                    samtools index {input}
+                    Rscript scripts/atac_process_bam.r \
+                           --file {input} --bigwig_file_name_output {output} --r_file_name_output {params.rdata_name}.granges.rds \
+                           --deduplicate_file T --tn5_cut_correction T --minimum_fragment_size 10 --maximum_fragment_size 600
+                    Rscript scripts/atac_process_bam.r \
+                           --file {input} --bigwig_file_name_output {params.cutsite_name}.bw \
+                           --deduplicate_file T --tn5_cut_correction T --minimum_fragment_size 10 --maximum_fragment_size 600 --cut_site_export T
+                    Rscript scripts/rpm_normalize_bws.r -f {params.rdata_name}.granges.rds -n {params.rdata_name}_normalized
+                """
+                )
+        elif wildcards.exp == 'nexus':
+            shell(
+                """
+                mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+                samtools index {input}
+                Rscript scripts/nexus_process_bam.r -f {input} -n {params.rdata_name} -o FALSE -u TRUE
+                Rscript scripts/nexus_process_bw.r -r {params.rdata_name}.granges.rds
+                Rscript scripts/nexus_normalize_bw.r -f {params.rdata_name}.granges.rds -n {params.rdata_name}_normalized
+                mv {params.rdata_name}_*.bw bw/{params.genome}/{params.exp}/{params.state} -v
+                """
+            )
+        elif wildcards.exp == 'mnase':
+            shell(
+                """
+                mkdir -p rdata/{params.genome}/{params.exp}/{params.state}
+                samtools index {input}
+                Rscript scripts/seq_process_bam.r  -f {input} -n {params.rdata_name} -b {output} -p -c {params.threads}
+                Rscript scripts/rpm_normalize_bws.r -f {params.rdata_name}.ranges.RData -n {params.rdata_name}_normalized -t mnase
+                """
+            )
+
+##########################################################################################
+# Peak/coverage identification rules
+##########################################################################################
+
+# lambda wildcards: SAMPLES.loc[wildcards.sample, 'control_name'],
+rule run_peak_calling:
+    priority: 1
+    input: "bam/{genome}/{exp}/{state}/{sample}.bam" #lambda wildcards: SAMPLES.loc[wildcards.sample, 'bam_path']
+    output: "peaks/{genome}/{exp}/{state}/{sample}_peaks.narrowPeak"
+    params:
+        wce = lambda wildcards: (str(SAMPLES.loc[str(SAMPLES.loc[str(SAMPLES.sample_name[SAMPLES.combined_sample_name == wildcards.sample][0]), 'control_name']), 'combined_sample_name']) if ((wildcards.exp=='seq') & (wildcards.state=='combined')) else str(SAMPLES.loc[wildcards.sample, 'control_name']) if (wildcards.state=='individual') else '') + '.bam',
+        extension_length = lambda wildcards: str(int(np.round(np.mean(SAMPLES[(SAMPLES.sample_name==wildcards.sample) | (SAMPLES.combined_sample_name==wildcards.sample)].extension_length.values)))),
+        name = "{sample}",
+        exp = "{exp}",
+        state = "{state}",
+        genome = '{genome}',
+        outdir = "peaks/{genome}/{exp}/{state}",
+        threads = 6,
+    message: "Running MACS2..."
+    run:
+        if wildcards.exp == 'seq':
+            if pd.isnull(params.wce): #If there is no WCE, then just find peaks without it
+                shell(
+                    """
+                    mkdir -p {params.outdir}
+                    macs2 callpeak -f BAM --tempdir tmp -t {input} --outdir {params.outdir} -n {params.name} --nomodel --extsize {params.extension_length}
+                    """
+                )
+            else:
+                shell(
+                    """
+                    mkdir -p {params.outdir}
+                    macs2 callpeak -f BAM --tempdir tmp -t {input} -c bam/{params.genome}/{params.exp}/{params.state}/{params.wce} \
+                    --outdir {params.outdir} -n {params.name} --nomodel --extsize {params.extension_length}
+                    """
+                )
+        elif wildcards.exp == 'nexus':
+            shell(
+                """
+                mkdir -p {params.outdir}
+                macs2 callpeak --keep-dup all -f BAM --nomodel --shift -75 --extsize 150 -t {input} --outdir {params.outdir} -n {params.name}
+                """
+            )
+        elif wildcards.exp == 'atac':
+                shell(
+                    """
+                    mkdir -p {params.outdir}
+                    macs2 callpeak -f BAMPE --nomodel -t {input} --outdir {params.outdir} -n {params.name}
+                    """
+                )
+
+#Run pairwise IDR: for each factor, run pairwise idr2 for each peak
+rule run_idr:
+    priority: 1
+    input:
+        macs2_file = "peaks/{genome}/{exp}/individual/{sample}_peaks.narrowPeak",
+        macs2_combined_file = lambda wildcards: "peaks/" + wildcards.genome + "/" + wildcards.exp + "/combined/" + SAMPLES.loc[wildcards.sample, 'combined_sample_name'] + "_peaks.narrowPeak",
+    output:
+        "idr/{genome}/{exp}/{condition}/{sample}.log"
+    params:
+        idr_output_dir = lambda wildcards:  "idr/" + wildcards.genome + "/" + wildcards.exp + "/" + wildcards.condition,
+        condition = "{condition}",
+    message: "Run IDR pairwise..."
+    shell:
+        """
+        mkdir -p {params.idr_output_dir}
+        bash scripts/run_macs2_idr_between_conditions.sh {input.macs2_file} {params.idr_output_dir} {params.condition} {input.macs2_combined_file}
+        """
+
+##########################################################################################
+# Normalization rules
+##########################################################################################
+#
+# #Normalize using log2 across a ChIP-seq sample
+# rule seq_bam_to_log2_normalized_seq_bw:
+#     priority: 1
+#     input:
+#         "bam/{genome}/{exp}/{state}/{sample}.bam"
+#     output:
+#         "bw/{genome}/{exp}/{state}/{sample}_log2_normalized.bw"
+#     params:
+#         wce = lambda wildcards: 'bam/' + wildcards.genome + '/' + wildcards.exp + '/' + wildcards.state + '/' + str(SAMPLES.loc[wildcards.sample, 'control_name']) + '.bam'
+#         extension_length = lambda wildcards: str(int(SAMPLES.loc[wildcards.sample, 'extension_length'])) if SAMPLES.loc[wildcards.sample, 'sequencing_type']=='single' else '',
+#         threads = 4,
+#     message: "Computing coverage of .bam file..."
+#     shell:
+#         """
+#         samtools index {input}
+#         samtools index {params.wce}
+#         bamCompare -b1 {input} -b2 {params.wce} -of bigwig -o {output} --scaleFactorsMethod readCount --operation log2 --binSize 1 -p {params.threads} --extendReads {params.extension_length}
+#         """
+
+#Normalize using log2 across a ChIP-seq sample
+rule seq_bam_to_log2_normalized_seq_bw:
+    priority: 1
+    input:
+        "bam/{genome}/{exp}/{state}/{sample}.bam"
+    output:
+        "bw/{genome}/{exp}/{state}/{sample}_log2_normalized.bw"
+    params:
+        wce = lambda wildcards: 'bam/' + wildcards.genome + '/' + wildcards.exp + '/' + wildcards.state + '/' + (str(SAMPLES.loc[wildcards.sample, 'control_name']) if wildcards.state=='individual' else str(SAMPLES.loc[str(SAMPLES.loc[str(SAMPLES.sample_name[SAMPLES.combined_sample_name == wildcards.sample][0]), 'control_name']), 'combined_sample_name'])) + '.bam',
+        extension_length = lambda wildcards: str(int(np.round(np.mean(SAMPLES[(SAMPLES.sample_name==wildcards.sample) | (SAMPLES.combined_sample_name==wildcards.sample)]['extension_length'].values)))),
+        threads = 4,
+    message: "Computing coverage of .bam file..."
+    shell:
+        """
+        samtools index {input}
+        samtools index {params.wce}
+        bamCompare -b1 {input} -b2 {params.wce} -of bigwig -o {output} --scaleFactorsMethod readCount --operation log2 --binSize 1 -p {params.threads} --extendReads {params.extension_length}
+        """

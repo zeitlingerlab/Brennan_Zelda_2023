@@ -1,0 +1,1266 @@
+[2022-07-12 10:40:19,149] - [INFO] - Using tasks: ['Zld']
+[2022-07-12 10:43:21,217] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 10:44:38,130] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 10:44:39,985] - [INFO] - Scanning for patterns
+[2022-07-12 10:45:10,284] - [INFO] - Merging
+[2022-07-12 10:45:10,294] - [INFO] - Append ranges
+[2022-07-12 10:45:10,316] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 4330 entries, 0 to 4329
+Data columns (total 30 columns):
+pattern                       4330 non-null object
+example_idx                   4330 non-null int64
+pattern_start                 4330 non-null int64
+pattern_end                   4330 non-null int64
+strand                        4330 non-null object
+pattern_center                4330 non-null int64
+pattern_len                   4330 non-null int64
+match_weighted                4330 non-null float64
+match_weighted_p              4330 non-null category
+match_weighted_cat            4330 non-null category
+match_max                     4330 non-null float64
+match_max_task                4330 non-null object
+contrib_weighted              4330 non-null float64
+contrib_weighted_p            4330 non-null category
+contrib_weighted_cat          4330 non-null category
+contrib_max                   4330 non-null float64
+contrib_max_task              4330 non-null object
+seq_match                     4330 non-null float64
+seq_match_p                   4330 non-null category
+seq_match_cat                 4330 non-null category
+match/Zld                     4330 non-null float64
+contrib/Zld                   4330 non-null float64
+pattern_short                 4330 non-null object
+example_chrom                 4330 non-null object
+example_start                 4330 non-null int64
+example_end                   4330 non-null int64
+example_strand                4330 non-null object
+example_interval_from_task    4330 non-null object
+pattern_start_abs             4330 non-null int64
+pattern_end_abs               4330 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 1.1+ MB
+[2022-07-12 10:45:10,331] - [INFO] - Writing the resuling pd.DataFrame of shape (4330, 30) to tsv/mapped_motifs/Zld_instances_noncurated_0based.tsv.gz
+[2022-07-12 10:45:10,334] - [INFO] - Writing a tsv file
+[2022-07-12 10:45:10,617] - [INFO] - Done!
+[2022-07-12 10:45:32,696] - [INFO] - Using tasks: ['Dl']
+[2022-07-12 10:48:34,927] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Dl_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 10:49:07,222] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Dl_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 10:49:07,977] - [INFO] - Scanning for patterns
+[2022-07-12 10:49:19,573] - [INFO] - Merging
+[2022-07-12 10:49:19,582] - [INFO] - Append ranges
+[2022-07-12 10:49:19,600] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 1769 entries, 0 to 1768
+Data columns (total 30 columns):
+pattern                       1769 non-null object
+example_idx                   1769 non-null int64
+pattern_start                 1769 non-null int64
+pattern_end                   1769 non-null int64
+strand                        1769 non-null object
+pattern_center                1769 non-null int64
+pattern_len                   1769 non-null int64
+match_weighted                1769 non-null float64
+match_weighted_p              1769 non-null category
+match_weighted_cat            1769 non-null category
+match_max                     1769 non-null float64
+match_max_task                1769 non-null object
+contrib_weighted              1769 non-null float64
+contrib_weighted_p            1769 non-null category
+contrib_weighted_cat          1769 non-null category
+contrib_max                   1769 non-null float64
+contrib_max_task              1769 non-null object
+seq_match                     1769 non-null float64
+seq_match_p                   1769 non-null category
+seq_match_cat                 1769 non-null category
+match/Dl                      1769 non-null float64
+contrib/Dl                    1769 non-null float64
+pattern_short                 1769 non-null object
+example_chrom                 1769 non-null object
+example_start                 1769 non-null int64
+example_end                   1769 non-null int64
+example_strand                1769 non-null object
+example_interval_from_task    1769 non-null object
+pattern_start_abs             1769 non-null int64
+pattern_end_abs               1769 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 481.7+ KB
+[2022-07-12 10:49:19,613] - [INFO] - Writing the resuling pd.DataFrame of shape (1769, 30) to tsv/mapped_motifs/Dl_instances_noncurated_0based.tsv.gz
+[2022-07-12 10:49:19,616] - [INFO] - Writing a tsv file
+[2022-07-12 10:49:19,739] - [INFO] - Done!
+[2022-07-12 10:49:36,671] - [INFO] - Using tasks: ['Twi']
+[2022-07-12 10:52:34,998] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Twi_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 10:53:44,079] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Twi_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 10:53:45,668] - [INFO] - Scanning for patterns
+[2022-07-12 10:54:25,022] - [INFO] - Merging
+[2022-07-12 10:54:25,035] - [INFO] - Append ranges
+[2022-07-12 10:54:25,075] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 27290 entries, 0 to 27289
+Data columns (total 30 columns):
+pattern                       27290 non-null object
+example_idx                   27290 non-null int64
+pattern_start                 27290 non-null int64
+pattern_end                   27290 non-null int64
+strand                        27290 non-null object
+pattern_center                27290 non-null int64
+pattern_len                   27290 non-null int64
+match_weighted                27290 non-null float64
+match_weighted_p              27290 non-null category
+match_weighted_cat            27290 non-null category
+match_max                     27290 non-null float64
+match_max_task                27290 non-null object
+contrib_weighted              27290 non-null float64
+contrib_weighted_p            27290 non-null category
+contrib_weighted_cat          27290 non-null category
+contrib_max                   27290 non-null float64
+contrib_max_task              27290 non-null object
+seq_match                     27290 non-null float64
+seq_match_p                   27290 non-null category
+seq_match_cat                 27290 non-null category
+match/Twi                     27290 non-null float64
+contrib/Twi                   27290 non-null float64
+pattern_short                 27290 non-null object
+example_chrom                 27290 non-null object
+example_start                 27290 non-null int64
+example_end                   27290 non-null int64
+example_strand                27290 non-null object
+example_interval_from_task    27290 non-null object
+pattern_start_abs             27290 non-null int64
+pattern_end_abs               27290 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 6.2+ MB
+[2022-07-12 10:54:25,106] - [INFO] - Writing the resuling pd.DataFrame of shape (27290, 30) to tsv/mapped_motifs/Twi_instances_noncurated_0based.tsv.gz
+[2022-07-12 10:54:25,111] - [INFO] - Writing a tsv file
+[2022-07-12 10:54:26,936] - [INFO] - Done!
+[2022-07-12 10:54:48,368] - [INFO] - Using tasks: ['Bcd']
+[2022-07-12 10:57:42,534] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Bcd_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 10:58:40,824] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Bcd_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 10:58:42,909] - [INFO] - Scanning for patterns
+[2022-07-12 10:59:11,498] - [INFO] - Merging
+[2022-07-12 10:59:11,508] - [INFO] - Append ranges
+[2022-07-12 10:59:11,539] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 12804 entries, 0 to 12803
+Data columns (total 30 columns):
+pattern                       12804 non-null object
+example_idx                   12804 non-null int64
+pattern_start                 12804 non-null int64
+pattern_end                   12804 non-null int64
+strand                        12804 non-null object
+pattern_center                12804 non-null int64
+pattern_len                   12804 non-null int64
+match_weighted                12804 non-null float64
+match_weighted_p              12804 non-null category
+match_weighted_cat            12804 non-null category
+match_max                     12804 non-null float64
+match_max_task                12804 non-null object
+contrib_weighted              12804 non-null float64
+contrib_weighted_p            12804 non-null category
+contrib_weighted_cat          12804 non-null category
+contrib_max                   12804 non-null float64
+contrib_max_task              12804 non-null object
+seq_match                     12804 non-null float64
+seq_match_p                   12804 non-null category
+seq_match_cat                 12804 non-null category
+match/Bcd                     12804 non-null float64
+contrib/Bcd                   12804 non-null float64
+pattern_short                 12804 non-null object
+example_chrom                 12804 non-null object
+example_start                 12804 non-null int64
+example_end                   12804 non-null int64
+example_strand                12804 non-null object
+example_interval_from_task    12804 non-null object
+pattern_start_abs             12804 non-null int64
+pattern_end_abs               12804 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 2.7+ MB
+[2022-07-12 10:59:11,560] - [INFO] - Writing the resuling pd.DataFrame of shape (12804, 30) to tsv/mapped_motifs/Bcd_instances_noncurated_0based.tsv.gz
+[2022-07-12 10:59:11,563] - [INFO] - Writing a tsv file
+[2022-07-12 10:59:12,370] - [INFO] - Done!
+[2022-07-12 10:59:33,572] - [INFO] - Using tasks: ['Cad']
+[2022-07-12 11:02:26,470] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Cad_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 11:03:32,279] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Cad_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 11:03:34,616] - [INFO] - Scanning for patterns
+[2022-07-12 11:04:09,717] - [INFO] - Merging
+[2022-07-12 11:04:09,727] - [INFO] - Append ranges
+[2022-07-12 11:04:09,761] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 10369 entries, 0 to 10368
+Data columns (total 30 columns):
+pattern                       10369 non-null object
+example_idx                   10369 non-null int64
+pattern_start                 10369 non-null int64
+pattern_end                   10369 non-null int64
+strand                        10369 non-null object
+pattern_center                10369 non-null int64
+pattern_len                   10369 non-null int64
+match_weighted                10369 non-null float64
+match_weighted_p              10369 non-null category
+match_weighted_cat            10369 non-null category
+match_max                     10369 non-null float64
+match_max_task                10369 non-null object
+contrib_weighted              10369 non-null float64
+contrib_weighted_p            10369 non-null category
+contrib_weighted_cat          10369 non-null category
+contrib_max                   10369 non-null float64
+contrib_max_task              10369 non-null object
+seq_match                     10369 non-null float64
+seq_match_p                   10369 non-null category
+seq_match_cat                 10369 non-null category
+match/Cad                     10369 non-null float64
+contrib/Cad                   10369 non-null float64
+pattern_short                 10369 non-null object
+example_chrom                 10369 non-null object
+example_start                 10369 non-null int64
+example_end                   10369 non-null int64
+example_strand                10369 non-null object
+example_interval_from_task    10369 non-null object
+pattern_start_abs             10369 non-null int64
+pattern_end_abs               10369 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 2.3+ MB
+[2022-07-12 11:04:09,781] - [INFO] - Writing the resuling pd.DataFrame of shape (10369, 30) to tsv/mapped_motifs/Cad_instances_noncurated_0based.tsv.gz
+[2022-07-12 11:04:09,784] - [INFO] - Writing a tsv file
+[2022-07-12 11:04:10,482] - [INFO] - Done!
+[2022-07-12 11:04:31,979] - [INFO] - Using tasks: ['GAF']
+[2022-07-12 11:07:29,428] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/GAF_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 11:08:10,422] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/GAF_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-12 11:08:11,244] - [INFO] - Scanning for patterns
+[2022-07-12 11:08:41,078] - [INFO] - Merging
+[2022-07-12 11:08:41,090] - [INFO] - Append ranges
+[2022-07-12 11:08:41,125] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 16391 entries, 0 to 16390
+Data columns (total 30 columns):
+pattern                       16391 non-null object
+example_idx                   16391 non-null int64
+pattern_start                 16391 non-null int64
+pattern_end                   16391 non-null int64
+strand                        16391 non-null object
+pattern_center                16391 non-null int64
+pattern_len                   16391 non-null int64
+match_weighted                16391 non-null float64
+match_weighted_p              16391 non-null category
+match_weighted_cat            16391 non-null category
+match_max                     16391 non-null float64
+match_max_task                16391 non-null object
+contrib_weighted              16391 non-null float64
+contrib_weighted_p            16391 non-null category
+contrib_weighted_cat          16391 non-null category
+contrib_max                   16391 non-null float64
+contrib_max_task              16391 non-null object
+seq_match                     16391 non-null float64
+seq_match_p                   16391 non-null category
+seq_match_cat                 16391 non-null category
+match/GAF                     16391 non-null float64
+contrib/GAF                   16391 non-null float64
+pattern_short                 16391 non-null object
+example_chrom                 16391 non-null object
+example_start                 16391 non-null int64
+example_end                   16391 non-null int64
+example_strand                16391 non-null object
+example_interval_from_task    16391 non-null object
+pattern_start_abs             16391 non-null int64
+pattern_end_abs               16391 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 3.4+ MB
+[2022-07-12 11:08:41,151] - [INFO] - Writing the resuling pd.DataFrame of shape (16391, 30) to tsv/mapped_motifs/GAF_instances_noncurated_0based.tsv.gz
+[2022-07-12 11:08:41,156] - [INFO] - Writing a tsv file
+[2022-07-12 11:08:42,332] - [INFO] - Done!
+[2022-07-14 15:57:02,404] - [INFO] - Using tasks: ['Zld']
+[2022-07-14 16:00:19,810] - [INFO] - Centroid matches already exist.
+[2022-07-14 16:00:19,815] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:00:30,737] - [INFO] - Scanning for patterns
+[2022-07-14 16:03:29,509] - [INFO] - Using tasks: ['Zld']
+[2022-07-14 16:06:33,574] - [INFO] - Centroid matches already exist.
+[2022-07-14 16:06:33,579] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:06:41,898] - [INFO] - Scanning for patterns
+[2022-07-14 16:07:40,005] - [INFO] - Merging
+[2022-07-14 16:07:40,014] - [INFO] - Append ranges
+[2022-07-14 16:07:40,037] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 4947 entries, 0 to 4946
+Data columns (total 30 columns):
+pattern                       4947 non-null object
+example_idx                   4947 non-null int64
+pattern_start                 4947 non-null int64
+pattern_end                   4947 non-null int64
+strand                        4947 non-null object
+pattern_center                4947 non-null int64
+pattern_len                   4947 non-null int64
+match_weighted                4947 non-null float64
+match_weighted_p              4947 non-null category
+match_weighted_cat            4947 non-null category
+match_max                     4947 non-null float64
+match_max_task                4947 non-null object
+contrib_weighted              4947 non-null float64
+contrib_weighted_p            4947 non-null category
+contrib_weighted_cat          4947 non-null category
+contrib_max                   4947 non-null float64
+contrib_max_task              4947 non-null object
+seq_match                     4947 non-null float64
+seq_match_p                   4947 non-null category
+seq_match_cat                 4947 non-null category
+match/Zld                     4947 non-null float64
+contrib/Zld                   4947 non-null float64
+pattern_short                 4947 non-null object
+example_chrom                 4947 non-null object
+example_start                 4947 non-null int64
+example_end                   4947 non-null int64
+example_strand                4947 non-null object
+example_interval_from_task    4947 non-null object
+pattern_start_abs             4947 non-null int64
+pattern_end_abs               4947 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 1.2+ MB
+[2022-07-14 16:07:40,053] - [INFO] - Writing the resuling pd.DataFrame of shape (4947, 30) to tsv/mapped_motifs/Zld_instances_noncurated_0based_match.15_contrib.005.tsv.gz
+[2022-07-14 16:07:40,056] - [INFO] - Writing a tsv file
+[2022-07-14 16:07:40,381] - [INFO] - Done!
+[2022-07-14 16:07:59,928] - [INFO] - Using tasks: ['Dl']
+[2022-07-14 16:11:13,147] - [INFO] - Centroid matches already exist.
+[2022-07-14 16:11:13,151] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Dl_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:11:17,673] - [INFO] - Scanning for patterns
+[2022-07-14 16:11:53,902] - [INFO] - Merging
+[2022-07-14 16:11:53,910] - [INFO] - Append ranges
+[2022-07-14 16:11:53,928] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 2248 entries, 0 to 2247
+Data columns (total 30 columns):
+pattern                       2248 non-null object
+example_idx                   2248 non-null int64
+pattern_start                 2248 non-null int64
+pattern_end                   2248 non-null int64
+strand                        2248 non-null object
+pattern_center                2248 non-null int64
+pattern_len                   2248 non-null int64
+match_weighted                2248 non-null float64
+match_weighted_p              2248 non-null category
+match_weighted_cat            2248 non-null category
+match_max                     2248 non-null float64
+match_max_task                2248 non-null object
+contrib_weighted              2248 non-null float64
+contrib_weighted_p            2248 non-null category
+contrib_weighted_cat          2248 non-null category
+contrib_max                   2248 non-null float64
+contrib_max_task              2248 non-null object
+seq_match                     2248 non-null float64
+seq_match_p                   2248 non-null category
+seq_match_cat                 2248 non-null category
+match/Dl                      2248 non-null float64
+contrib/Dl                    2248 non-null float64
+pattern_short                 2248 non-null object
+example_chrom                 2248 non-null object
+example_start                 2248 non-null int64
+example_end                   2248 non-null int64
+example_strand                2248 non-null object
+example_interval_from_task    2248 non-null object
+pattern_start_abs             2248 non-null int64
+pattern_end_abs               2248 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 579.4+ KB
+[2022-07-14 16:11:53,942] - [INFO] - Writing the resuling pd.DataFrame of shape (2248, 30) to tsv/mapped_motifs/Dl_instances_noncurated_0based_match.15_contrib.005.tsv.gz
+[2022-07-14 16:11:53,945] - [INFO] - Writing a tsv file
+[2022-07-14 16:11:54,136] - [INFO] - Done!
+[2022-07-14 16:18:36,699] - [INFO] - Using tasks: ['Zld']
+[2022-07-14 16:24:16,399] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:25:49,732] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:25:53,685] - [INFO] - Scanning for patterns
+[2022-07-14 16:26:45,644] - [INFO] - Merging
+[2022-07-14 16:26:45,653] - [INFO] - Append ranges
+[2022-07-14 16:26:45,676] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 2348 entries, 0 to 2347
+Data columns (total 30 columns):
+pattern                       2348 non-null object
+example_idx                   2348 non-null int64
+pattern_start                 2348 non-null int64
+pattern_end                   2348 non-null int64
+strand                        2348 non-null object
+pattern_center                2348 non-null int64
+pattern_len                   2348 non-null int64
+match_weighted                2348 non-null float64
+match_weighted_p              2348 non-null category
+match_weighted_cat            2348 non-null category
+match_max                     2348 non-null float64
+match_max_task                2348 non-null object
+contrib_weighted              2348 non-null float64
+contrib_weighted_p            2348 non-null category
+contrib_weighted_cat          2348 non-null category
+contrib_max                   2348 non-null float64
+contrib_max_task              2348 non-null object
+seq_match                     2348 non-null float64
+seq_match_p                   2348 non-null category
+seq_match_cat                 2348 non-null category
+match/Zld                     2348 non-null float64
+contrib/Zld                   2348 non-null float64
+pattern_short                 2348 non-null object
+example_chrom                 2348 non-null object
+example_start                 2348 non-null int64
+example_end                   2348 non-null int64
+example_strand                2348 non-null object
+example_interval_from_task    2348 non-null object
+pattern_start_abs             2348 non-null int64
+pattern_end_abs               2348 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 772.9+ KB
+[2022-07-14 16:26:45,691] - [INFO] - Writing the resuling pd.DataFrame of shape (2348, 30) to tsv/mapped_motifs/Zld_instances_noncurated_0based.tsv.gz
+[2022-07-14 16:26:45,700] - [INFO] - Writing a tsv file
+[2022-07-14 16:26:45,902] - [INFO] - Done!
+[2022-07-14 16:27:09,179] - [INFO] - Using tasks: ['Dl']
+[2022-07-14 16:30:17,651] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Dl_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:30:56,308] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Dl_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:30:57,087] - [INFO] - Scanning for patterns
+[2022-07-14 16:31:08,246] - [INFO] - Merging
+[2022-07-14 16:31:08,254] - [INFO] - Append ranges
+[2022-07-14 16:31:08,272] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 1580 entries, 0 to 1579
+Data columns (total 30 columns):
+pattern                       1580 non-null object
+example_idx                   1580 non-null int64
+pattern_start                 1580 non-null int64
+pattern_end                   1580 non-null int64
+strand                        1580 non-null object
+pattern_center                1580 non-null int64
+pattern_len                   1580 non-null int64
+match_weighted                1580 non-null float64
+match_weighted_p              1580 non-null category
+match_weighted_cat            1580 non-null category
+match_max                     1580 non-null float64
+match_max_task                1580 non-null object
+contrib_weighted              1580 non-null float64
+contrib_weighted_p            1580 non-null category
+contrib_weighted_cat          1580 non-null category
+contrib_max                   1580 non-null float64
+contrib_max_task              1580 non-null object
+seq_match                     1580 non-null float64
+seq_match_p                   1580 non-null category
+seq_match_cat                 1580 non-null category
+match/Dl                      1580 non-null float64
+contrib/Dl                    1580 non-null float64
+pattern_short                 1580 non-null object
+example_chrom                 1580 non-null object
+example_start                 1580 non-null int64
+example_end                   1580 non-null int64
+example_strand                1580 non-null object
+example_interval_from_task    1580 non-null object
+pattern_start_abs             1580 non-null int64
+pattern_end_abs               1580 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 416.4+ KB
+[2022-07-14 16:31:08,285] - [INFO] - Writing the resuling pd.DataFrame of shape (1580, 30) to tsv/mapped_motifs/Dl_instances_noncurated_0based.tsv.gz
+[2022-07-14 16:31:08,288] - [INFO] - Writing a tsv file
+[2022-07-14 16:31:08,400] - [INFO] - Done!
+[2022-07-14 16:31:25,710] - [INFO] - Using tasks: ['Twi']
+[2022-07-14 16:33:30,190] - [INFO] - Using tasks: ['Bcd']
+[2022-07-14 16:36:56,805] - [INFO] - Using tasks: ['Zld']
+[2022-07-14 16:40:00,071] - [INFO] - Centroid matches already exist.
+[2022-07-14 16:40:00,076] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:40:09,836] - [INFO] - Scanning for patterns
+[2022-07-14 16:41:03,063] - [INFO] - Merging
+[2022-07-14 16:41:03,071] - [INFO] - Append ranges
+[2022-07-14 16:41:03,096] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 4357 entries, 0 to 4356
+Data columns (total 30 columns):
+pattern                       4357 non-null object
+example_idx                   4357 non-null int64
+pattern_start                 4357 non-null int64
+pattern_end                   4357 non-null int64
+strand                        4357 non-null object
+pattern_center                4357 non-null int64
+pattern_len                   4357 non-null int64
+match_weighted                4357 non-null float64
+match_weighted_p              4357 non-null category
+match_weighted_cat            4357 non-null category
+match_max                     4357 non-null float64
+match_max_task                4357 non-null object
+contrib_weighted              4357 non-null float64
+contrib_weighted_p            4357 non-null category
+contrib_weighted_cat          4357 non-null category
+contrib_max                   4357 non-null float64
+contrib_max_task              4357 non-null object
+seq_match                     4357 non-null float64
+seq_match_p                   4357 non-null category
+seq_match_cat                 4357 non-null category
+match/Zld                     4357 non-null float64
+contrib/Zld                   4357 non-null float64
+pattern_short                 4357 non-null object
+example_chrom                 4357 non-null object
+example_start                 4357 non-null int64
+example_end                   4357 non-null int64
+example_strand                4357 non-null object
+example_interval_from_task    4357 non-null object
+pattern_start_abs             4357 non-null int64
+pattern_end_abs               4357 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 1.1+ MB
+[2022-07-14 16:41:03,112] - [INFO] - Writing the resuling pd.DataFrame of shape (4357, 30) to tsv/mapped_motifs/Zld_instances_noncurated_0based.tsv.gz
+[2022-07-14 16:41:03,115] - [INFO] - Writing a tsv file
+[2022-07-14 16:41:03,397] - [INFO] - Done!
+[2022-07-14 16:41:22,217] - [INFO] - Using tasks: ['Dl']
+[2022-07-14 16:44:27,876] - [INFO] - Centroid matches already exist.
+[2022-07-14 16:44:27,880] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Dl_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:44:32,579] - [INFO] - Scanning for patterns
+[2022-07-14 16:45:06,853] - [INFO] - Merging
+[2022-07-14 16:45:06,861] - [INFO] - Append ranges
+[2022-07-14 16:45:06,878] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 1398 entries, 0 to 1397
+Data columns (total 30 columns):
+pattern                       1398 non-null object
+example_idx                   1398 non-null int64
+pattern_start                 1398 non-null int64
+pattern_end                   1398 non-null int64
+strand                        1398 non-null object
+pattern_center                1398 non-null int64
+pattern_len                   1398 non-null int64
+match_weighted                1398 non-null float64
+match_weighted_p              1398 non-null category
+match_weighted_cat            1398 non-null category
+match_max                     1398 non-null float64
+match_max_task                1398 non-null object
+contrib_weighted              1398 non-null float64
+contrib_weighted_p            1398 non-null category
+contrib_weighted_cat          1398 non-null category
+contrib_max                   1398 non-null float64
+contrib_max_task              1398 non-null object
+seq_match                     1398 non-null float64
+seq_match_p                   1395 non-null category
+seq_match_cat                 1395 non-null category
+match/Dl                      1398 non-null float64
+contrib/Dl                    1398 non-null float64
+pattern_short                 1398 non-null object
+example_chrom                 1398 non-null object
+example_start                 1398 non-null int64
+example_end                   1398 non-null int64
+example_strand                1398 non-null object
+example_interval_from_task    1398 non-null object
+pattern_start_abs             1398 non-null int64
+pattern_end_abs               1398 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 392.3+ KB
+[2022-07-14 16:45:06,891] - [INFO] - Writing the resuling pd.DataFrame of shape (1398, 30) to tsv/mapped_motifs/Dl_instances_noncurated_0based.tsv.gz
+[2022-07-14 16:45:06,894] - [INFO] - Writing a tsv file
+[2022-07-14 16:45:06,994] - [INFO] - Done!
+[2022-07-14 16:45:24,298] - [INFO] - Using tasks: ['Twi']
+[2022-07-14 16:48:29,269] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Twi_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:50:08,861] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Twi_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:50:14,098] - [INFO] - Scanning for patterns
+[2022-07-14 16:50:59,628] - [INFO] - Merging
+[2022-07-14 16:50:59,644] - [INFO] - Append ranges
+[2022-07-14 16:50:59,694] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 32823 entries, 0 to 32822
+Data columns (total 30 columns):
+pattern                       32823 non-null object
+example_idx                   32823 non-null int64
+pattern_start                 32823 non-null int64
+pattern_end                   32823 non-null int64
+strand                        32823 non-null object
+pattern_center                32823 non-null int64
+pattern_len                   32823 non-null int64
+match_weighted                32823 non-null float64
+match_weighted_p              32823 non-null category
+match_weighted_cat            32823 non-null category
+match_max                     32823 non-null float64
+match_max_task                32823 non-null object
+contrib_weighted              32823 non-null float64
+contrib_weighted_p            32823 non-null category
+contrib_weighted_cat          32823 non-null category
+contrib_max                   32823 non-null float64
+contrib_max_task              32823 non-null object
+seq_match                     32823 non-null float64
+seq_match_p                   32823 non-null category
+seq_match_cat                 32823 non-null category
+match/Twi                     32823 non-null float64
+contrib/Twi                   32823 non-null float64
+pattern_short                 32823 non-null object
+example_chrom                 32823 non-null object
+example_start                 32823 non-null int64
+example_end                   32823 non-null int64
+example_strand                32823 non-null object
+example_interval_from_task    32823 non-null object
+pattern_start_abs             32823 non-null int64
+pattern_end_abs               32823 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 7.3+ MB
+[2022-07-14 16:50:59,733] - [INFO] - Writing the resuling pd.DataFrame of shape (32823, 30) to tsv/mapped_motifs/Twi_instances_noncurated_0based.tsv.gz
+[2022-07-14 16:50:59,750] - [INFO] - Writing a tsv file
+[2022-07-14 16:51:02,119] - [INFO] - Done!
+[2022-07-14 16:51:25,710] - [INFO] - Using tasks: ['Bcd']
+[2022-07-14 16:54:30,847] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Bcd_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:55:36,961] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Bcd_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 16:55:39,212] - [INFO] - Scanning for patterns
+[2022-07-14 16:56:10,630] - [INFO] - Merging
+[2022-07-14 16:56:10,641] - [INFO] - Append ranges
+[2022-07-14 16:56:10,671] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 13245 entries, 0 to 13244
+Data columns (total 30 columns):
+pattern                       13245 non-null object
+example_idx                   13245 non-null int64
+pattern_start                 13245 non-null int64
+pattern_end                   13245 non-null int64
+strand                        13245 non-null object
+pattern_center                13245 non-null int64
+pattern_len                   13245 non-null int64
+match_weighted                13245 non-null float64
+match_weighted_p              13245 non-null category
+match_weighted_cat            13245 non-null category
+match_max                     13245 non-null float64
+match_max_task                13245 non-null object
+contrib_weighted              13245 non-null float64
+contrib_weighted_p            13245 non-null category
+contrib_weighted_cat          13245 non-null category
+contrib_max                   13245 non-null float64
+contrib_max_task              13245 non-null object
+seq_match                     13245 non-null float64
+seq_match_p                   13245 non-null category
+seq_match_cat                 13245 non-null category
+match/Bcd                     13245 non-null float64
+contrib/Bcd                   13245 non-null float64
+pattern_short                 13245 non-null object
+example_chrom                 13245 non-null object
+example_start                 13245 non-null int64
+example_end                   13245 non-null int64
+example_strand                13245 non-null object
+example_interval_from_task    13245 non-null object
+pattern_start_abs             13245 non-null int64
+pattern_end_abs               13245 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 2.8+ MB
+[2022-07-14 16:56:10,692] - [INFO] - Writing the resuling pd.DataFrame of shape (13245, 30) to tsv/mapped_motifs/Bcd_instances_noncurated_0based.tsv.gz
+[2022-07-14 16:56:10,696] - [INFO] - Writing a tsv file
+[2022-07-14 16:56:11,576] - [INFO] - Done!
+[2022-07-14 16:56:35,567] - [INFO] - Using tasks: ['Cad']
+[2022-07-14 17:00:04,984] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Cad_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:01:30,666] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/Cad_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:01:33,299] - [INFO] - Scanning for patterns
+[2022-07-14 17:02:08,893] - [INFO] - Merging
+[2022-07-14 17:02:08,904] - [INFO] - Append ranges
+[2022-07-14 17:02:08,936] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 10408 entries, 0 to 10407
+Data columns (total 30 columns):
+pattern                       10408 non-null object
+example_idx                   10408 non-null int64
+pattern_start                 10408 non-null int64
+pattern_end                   10408 non-null int64
+strand                        10408 non-null object
+pattern_center                10408 non-null int64
+pattern_len                   10408 non-null int64
+match_weighted                10408 non-null float64
+match_weighted_p              10408 non-null category
+match_weighted_cat            10408 non-null category
+match_max                     10408 non-null float64
+match_max_task                10408 non-null object
+contrib_weighted              10408 non-null float64
+contrib_weighted_p            10408 non-null category
+contrib_weighted_cat          10408 non-null category
+contrib_max                   10408 non-null float64
+contrib_max_task              10408 non-null object
+seq_match                     10408 non-null float64
+seq_match_p                   10408 non-null category
+seq_match_cat                 10408 non-null category
+match/Cad                     10408 non-null float64
+contrib/Cad                   10408 non-null float64
+pattern_short                 10408 non-null object
+example_chrom                 10408 non-null object
+example_start                 10408 non-null int64
+example_end                   10408 non-null int64
+example_strand                10408 non-null object
+example_interval_from_task    10408 non-null object
+pattern_start_abs             10408 non-null int64
+pattern_end_abs               10408 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 2.4+ MB
+[2022-07-14 17:02:08,956] - [INFO] - Writing the resuling pd.DataFrame of shape (10408, 30) to tsv/mapped_motifs/Cad_instances_noncurated_0based.tsv.gz
+[2022-07-14 17:02:08,959] - [INFO] - Writing a tsv file
+[2022-07-14 17:02:09,707] - [INFO] - Done!
+[2022-07-14 17:02:33,724] - [INFO] - Using tasks: ['GAF']
+[2022-07-14 17:05:57,401] - [INFO] - Generating centroid matches to /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/GAF_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:07:11,890] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold2/GAF_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:07:14,932] - [INFO] - Scanning for patterns
+[2022-07-14 17:07:52,770] - [INFO] - Merging
+[2022-07-14 17:07:52,780] - [INFO] - Append ranges
+[2022-07-14 17:07:52,810] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 14143 entries, 0 to 14142
+Data columns (total 30 columns):
+pattern                       14143 non-null object
+example_idx                   14143 non-null int64
+pattern_start                 14143 non-null int64
+pattern_end                   14143 non-null int64
+strand                        14143 non-null object
+pattern_center                14143 non-null int64
+pattern_len                   14143 non-null int64
+match_weighted                14143 non-null float64
+match_weighted_p              14143 non-null category
+match_weighted_cat            14143 non-null category
+match_max                     14143 non-null float64
+match_max_task                14143 non-null object
+contrib_weighted              14143 non-null float64
+contrib_weighted_p            14143 non-null category
+contrib_weighted_cat          14143 non-null category
+contrib_max                   14143 non-null float64
+contrib_max_task              14143 non-null object
+seq_match                     14143 non-null float64
+seq_match_p                   14143 non-null category
+seq_match_cat                 14143 non-null category
+match/GAF                     14143 non-null float64
+contrib/GAF                   14143 non-null float64
+pattern_short                 14143 non-null object
+example_chrom                 14143 non-null object
+example_start                 14143 non-null int64
+example_end                   14143 non-null int64
+example_strand                14143 non-null object
+example_interval_from_task    14143 non-null object
+pattern_start_abs             14143 non-null int64
+pattern_end_abs               14143 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 2.9+ MB
+[2022-07-14 17:07:52,832] - [INFO] - Writing the resuling pd.DataFrame of shape (14143, 30) to tsv/mapped_motifs/GAF_instances_noncurated_0based.tsv.gz
+[2022-07-14 17:07:52,836] - [INFO] - Writing a tsv file
+[2022-07-14 17:07:53,840] - [INFO] - Done!
+[2022-07-14 17:28:42,141] - [INFO] - Using tasks: ['Zld']
+[2022-07-14 17:32:07,398] - [INFO] - Centroid matches already exist.
+[2022-07-14 17:32:07,404] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:32:21,698] - [INFO] - Scanning for patterns
+[2022-07-14 17:33:19,517] - [INFO] - Merging
+[2022-07-14 17:33:19,526] - [INFO] - Append ranges
+[2022-07-14 17:33:19,551] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 4330 entries, 0 to 4329
+Data columns (total 30 columns):
+pattern                       4330 non-null object
+example_idx                   4330 non-null int64
+pattern_start                 4330 non-null int64
+pattern_end                   4330 non-null int64
+strand                        4330 non-null object
+pattern_center                4330 non-null int64
+pattern_len                   4330 non-null int64
+match_weighted                4330 non-null float64
+match_weighted_p              4330 non-null category
+match_weighted_cat            4330 non-null category
+match_max                     4330 non-null float64
+match_max_task                4330 non-null object
+contrib_weighted              4330 non-null float64
+contrib_weighted_p            4330 non-null category
+contrib_weighted_cat          4330 non-null category
+contrib_max                   4330 non-null float64
+contrib_max_task              4330 non-null object
+seq_match                     4330 non-null float64
+seq_match_p                   4330 non-null category
+seq_match_cat                 4330 non-null category
+match/Zld                     4330 non-null float64
+contrib/Zld                   4330 non-null float64
+pattern_short                 4330 non-null object
+example_chrom                 4330 non-null object
+example_start                 4330 non-null int64
+example_end                   4330 non-null int64
+example_strand                4330 non-null object
+example_interval_from_task    4330 non-null object
+pattern_start_abs             4330 non-null int64
+pattern_end_abs               4330 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 1.1+ MB
+[2022-07-14 17:33:19,569] - [INFO] - Writing the resuling pd.DataFrame of shape (4330, 30) to tsv/mapped_motifs/Zld_instances_noncurated_0based.tsv.gz
+[2022-07-14 17:33:19,572] - [INFO] - Writing a tsv file
+[2022-07-14 17:33:19,888] - [INFO] - Done!
+[2022-07-14 17:33:39,377] - [INFO] - Using tasks: ['Dl']
+[2022-07-14 17:37:03,792] - [INFO] - Centroid matches already exist.
+[2022-07-14 17:37:03,796] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Dl_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:37:09,112] - [INFO] - Scanning for patterns
+[2022-07-14 17:37:44,211] - [INFO] - Merging
+[2022-07-14 17:37:44,219] - [INFO] - Append ranges
+[2022-07-14 17:37:44,237] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 1769 entries, 0 to 1768
+Data columns (total 30 columns):
+pattern                       1769 non-null object
+example_idx                   1769 non-null int64
+pattern_start                 1769 non-null int64
+pattern_end                   1769 non-null int64
+strand                        1769 non-null object
+pattern_center                1769 non-null int64
+pattern_len                   1769 non-null int64
+match_weighted                1769 non-null float64
+match_weighted_p              1769 non-null category
+match_weighted_cat            1769 non-null category
+match_max                     1769 non-null float64
+match_max_task                1769 non-null object
+contrib_weighted              1769 non-null float64
+contrib_weighted_p            1769 non-null category
+contrib_weighted_cat          1769 non-null category
+contrib_max                   1769 non-null float64
+contrib_max_task              1769 non-null object
+seq_match                     1769 non-null float64
+seq_match_p                   1769 non-null category
+seq_match_cat                 1769 non-null category
+match/Dl                      1769 non-null float64
+contrib/Dl                    1769 non-null float64
+pattern_short                 1769 non-null object
+example_chrom                 1769 non-null object
+example_start                 1769 non-null int64
+example_end                   1769 non-null int64
+example_strand                1769 non-null object
+example_interval_from_task    1769 non-null object
+pattern_start_abs             1769 non-null int64
+pattern_end_abs               1769 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 481.7+ KB
+[2022-07-14 17:37:44,251] - [INFO] - Writing the resuling pd.DataFrame of shape (1769, 30) to tsv/mapped_motifs/Dl_instances_noncurated_0based.tsv.gz
+[2022-07-14 17:37:44,254] - [INFO] - Writing a tsv file
+[2022-07-14 17:37:44,376] - [INFO] - Done!
+[2022-07-14 17:38:02,445] - [INFO] - Using tasks: ['Twi']
+[2022-07-14 17:41:38,106] - [INFO] - Centroid matches already exist.
+[2022-07-14 17:41:38,110] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Twi_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:41:58,765] - [INFO] - Scanning for patterns
+[2022-07-14 17:43:11,113] - [INFO] - Merging
+[2022-07-14 17:43:11,125] - [INFO] - Append ranges
+[2022-07-14 17:43:11,236] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 27290 entries, 0 to 27289
+Data columns (total 30 columns):
+pattern                       27290 non-null object
+example_idx                   27290 non-null int64
+pattern_start                 27290 non-null int64
+pattern_end                   27290 non-null int64
+strand                        27290 non-null object
+pattern_center                27290 non-null int64
+pattern_len                   27290 non-null int64
+match_weighted                27290 non-null float64
+match_weighted_p              27290 non-null category
+match_weighted_cat            27290 non-null category
+match_max                     27290 non-null float64
+match_max_task                27290 non-null object
+contrib_weighted              27290 non-null float64
+contrib_weighted_p            27290 non-null category
+contrib_weighted_cat          27290 non-null category
+contrib_max                   27290 non-null float64
+contrib_max_task              27290 non-null object
+seq_match                     27290 non-null float64
+seq_match_p                   27290 non-null category
+seq_match_cat                 27290 non-null category
+match/Twi                     27290 non-null float64
+contrib/Twi                   27290 non-null float64
+pattern_short                 27290 non-null object
+example_chrom                 27290 non-null object
+example_start                 27290 non-null int64
+example_end                   27290 non-null int64
+example_strand                27290 non-null object
+example_interval_from_task    27290 non-null object
+pattern_start_abs             27290 non-null int64
+pattern_end_abs               27290 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 6.2+ MB
+[2022-07-14 17:43:11,267] - [INFO] - Writing the resuling pd.DataFrame of shape (27290, 30) to tsv/mapped_motifs/Twi_instances_noncurated_0based.tsv.gz
+[2022-07-14 17:43:11,273] - [INFO] - Writing a tsv file
+[2022-07-14 17:43:13,105] - [INFO] - Done!
+[2022-07-14 17:43:37,499] - [INFO] - Using tasks: ['Bcd']
+[2022-07-14 17:46:54,887] - [INFO] - Centroid matches already exist.
+[2022-07-14 17:46:54,892] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Bcd_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:47:11,067] - [INFO] - Scanning for patterns
+[2022-07-14 17:48:11,217] - [INFO] - Merging
+[2022-07-14 17:48:11,228] - [INFO] - Append ranges
+[2022-07-14 17:48:11,261] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 12804 entries, 0 to 12803
+Data columns (total 30 columns):
+pattern                       12804 non-null object
+example_idx                   12804 non-null int64
+pattern_start                 12804 non-null int64
+pattern_end                   12804 non-null int64
+strand                        12804 non-null object
+pattern_center                12804 non-null int64
+pattern_len                   12804 non-null int64
+match_weighted                12804 non-null float64
+match_weighted_p              12804 non-null category
+match_weighted_cat            12804 non-null category
+match_max                     12804 non-null float64
+match_max_task                12804 non-null object
+contrib_weighted              12804 non-null float64
+contrib_weighted_p            12804 non-null category
+contrib_weighted_cat          12804 non-null category
+contrib_max                   12804 non-null float64
+contrib_max_task              12804 non-null object
+seq_match                     12804 non-null float64
+seq_match_p                   12804 non-null category
+seq_match_cat                 12804 non-null category
+match/Bcd                     12804 non-null float64
+contrib/Bcd                   12804 non-null float64
+pattern_short                 12804 non-null object
+example_chrom                 12804 non-null object
+example_start                 12804 non-null int64
+example_end                   12804 non-null int64
+example_strand                12804 non-null object
+example_interval_from_task    12804 non-null object
+pattern_start_abs             12804 non-null int64
+pattern_end_abs               12804 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 2.7+ MB
+[2022-07-14 17:48:11,285] - [INFO] - Writing the resuling pd.DataFrame of shape (12804, 30) to tsv/mapped_motifs/Bcd_instances_noncurated_0based.tsv.gz
+[2022-07-14 17:48:11,313] - [INFO] - Writing a tsv file
+[2022-07-14 17:48:12,225] - [INFO] - Done!
+[2022-07-14 17:48:33,447] - [INFO] - Using tasks: ['Cad']
+[2022-07-14 17:51:50,191] - [INFO] - Centroid matches already exist.
+[2022-07-14 17:51:50,196] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Cad_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:52:07,576] - [INFO] - Scanning for patterns
+[2022-07-14 17:53:14,219] - [INFO] - Merging
+[2022-07-14 17:53:14,229] - [INFO] - Append ranges
+[2022-07-14 17:53:14,267] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 10369 entries, 0 to 10368
+Data columns (total 30 columns):
+pattern                       10369 non-null object
+example_idx                   10369 non-null int64
+pattern_start                 10369 non-null int64
+pattern_end                   10369 non-null int64
+strand                        10369 non-null object
+pattern_center                10369 non-null int64
+pattern_len                   10369 non-null int64
+match_weighted                10369 non-null float64
+match_weighted_p              10369 non-null category
+match_weighted_cat            10369 non-null category
+match_max                     10369 non-null float64
+match_max_task                10369 non-null object
+contrib_weighted              10369 non-null float64
+contrib_weighted_p            10369 non-null category
+contrib_weighted_cat          10369 non-null category
+contrib_max                   10369 non-null float64
+contrib_max_task              10369 non-null object
+seq_match                     10369 non-null float64
+seq_match_p                   10369 non-null category
+seq_match_cat                 10369 non-null category
+match/Cad                     10369 non-null float64
+contrib/Cad                   10369 non-null float64
+pattern_short                 10369 non-null object
+example_chrom                 10369 non-null object
+example_start                 10369 non-null int64
+example_end                   10369 non-null int64
+example_strand                10369 non-null object
+example_interval_from_task    10369 non-null object
+pattern_start_abs             10369 non-null int64
+pattern_end_abs               10369 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 2.3+ MB
+[2022-07-14 17:53:14,289] - [INFO] - Writing the resuling pd.DataFrame of shape (10369, 30) to tsv/mapped_motifs/Cad_instances_noncurated_0based.tsv.gz
+[2022-07-14 17:53:14,293] - [INFO] - Writing a tsv file
+[2022-07-14 17:53:15,015] - [INFO] - Done!
+[2022-07-14 17:53:39,049] - [INFO] - Using tasks: ['GAF']
+[2022-07-14 17:56:52,682] - [INFO] - Centroid matches already exist.
+[2022-07-14 17:56:52,686] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/GAF_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 17:57:05,024] - [INFO] - Scanning for patterns
+[2022-07-14 17:58:15,809] - [INFO] - Merging
+[2022-07-14 17:58:15,819] - [INFO] - Append ranges
+[2022-07-14 17:58:15,853] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 16391 entries, 0 to 16390
+Data columns (total 30 columns):
+pattern                       16391 non-null object
+example_idx                   16391 non-null int64
+pattern_start                 16391 non-null int64
+pattern_end                   16391 non-null int64
+strand                        16391 non-null object
+pattern_center                16391 non-null int64
+pattern_len                   16391 non-null int64
+match_weighted                16391 non-null float64
+match_weighted_p              16391 non-null category
+match_weighted_cat            16391 non-null category
+match_max                     16391 non-null float64
+match_max_task                16391 non-null object
+contrib_weighted              16391 non-null float64
+contrib_weighted_p            16391 non-null category
+contrib_weighted_cat          16391 non-null category
+contrib_max                   16391 non-null float64
+contrib_max_task              16391 non-null object
+seq_match                     16391 non-null float64
+seq_match_p                   16391 non-null category
+seq_match_cat                 16391 non-null category
+match/GAF                     16391 non-null float64
+contrib/GAF                   16391 non-null float64
+pattern_short                 16391 non-null object
+example_chrom                 16391 non-null object
+example_start                 16391 non-null int64
+example_end                   16391 non-null int64
+example_strand                16391 non-null object
+example_interval_from_task    16391 non-null object
+pattern_start_abs             16391 non-null int64
+pattern_end_abs               16391 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 3.4+ MB
+[2022-07-14 17:58:15,879] - [INFO] - Writing the resuling pd.DataFrame of shape (16391, 30) to tsv/mapped_motifs/GAF_instances_noncurated_0based.tsv.gz
+[2022-07-14 17:58:15,884] - [INFO] - Writing a tsv file
+[2022-07-14 17:58:16,956] - [INFO] - Done!
+[2022-07-14 17:58:39,965] - [INFO] - Using tasks: ['Zld']
+[2022-07-14 18:01:53,365] - [INFO] - Centroid matches already exist.
+[2022-07-14 18:01:53,369] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Zld_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 18:02:09,030] - [INFO] - Scanning for patterns
+[2022-07-14 18:03:06,611] - [INFO] - Merging
+[2022-07-14 18:03:06,621] - [INFO] - Append ranges
+[2022-07-14 18:03:06,649] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 5352 entries, 0 to 5351
+Data columns (total 30 columns):
+pattern                       5352 non-null object
+example_idx                   5352 non-null int64
+pattern_start                 5352 non-null int64
+pattern_end                   5352 non-null int64
+strand                        5352 non-null object
+pattern_center                5352 non-null int64
+pattern_len                   5352 non-null int64
+match_weighted                5352 non-null float64
+match_weighted_p              5352 non-null category
+match_weighted_cat            5352 non-null category
+match_max                     5352 non-null float64
+match_max_task                5352 non-null object
+contrib_weighted              5352 non-null float64
+contrib_weighted_p            5352 non-null category
+contrib_weighted_cat          5352 non-null category
+contrib_max                   5352 non-null float64
+contrib_max_task              5352 non-null object
+seq_match                     5352 non-null float64
+seq_match_p                   5352 non-null category
+seq_match_cat                 5352 non-null category
+match/Zld                     5352 non-null float64
+contrib/Zld                   5352 non-null float64
+pattern_short                 5352 non-null object
+example_chrom                 5352 non-null object
+example_start                 5352 non-null int64
+example_end                   5352 non-null int64
+example_strand                5352 non-null object
+example_interval_from_task    5352 non-null object
+pattern_start_abs             5352 non-null int64
+pattern_end_abs               5352 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 1.3+ MB
+[2022-07-14 18:03:06,666] - [INFO] - Writing the resuling pd.DataFrame of shape (5352, 30) to tsv/mapped_motifs/Zld_instances_noncurated_0based_match.1_contrib.005.tsv.gz
+[2022-07-14 18:03:06,669] - [INFO] - Writing a tsv file
+[2022-07-14 18:03:07,009] - [INFO] - Done!
+[2022-07-14 18:03:26,472] - [INFO] - Using tasks: ['Dl']
+[2022-07-14 18:06:37,459] - [INFO] - Centroid matches already exist.
+[2022-07-14 18:06:37,463] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Dl_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 18:06:42,668] - [INFO] - Scanning for patterns
+[2022-07-14 18:07:18,455] - [INFO] - Merging
+[2022-07-14 18:07:18,463] - [INFO] - Append ranges
+[2022-07-14 18:07:18,481] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 2858 entries, 0 to 2857
+Data columns (total 30 columns):
+pattern                       2858 non-null object
+example_idx                   2858 non-null int64
+pattern_start                 2858 non-null int64
+pattern_end                   2858 non-null int64
+strand                        2858 non-null object
+pattern_center                2858 non-null int64
+pattern_len                   2858 non-null int64
+match_weighted                2858 non-null float64
+match_weighted_p              2858 non-null category
+match_weighted_cat            2858 non-null category
+match_max                     2858 non-null float64
+match_max_task                2858 non-null object
+contrib_weighted              2858 non-null float64
+contrib_weighted_p            2858 non-null category
+contrib_weighted_cat          2858 non-null category
+contrib_max                   2858 non-null float64
+contrib_max_task              2858 non-null object
+seq_match                     2858 non-null float64
+seq_match_p                   2857 non-null category
+seq_match_cat                 2857 non-null category
+match/Dl                      2858 non-null float64
+contrib/Dl                    2858 non-null float64
+pattern_short                 2858 non-null object
+example_chrom                 2858 non-null object
+example_start                 2858 non-null int64
+example_end                   2858 non-null int64
+example_strand                2858 non-null object
+example_interval_from_task    2858 non-null object
+pattern_start_abs             2858 non-null int64
+pattern_end_abs               2858 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 703.9+ KB
+[2022-07-14 18:07:18,495] - [INFO] - Writing the resuling pd.DataFrame of shape (2858, 30) to tsv/mapped_motifs/Dl_instances_noncurated_0based_match.1_contrib.005.tsv.gz
+[2022-07-14 18:07:18,498] - [INFO] - Writing a tsv file
+[2022-07-14 18:07:18,716] - [INFO] - Done!
+[2022-07-14 18:07:36,262] - [INFO] - Using tasks: ['Twi']
+[2022-07-14 18:10:47,276] - [INFO] - Centroid matches already exist.
+[2022-07-14 18:10:47,280] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Twi_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 18:11:08,941] - [INFO] - Scanning for patterns
+[2022-07-14 18:12:22,421] - [INFO] - Merging
+[2022-07-14 18:12:22,437] - [INFO] - Append ranges
+[2022-07-14 18:12:22,485] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 39886 entries, 0 to 39885
+Data columns (total 30 columns):
+pattern                       39886 non-null object
+example_idx                   39886 non-null int64
+pattern_start                 39886 non-null int64
+pattern_end                   39886 non-null int64
+strand                        39886 non-null object
+pattern_center                39886 non-null int64
+pattern_len                   39886 non-null int64
+match_weighted                39886 non-null float64
+match_weighted_p              39886 non-null category
+match_weighted_cat            39886 non-null category
+match_max                     39886 non-null float64
+match_max_task                39886 non-null object
+contrib_weighted              39886 non-null float64
+contrib_weighted_p            39886 non-null category
+contrib_weighted_cat          39886 non-null category
+contrib_max                   39886 non-null float64
+contrib_max_task              39886 non-null object
+seq_match                     39886 non-null float64
+seq_match_p                   39886 non-null category
+seq_match_cat                 39886 non-null category
+match/Twi                     39886 non-null float64
+contrib/Twi                   39886 non-null float64
+pattern_short                 39886 non-null object
+example_chrom                 39886 non-null object
+example_start                 39886 non-null int64
+example_end                   39886 non-null int64
+example_strand                39886 non-null object
+example_interval_from_task    39886 non-null object
+pattern_start_abs             39886 non-null int64
+pattern_end_abs               39886 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 8.7+ MB
+[2022-07-14 18:12:22,528] - [INFO] - Writing the resuling pd.DataFrame of shape (39886, 30) to tsv/mapped_motifs/Twi_instances_noncurated_0based_match.1_contrib.005.tsv.gz
+[2022-07-14 18:12:22,537] - [INFO] - Writing a tsv file
+[2022-07-14 18:12:25,333] - [INFO] - Done!
+[2022-07-14 18:12:49,640] - [INFO] - Using tasks: ['Bcd']
+[2022-07-14 18:16:01,229] - [INFO] - Centroid matches already exist.
+[2022-07-14 18:16:01,233] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Bcd_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 18:16:17,731] - [INFO] - Scanning for patterns
+[2022-07-14 18:17:16,147] - [INFO] - Merging
+[2022-07-14 18:17:16,159] - [INFO] - Append ranges
+[2022-07-14 18:17:16,195] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 17618 entries, 0 to 17617
+Data columns (total 30 columns):
+pattern                       17618 non-null object
+example_idx                   17618 non-null int64
+pattern_start                 17618 non-null int64
+pattern_end                   17618 non-null int64
+strand                        17618 non-null object
+pattern_center                17618 non-null int64
+pattern_len                   17618 non-null int64
+match_weighted                17618 non-null float64
+match_weighted_p              17618 non-null category
+match_weighted_cat            17618 non-null category
+match_max                     17618 non-null float64
+match_max_task                17618 non-null object
+contrib_weighted              17618 non-null float64
+contrib_weighted_p            17618 non-null category
+contrib_weighted_cat          17618 non-null category
+contrib_max                   17618 non-null float64
+contrib_max_task              17618 non-null object
+seq_match                     17618 non-null float64
+seq_match_p                   17618 non-null category
+seq_match_cat                 17618 non-null category
+match/Bcd                     17618 non-null float64
+contrib/Bcd                   17618 non-null float64
+pattern_short                 17618 non-null object
+example_chrom                 17618 non-null object
+example_start                 17618 non-null int64
+example_end                   17618 non-null int64
+example_strand                17618 non-null object
+example_interval_from_task    17618 non-null object
+pattern_start_abs             17618 non-null int64
+pattern_end_abs               17618 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 3.7+ MB
+[2022-07-14 18:17:16,219] - [INFO] - Writing the resuling pd.DataFrame of shape (17618, 30) to tsv/mapped_motifs/Bcd_instances_noncurated_0based_match.1_contrib.005.tsv.gz
+[2022-07-14 18:17:16,224] - [INFO] - Writing a tsv file
+[2022-07-14 18:17:17,398] - [INFO] - Done!
+[2022-07-14 18:17:37,890] - [INFO] - Using tasks: ['Cad']
+[2022-07-14 18:20:48,350] - [INFO] - Centroid matches already exist.
+[2022-07-14 18:20:48,354] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/Cad_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 18:21:06,398] - [INFO] - Scanning for patterns
+[2022-07-14 18:22:16,151] - [INFO] - Merging
+[2022-07-14 18:22:16,162] - [INFO] - Append ranges
+[2022-07-14 18:22:16,195] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 13832 entries, 0 to 13831
+Data columns (total 30 columns):
+pattern                       13832 non-null object
+example_idx                   13832 non-null int64
+pattern_start                 13832 non-null int64
+pattern_end                   13832 non-null int64
+strand                        13832 non-null object
+pattern_center                13832 non-null int64
+pattern_len                   13832 non-null int64
+match_weighted                13832 non-null float64
+match_weighted_p              13832 non-null category
+match_weighted_cat            13832 non-null category
+match_max                     13832 non-null float64
+match_max_task                13832 non-null object
+contrib_weighted              13832 non-null float64
+contrib_weighted_p            13832 non-null category
+contrib_weighted_cat          13832 non-null category
+contrib_max                   13832 non-null float64
+contrib_max_task              13832 non-null object
+seq_match                     13832 non-null float64
+seq_match_p                   13828 non-null category
+seq_match_cat                 13828 non-null category
+match/Cad                     13832 non-null float64
+contrib/Cad                   13832 non-null float64
+pattern_short                 13832 non-null object
+example_chrom                 13832 non-null object
+example_start                 13832 non-null int64
+example_end                   13832 non-null int64
+example_strand                13832 non-null object
+example_interval_from_task    13832 non-null object
+pattern_start_abs             13832 non-null int64
+pattern_end_abs               13832 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 3.0+ MB
+[2022-07-14 18:22:16,220] - [INFO] - Writing the resuling pd.DataFrame of shape (13832, 30) to tsv/mapped_motifs/Cad_instances_noncurated_0based_match.1_contrib.005.tsv.gz
+[2022-07-14 18:22:16,224] - [INFO] - Writing a tsv file
+[2022-07-14 18:22:17,186] - [INFO] - Done!
+[2022-07-14 18:22:41,819] - [INFO] - Using tasks: ['GAF']
+[2022-07-14 18:25:50,926] - [INFO] - Centroid matches already exist.
+[2022-07-14 18:25:50,929] - [INFO] - Loading centroid matches from /l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/modisco/fold1/GAF_counts/cwm-scan-seqlets.trim-frac=0.08.csv.gz
+[2022-07-14 18:26:02,266] - [INFO] - Scanning for patterns
+[2022-07-14 18:27:05,438] - [INFO] - Merging
+[2022-07-14 18:27:05,451] - [INFO] - Append ranges
+[2022-07-14 18:27:05,488] - [INFO] - Table info
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 28314 entries, 0 to 28313
+Data columns (total 30 columns):
+pattern                       28314 non-null object
+example_idx                   28314 non-null int64
+pattern_start                 28314 non-null int64
+pattern_end                   28314 non-null int64
+strand                        28314 non-null object
+pattern_center                28314 non-null int64
+pattern_len                   28314 non-null int64
+match_weighted                28314 non-null float64
+match_weighted_p              28314 non-null category
+match_weighted_cat            28314 non-null category
+match_max                     28314 non-null float64
+match_max_task                28314 non-null object
+contrib_weighted              28314 non-null float64
+contrib_weighted_p            28314 non-null category
+contrib_weighted_cat          28314 non-null category
+contrib_max                   28314 non-null float64
+contrib_max_task              28314 non-null object
+seq_match                     28314 non-null float64
+seq_match_p                   28314 non-null category
+seq_match_cat                 28314 non-null category
+match/GAF                     28314 non-null float64
+contrib/GAF                   28314 non-null float64
+pattern_short                 28314 non-null object
+example_chrom                 28314 non-null object
+example_start                 28314 non-null int64
+example_end                   28314 non-null int64
+example_strand                28314 non-null object
+example_interval_from_task    28314 non-null object
+pattern_start_abs             28314 non-null int64
+pattern_end_abs               28314 non-null int64
+dtypes: category(6), float64(7), int64(9), object(8)
+memory usage: 5.8+ MB
+[2022-07-14 18:27:05,564] - [INFO] - Writing the resuling pd.DataFrame of shape (28314, 30) to tsv/mapped_motifs/GAF_instances_noncurated_0based_match.1_contrib.005.tsv.gz
+[2022-07-14 18:27:05,572] - [INFO] - Writing a tsv file
+[2022-07-14 18:27:07,505] - [INFO] - Done!
