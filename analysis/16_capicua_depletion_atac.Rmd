@@ -234,7 +234,7 @@ peaks_w_de_t4.gr <- peaks_w_de_t4.df %>%
 
 ## 4.6. Save DESeq2 results
 
-```{r save}
+```{r save, eval=FALSE}
 
 deseq_at_peaks.list <- list('cic6_2to25/wt_2to25' = peaks_w_de_t3.gr,
                             'cic6_25to3/wt_25to3' = peaks_w_de_t4.gr)
