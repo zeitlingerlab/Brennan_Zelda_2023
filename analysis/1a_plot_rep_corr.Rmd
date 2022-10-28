@@ -150,10 +150,7 @@ cic6_2to25_bw.list <- list(cic6_2to25_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manusc
 cic6_25to3_bw.list <- list(cic6_25to3_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_1.bw",
                            cic6_25to3_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_2.bw",
                            cic6_25to3_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_3.bw")
-gd7_2to4_bw.list <- list(gd7_2to4_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to4_atac_1.bw",
-                         gd7_2to4_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to4_atac_2.bw")
-toll10b_2to4_bw.list <- list(toll10b_2to4_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/toll10b_2to4_atac_1.bw",
-                         toll10b_2to4_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/toll10b_2to4_atac_2.bw")
+
 
 # ChIP-seq
 
@@ -167,10 +164,6 @@ h3k4me1_mbt_bw.list <- list(h3k4me1_mbt_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manu
 orer_mbt_100u_mnase_bw.list <- list(orer_mbt_100u_mnase_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_1.bw",
                                     orer_mbt_100u_mnase_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_2.bw",
                                     orer_mbt_100u_mnase_rep3 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_3.bw")
-gd7_mnase_bw.list <- list(gd7_mnase_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/gd7_2to4_mono_mnase_1.bw",
-                          gd7_mnase_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/gd7_2to4_mono_mnase_2.bw")
-toll10b_mnase_bw.list <- list(toll10b_mnase_rep1 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/toll10b_2to4_mono_mnase_1.bw",
-                          toll10b_mnase_rep2 = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/toll10b_2to4_mono_mnase_2.bw")
 
 ```
 
@@ -203,8 +196,6 @@ zldrnai_2to25_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and
 zldrnai_25to3_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/zldrnai_25to3_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
 cic6_2to25_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/cic6_2to25_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
 cic6_25to3_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/cic6_25to3_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
-gd7_2to4_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/gd7_2to4_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
-toll10b_2to4_peaks <- import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/toll10b_2to4_atac_combined_peaks.narrowPeak') %>% keepStandardChromosomes(pruning.mode="coarse")
 
 # ChIP-seq
 
@@ -307,12 +298,6 @@ cic6_25to3_peaks$rep1signal <- regionSums(resize(cic6_25to3_peaks, 400, 'center'
 cic6_25to3_peaks$rep2signal <- regionSums(resize(cic6_25to3_peaks, 400, 'center'), cic6_25to3_bw.list$cic6_25to3_rep2)
 cic6_25to3_peaks$rep3signal <- regionSums(resize(cic6_25to3_peaks, 400, 'center'), cic6_25to3_bw.list$cic6_25to3_rep3)
 
-gd7_2to4_peaks$rep1signal <- regionSums(resize(gd7_2to4_peaks, 400, 'center'), gd7_2to4_bw.list$gd7_2to4_rep1)
-gd7_2to4_peaks$rep2signal <- regionSums(resize(gd7_2to4_peaks, 400, 'center'), gd7_2to4_bw.list$gd7_2to4_rep2)
-
-toll10b_2to4_peaks$rep1signal <- regionSums(resize(toll10b_2to4_peaks, 400, 'center'), toll10b_2to4_bw.list$toll10b_2to4_rep1)
-toll10b_2to4_peaks$rep2signal <- regionSums(resize(toll10b_2to4_peaks, 400, 'center'), toll10b_2to4_bw.list$toll10b_2to4_rep2)
-
 # ChIP-seq
 
 h3k27ac_mbt_peaks$rep1signal <- regionSums(resize(h3k27ac_mbt_peaks, 1000, 'center'), h3k27ac_mbt_bw.list$h3k27ac_mbt_rep1)
@@ -326,10 +311,6 @@ h3k4me1_mbt_peaks$rep2signal <- regionSums(resize(h3k4me1_mbt_peaks, 1000, 'cent
 tss.gr$orer_rep1signal <- regionSums(resize(tss.gr, 1000, 'center'), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep1)
 tss.gr$orer_rep2signal <- regionSums(resize(tss.gr, 1000, 'center'), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep2)
 tss.gr$orer_rep3signal <- regionSums(resize(tss.gr, 1000, 'center'), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep3)
-tss.gr$gd7_rep1signal <- regionSums(resize(tss.gr, 1000, 'center'), gd7_mnase_bw.list$gd7_mnase_rep1)
-tss.gr$gd7_rep2signal <- regionSums(resize(tss.gr, 1000, 'center'), gd7_mnase_bw.list$gd7_mnase_rep2)
-tss.gr$toll_rep1signal <- regionSums(resize(tss.gr, 1000, 'center'), toll10b_mnase_bw.list$toll10b_mnase_rep1)
-tss.gr$toll_rep2signal <- regionSums(resize(tss.gr, 1000, 'center'), toll10b_mnase_bw.list$toll10b_mnase_rep2)
 
 ```
 
@@ -461,12 +442,6 @@ cor(as.data.frame(log(cic6_25to3_peaks$rep1signal+1)), as.data.frame(log(cic6_25
 cor(as.data.frame(log(cic6_25to3_peaks$rep1signal+1)), as.data.frame(log(cic6_25to3_peaks$rep3signal+1)), method = "pearson")
 cor(as.data.frame(log(cic6_25to3_peaks$rep2signal+1)), as.data.frame(log(cic6_25to3_peaks$rep3signal+1)), method = "pearson")
 
-## Gd7 2-4
-cor(as.data.frame(log(gd7_2to4_peaks$rep1signal+1)), as.data.frame(log(gd7_2to4_peaks$rep2signal+1)), method = "pearson")
-
-## Toll10b 2-4 
-cor(as.data.frame(log(toll10b_2to4_peaks$rep1signal+1)), as.data.frame(log(toll10b_2to4_peaks$rep2signal+1)), method = "pearson")
-
 # ChIP-seq 
 
 cor(as.data.frame(log(h3k27ac_mbt_peaks$rep1signal+1)), as.data.frame(log(h3k27ac_mbt_peaks$rep2signal+1)), method = "pearson")
@@ -477,8 +452,6 @@ cor(as.data.frame(log(h3k4me1_mbt_peaks$rep1signal+1)), as.data.frame(log(h3k4me
 cor(as.data.frame(log(tss.gr$orer_rep1signal+1)), as.data.frame(log(tss.gr$orer_rep2signal+1)), method = "pearson")
 cor(as.data.frame(log(tss.gr$orer_rep1signal+1)), as.data.frame(log(tss.gr$orer_rep3signal+1)), method = "pearson")
 cor(as.data.frame(log(tss.gr$orer_rep2signal+1)), as.data.frame(log(tss.gr$orer_rep3signal+1)), method = "pearson")
-cor(as.data.frame(log(tss.gr$gd7_rep1signal+1)), as.data.frame(log(tss.gr$gd7_rep2signal+1)), method = "pearson")
-cor(as.data.frame(log(tss.gr$toll_rep1signal+1)), as.data.frame(log(tss.gr$toll_rep2signal+1)), method = "pearson")
 
 ```
 
@@ -561,125 +534,117 @@ ggsave("gaf_corr_plots.png", plot = gaf.plot, path = "figures/1a_plot_rep_corr/"
 
 ## ATAC-seq
 
-o_t1_1 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep6signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#31218C")
-o_t1_2 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep7signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#31218C")
-o_t1_3 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep6signal, signal2 = orer_1to15_peaks$rep7signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#31218C")
+o_t1_1 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep6signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#6F4ECC")
+o_t1_2 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep7signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#6F4ECC")
+o_t1_3 <- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep6signal, signal2 = orer_1to15_peaks$rep7signal, name = "Orer 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#6F4ECC")
 o_t1.plot <- o_t1_1 + o_t1_2 + o_t1_3 +
   plot_layout(ncol=3)
 ggsave("orer_1to15_atac_corr_plots.pdf", plot = o_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("orer_1to15_atac_corr_plots.png", plot = o_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-o_t2_1 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep6signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#232996")
-o_t2_2 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep7signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#232996")
-o_t2_3 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep6signal, signal2 = orer_15to2_peaks$rep7signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#232996")
+o_t2_1 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep6signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#4952CE")
+o_t2_2 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep7signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#4952CE")
+o_t2_3 <- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep6signal, signal2 = orer_15to2_peaks$rep7signal, name = "Orer 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#4952CE")
 o_t2.plot <- o_t2_1 + o_t2_2 + o_t2_3 +
   plot_layout(ncol=3)
 ggsave("orer_15to2_atac_corr_plots.pdf", plot = o_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("orer_15to2_atac_corr_plots.png", plot = o_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-o_t3_1 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep6signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#236E96")
-o_t3_2 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep7signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#236E96")
-o_t3_3 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep6signal, signal2 = orer_2to25_peaks$rep7signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#236E96")
+o_t3_1 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep6signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#39A7D8")
+o_t3_2 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep7signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#39A7D8")
+o_t3_3 <- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep6signal, signal2 = orer_2to25_peaks$rep7signal, name = "Orer 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#39A7D8")
 o_t3.plot <- o_t3_1 + o_t3_2 + o_t3_3 +
   plot_layout(ncol=3)
 ggsave("orer_2to25_atac_corr_plots.pdf", plot = o_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("orer_2to25_atac_corr_plots.png", plot = o_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-o_t4_1 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep6signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#218C89")
-o_t4_2 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep7signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#218C89")
-o_t4_3 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep6signal, signal2 = orer_25to3_peaks$rep7signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#218C89")
+o_t4_1 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep6signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#36CCC4")
+o_t4_2 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep7signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#36CCC4")
+o_t4_3 <- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep6signal, signal2 = orer_25to3_peaks$rep7signal, name = "Orer 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#36CCC4")
 o_t4.plot <- o_t4_1 + o_t4_2 + o_t4_3 +
   plot_layout(ncol=3)
 ggsave("orer_25to3_atac_corr_plots.pdf", plot = o_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("orer_25to3_atac_corr_plots.png", plot = o_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-g_t1_1 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep5signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#31218C")
-g_t1_2 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep6signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#31218C")
-g_t1_3 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep5signal, signal2 = gd7_1to15_peaks$rep6signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#31218C")
+g_t1_1 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep5signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#6F4ECC")
+g_t1_2 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep6signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#6F4ECC")
+g_t1_3 <- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep5signal, signal2 = gd7_1to15_peaks$rep6signal, name = "Gd7 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#6F4ECC")
 g_t1.plot <- g_t1_1 + g_t1_2 + g_t1_3 +
   plot_layout(ncol=3)
 ggsave("gd7_1to15_atac_corr_plots.pdf", plot = g_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("gd7_1to15_atac_corr_plots.png", plot = g_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-g_t2_1 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep5signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#232996")
-g_t2_2 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep6signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#232996")
-g_t2_3 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep5signal, signal2 = gd7_15to2_peaks$rep6signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#232996")
+g_t2_1 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep5signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#4952CE")
+g_t2_2 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep6signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#4952CE")
+g_t2_3 <- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep5signal, signal2 = gd7_15to2_peaks$rep6signal, name = "Gd7 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#4952CE")
 g_t2.plot <- g_t2_1 + g_t2_2 + g_t2_3 +
   plot_layout(ncol=3)
 ggsave("gd7_15to2_atac_corr_plots.pdf", plot = g_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("gd7_15to2_atac_corr_plots.png", plot = g_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-g_t3_1 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep5signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#236E96")
-g_t3_2 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep6signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#236E96")
-g_t3_3 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep5signal, signal2 = gd7_2to25_peaks$rep6signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#236E96")
+g_t3_1 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep5signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#39A7D8")
+g_t3_2 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep6signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#39A7D8")
+g_t3_3 <- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep5signal, signal2 = gd7_2to25_peaks$rep6signal, name = "Gd7 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#39A7D8")
 g_t3.plot <- g_t3_1 + g_t3_2 + g_t3_3 +
   plot_layout(ncol=3)
 ggsave("gd7_2to25_atac_corr_plots.pdf", plot = g_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("gd7_2to25_atac_corr_plots.png", plot = g_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-g_t4_1 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep5signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#218C89")
-g_t4_2 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep6signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#218C89")
-g_t4_3 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep5signal, signal2 = gd7_25to3_peaks$rep6signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#218C89")
+g_t4_1 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep5signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#36CCC4")
+g_t4_2 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep6signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#36CCC4")
+g_t4_3 <- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep5signal, signal2 = gd7_25to3_peaks$rep6signal, name = "Gd7 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#36CCC4")
 g_t4.plot <- g_t4_1 + g_t4_2 + g_t4_3 +
   plot_layout(ncol=3)
 ggsave("gd7_25to3_atac_corr_plots.pdf", plot = g_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("gd7_25to3_atac_corr_plots.png", plot = g_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-z_t1_1 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep2signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#31218C")
-z_t1_2 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#31218C")
-z_t1_3 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep2signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#31218C")
+z_t1_1 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep2signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#6F4ECC")
+z_t1_2 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#6F4ECC")
+z_t1_3 <- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep2signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = "Zld- 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#6F4ECC")
 z_t1.plot <- z_t1_1 + z_t1_2 + z_t1_3 +
   plot_layout(ncol=3)
 ggsave("zldrnai_1to15_atac_corr_plots.pdf", plot = z_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("zldrnai_1to15_atac_corr_plots.png", plot = z_t1.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-z_t2_1 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep2signal, name = "Zld- 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#232996")
-z_t2_2 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = "Zld-i 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#232996")
-z_t2_3 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep2signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = "Zld- 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#232996")
+z_t2_1 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep2signal, name = "Zld- 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#4952CE")
+z_t2_2 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = "Zld-i 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#4952CE")
+z_t2_3 <- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep2signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = "Zld- 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#4952CE")
 z_t2.plot <- z_t2_1 + z_t2_2 + z_t2_3 +
   plot_layout(ncol=3)
 ggsave("zldrnai_15to2_atac_corr_plots.pdf", plot = z_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("zldrnai_15to2_atac_corr_plots.png", plot = z_t2.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-z_t3_1 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep2signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#236E96")
-z_t3_2 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#236E96")
-z_t3_3 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep2signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#236E96")
+z_t3_1 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep2signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#39A7D8")
+z_t3_2 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#39A7D8")
+z_t3_3 <- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep2signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = "Zld- 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#39A7D8")
 z_t3.plot <- z_t3_1 + z_t3_2 + z_t3_3 +
   plot_layout(ncol=3)
 ggsave("zldrnai_2to25_atac_corr_plots.pdf", plot = z_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("zldrnai_2to25_atac_corr_plots.png", plot = z_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-z_t4_1 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep2signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#218C89")
-z_t4_2 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#218C89")
-z_t4_3 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep2signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#218C89")
+z_t4_1 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep2signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#36CCC4")
+z_t4_2 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#36CCC4")
+z_t4_3 <- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep2signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = "Zld- 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#36CCC4")
 z_t4.plot <- z_t4_1 + z_t4_2 + z_t4_3 +
   plot_layout(ncol=3)
 ggsave("zldrnai_25to3_atac_corr_plots.pdf", plot = z_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("zldrnai_25to3_atac_corr_plots.png", plot = z_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-c_t3_1 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep2signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#236E96")
-c_t3_2 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep3signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#236E96")
-c_t3_3 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep2signal, signal2 = cic6_2to25_peaks$rep3signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#236E96")
+c_t3_1 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep2signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#39A7D8")
+c_t3_2 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep3signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#39A7D8")
+c_t3_3 <- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep2signal, signal2 = cic6_2to25_peaks$rep3signal, name = "Cic6 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#39A7D8")
 c_t3.plot <- c_t3_1 + c_t3_2 + c_t3_3 +
   plot_layout(ncol=3)
 ggsave("cic6_2to25_atac_corr_plots.pdf", plot = c_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("cic6_2to25_atac_corr_plots.png", plot = c_t3.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 
-c_t4_1 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep2signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#218C89")
-c_t4_2 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep3signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#218C89")
-c_t4_3 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep2signal, signal2 = cic6_25to3_peaks$rep3signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#218C89")
+c_t4_1 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep2signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#36CCC4")
+c_t4_2 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep3signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3", colour = "#36CCC4")
+c_t4_3 <- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep2signal, signal2 = cic6_25to3_peaks$rep3signal, name = "Cic6 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3", colour = "#36CCC4")
 c_t4.plot <- c_t4_1 + c_t4_2 + c_t4_3 +
   plot_layout(ncol=3)
 ggsave("cic6_25to3_atac_corr_plots.pdf", plot = c_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("cic6_25to3_atac_corr_plots.png", plot = c_t4.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
-
-g_2to4 <- plot_cor(gd7_2to4_peaks, signal1 = gd7_2to4_peaks$rep1signal, signal2 = gd7_2to4_peaks$rep2signal, name = "Gd7 2-4 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#FCB13C")
-ggsave("gd7_atac_2to4_corr_plots.pdf", plot = g_2to4, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
-ggsave("dl_corr_plots.png", plot = g_2to4, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
-
-t_2to4 <- plot_cor(toll10b_2to4_peaks, signal1 = toll10b_2to4_peaks$rep1signal, signal2 = toll10b_2to4_peaks$rep2signal, name = "Toll10b 2-4 h ATAC Replicate Correlation: rep 1 vs 2", colour = "#3535A8")
-ggsave("toll10b_atac_2to4_corr_plots.pdf", plot = t_2to4, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
-ggsave("toll10b_atac_2to4_corr_plots.png", plot = t_2to4, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
 
 ## ChIP-seq
 
@@ -700,13 +665,6 @@ o_mnase.plot <- o_mnase_1 + o_mnase_2 + o_mnase_3 +
   plot_layout(ncol=3)
 ggsave("orer_mnase_corr_plots.pdf", plot = o_mnase.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
 ggsave("orer_mnase_corr_plots.png", plot = o_mnase.plot, path = "figures/1a_plot_rep_corr/", width = 50, height = 25, units = "cm")
-
-g_mnase <- plot_cor(tss.gr, signal1 = tss.gr$gd7_rep1signal, signal2 = tss.gr$gd7_rep2signal, name = "Gd7 MNase Replicate Correlation: rep 1 vs 2", colour = "#FCB13C")
-ggsave("gd7_mnase_corr_plots.pdf", plot = g_mnase, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
-ggsave("gd7_mnase_corr_plots.png", plot = g_mnase, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
-t_mnase <- plot_cor(tss.gr, signal1 = tss.gr$toll_rep1signal, signal2 = tss.gr$toll_rep2signal, name = "Toll10b MNase Replicate Correlation: rep 1 vs 2", colour = "#3535A8")
-ggsave("toll10b_mnase_corr_plots.pdf", plot = t_mnase, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
-ggsave("toll10b_mnase_corr_plots.png", plot = t_mnase, path = "figures/1a_plot_rep_corr/", width = 16, height = 25, units = "cm")
 
 ```
 

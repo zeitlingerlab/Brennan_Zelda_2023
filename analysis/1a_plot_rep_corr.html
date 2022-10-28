@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kaelan (1028-02098-001-001)" />
 
-<meta name="date" content="2022-09-07" />
+<meta name="date" content="2022-10-26" />
 
 <title>Plot replicate correlations</title>
 
@@ -1524,7 +1524,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Plot replicate correlations</h1>
 <h4 class="author">Kaelan (1028-02098-001-001)</h4>
-<h4 class="date">September 07, 2022</h4>
+<h4 class="date">October 26, 2022</h4>
 
 </div>
 
@@ -1655,10 +1655,7 @@ cic6_2to25_bw.list &lt;- list(cic6_2to25_rep1 = &quot;/l/Zeitlinger/ZeitlingerLa
 cic6_25to3_bw.list &lt;- list(cic6_25to3_rep1 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_1.bw&quot;,
                            cic6_25to3_rep2 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_2.bw&quot;,
                            cic6_25to3_rep3 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/cic6_25to3_atac_3.bw&quot;)
-gd7_2to4_bw.list &lt;- list(gd7_2to4_rep1 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to4_atac_1.bw&quot;,
-                         gd7_2to4_rep2 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/gd7_2to4_atac_2.bw&quot;)
-toll10b_2to4_bw.list &lt;- list(toll10b_2to4_rep1 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/toll10b_2to4_atac_1.bw&quot;,
-                         toll10b_2to4_rep2 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/individual/toll10b_2to4_atac_2.bw&quot;)
+
 
 # ChIP-seq
 
@@ -1671,11 +1668,7 @@ h3k4me1_mbt_bw.list &lt;- list(h3k4me1_mbt_rep1 = &quot;/l/Zeitlinger/Zeitlinger
 
 orer_mbt_100u_mnase_bw.list &lt;- list(orer_mbt_100u_mnase_rep1 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_1.bw&quot;,
                                     orer_mbt_100u_mnase_rep2 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_2.bw&quot;,
-                                    orer_mbt_100u_mnase_rep3 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_3.bw&quot;)
-gd7_mnase_bw.list &lt;- list(gd7_mnase_rep1 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/gd7_2to4_mono_mnase_1.bw&quot;,
-                          gd7_mnase_rep2 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/gd7_2to4_mono_mnase_2.bw&quot;)
-toll10b_mnase_bw.list &lt;- list(toll10b_mnase_rep1 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/toll10b_2to4_mono_mnase_1.bw&quot;,
-                          toll10b_mnase_rep2 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/toll10b_2to4_mono_mnase_2.bw&quot;)</code></pre>
+                                    orer_mbt_100u_mnase_rep3 = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/mnase/individual/orer_mbt_100u_mnase_3.bw&quot;)</code></pre>
 </div>
 <div id="load-in-peak-region-sets-for-comparisons" class="section level2">
 <h2>3.2. Load in peak region sets for comparisons</h2>
@@ -1704,8 +1697,6 @@ zldrnai_2to25_peaks &lt;- import(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Ze
 zldrnai_25to3_peaks &lt;- import(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/zldrnai_25to3_atac_combined_peaks.narrowPeak&#39;) %&gt;% keepStandardChromosomes(pruning.mode=&quot;coarse&quot;)
 cic6_2to25_peaks &lt;- import(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/cic6_2to25_atac_combined_peaks.narrowPeak&#39;) %&gt;% keepStandardChromosomes(pruning.mode=&quot;coarse&quot;)
 cic6_25to3_peaks &lt;- import(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/cic6_25to3_atac_combined_peaks.narrowPeak&#39;) %&gt;% keepStandardChromosomes(pruning.mode=&quot;coarse&quot;)
-gd7_2to4_peaks &lt;- import(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/gd7_2to4_atac_combined_peaks.narrowPeak&#39;) %&gt;% keepStandardChromosomes(pruning.mode=&quot;coarse&quot;)
-toll10b_2to4_peaks &lt;- import(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/peaks/dm6/atac/combined/toll10b_2to4_atac_combined_peaks.narrowPeak&#39;) %&gt;% keepStandardChromosomes(pruning.mode=&quot;coarse&quot;)
 
 # ChIP-seq
 
@@ -1805,12 +1796,6 @@ cic6_25to3_peaks$rep1signal &lt;- regionSums(resize(cic6_25to3_peaks, 400, &#39;
 cic6_25to3_peaks$rep2signal &lt;- regionSums(resize(cic6_25to3_peaks, 400, &#39;center&#39;), cic6_25to3_bw.list$cic6_25to3_rep2)
 cic6_25to3_peaks$rep3signal &lt;- regionSums(resize(cic6_25to3_peaks, 400, &#39;center&#39;), cic6_25to3_bw.list$cic6_25to3_rep3)
 
-gd7_2to4_peaks$rep1signal &lt;- regionSums(resize(gd7_2to4_peaks, 400, &#39;center&#39;), gd7_2to4_bw.list$gd7_2to4_rep1)
-gd7_2to4_peaks$rep2signal &lt;- regionSums(resize(gd7_2to4_peaks, 400, &#39;center&#39;), gd7_2to4_bw.list$gd7_2to4_rep2)
-
-toll10b_2to4_peaks$rep1signal &lt;- regionSums(resize(toll10b_2to4_peaks, 400, &#39;center&#39;), toll10b_2to4_bw.list$toll10b_2to4_rep1)
-toll10b_2to4_peaks$rep2signal &lt;- regionSums(resize(toll10b_2to4_peaks, 400, &#39;center&#39;), toll10b_2to4_bw.list$toll10b_2to4_rep2)
-
 # ChIP-seq
 
 h3k27ac_mbt_peaks$rep1signal &lt;- regionSums(resize(h3k27ac_mbt_peaks, 1000, &#39;center&#39;), h3k27ac_mbt_bw.list$h3k27ac_mbt_rep1)
@@ -1823,11 +1808,7 @@ h3k4me1_mbt_peaks$rep2signal &lt;- regionSums(resize(h3k4me1_mbt_peaks, 1000, &#
 
 tss.gr$orer_rep1signal &lt;- regionSums(resize(tss.gr, 1000, &#39;center&#39;), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep1)
 tss.gr$orer_rep2signal &lt;- regionSums(resize(tss.gr, 1000, &#39;center&#39;), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep2)
-tss.gr$orer_rep3signal &lt;- regionSums(resize(tss.gr, 1000, &#39;center&#39;), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep3)
-tss.gr$gd7_rep1signal &lt;- regionSums(resize(tss.gr, 1000, &#39;center&#39;), gd7_mnase_bw.list$gd7_mnase_rep1)
-tss.gr$gd7_rep2signal &lt;- regionSums(resize(tss.gr, 1000, &#39;center&#39;), gd7_mnase_bw.list$gd7_mnase_rep2)
-tss.gr$toll_rep1signal &lt;- regionSums(resize(tss.gr, 1000, &#39;center&#39;), toll10b_mnase_bw.list$toll10b_mnase_rep1)
-tss.gr$toll_rep2signal &lt;- regionSums(resize(tss.gr, 1000, &#39;center&#39;), toll10b_mnase_bw.list$toll10b_mnase_rep2)</code></pre>
+tss.gr$orer_rep3signal &lt;- regionSums(resize(tss.gr, 1000, &#39;center&#39;), orer_mbt_100u_mnase_bw.list$orer_mbt_100u_mnase_rep3)</code></pre>
 </div>
 <div id="generate-pearson-correlation-values" class="section level2">
 <h2>4.2. Generate Pearson correlation values</h2>
@@ -2055,14 +2036,6 @@ cor(as.data.frame(log(cic6_25to3_peaks$rep1signal+1)), as.data.frame(log(cic6_25
 <pre class="r"><code>cor(as.data.frame(log(cic6_25to3_peaks$rep2signal+1)), as.data.frame(log(cic6_25to3_peaks$rep3signal+1)), method = &quot;pearson&quot;)</code></pre>
 <pre><code>##                                      log(cic6_25to3_peaks$rep3signal + 1)
 ## log(cic6_25to3_peaks$rep2signal + 1)                            0.9634903</code></pre>
-<pre class="r"><code>## Gd7 2-4
-cor(as.data.frame(log(gd7_2to4_peaks$rep1signal+1)), as.data.frame(log(gd7_2to4_peaks$rep2signal+1)), method = &quot;pearson&quot;)</code></pre>
-<pre><code>##                                    log(gd7_2to4_peaks$rep2signal + 1)
-## log(gd7_2to4_peaks$rep1signal + 1)                          0.9429407</code></pre>
-<pre class="r"><code>## Toll10b 2-4 
-cor(as.data.frame(log(toll10b_2to4_peaks$rep1signal+1)), as.data.frame(log(toll10b_2to4_peaks$rep2signal+1)), method = &quot;pearson&quot;)</code></pre>
-<pre><code>##                                        log(toll10b_2to4_peaks$rep2signal + 1)
-## log(toll10b_2to4_peaks$rep1signal + 1)                              0.9221243</code></pre>
 <pre class="r"><code># ChIP-seq 
 
 cor(as.data.frame(log(h3k27ac_mbt_peaks$rep1signal+1)), as.data.frame(log(h3k27ac_mbt_peaks$rep2signal+1)), method = &quot;pearson&quot;)</code></pre>
@@ -2082,12 +2055,6 @@ cor(as.data.frame(log(tss.gr$orer_rep1signal+1)), as.data.frame(log(tss.gr$orer_
 <pre class="r"><code>cor(as.data.frame(log(tss.gr$orer_rep2signal+1)), as.data.frame(log(tss.gr$orer_rep3signal+1)), method = &quot;pearson&quot;)</code></pre>
 <pre><code>##                                 log(tss.gr$orer_rep3signal + 1)
 ## log(tss.gr$orer_rep2signal + 1)                       0.9652751</code></pre>
-<pre class="r"><code>cor(as.data.frame(log(tss.gr$gd7_rep1signal+1)), as.data.frame(log(tss.gr$gd7_rep2signal+1)), method = &quot;pearson&quot;)</code></pre>
-<pre><code>##                                log(tss.gr$gd7_rep2signal + 1)
-## log(tss.gr$gd7_rep1signal + 1)                      0.9550028</code></pre>
-<pre class="r"><code>cor(as.data.frame(log(tss.gr$toll_rep1signal+1)), as.data.frame(log(tss.gr$toll_rep2signal+1)), method = &quot;pearson&quot;)</code></pre>
-<pre><code>##                                 log(tss.gr$toll_rep2signal + 1)
-## log(tss.gr$toll_rep1signal + 1)                       0.9633059</code></pre>
 </div>
 <div id="plot-correlation-plots" class="section level2">
 <h2>4.3. Plot correlation plots</h2>
@@ -2166,125 +2133,117 @@ ggsave(&quot;gaf_corr_plots.png&quot;, plot = gaf.plot, path = &quot;figures/1a_
 
 ## ATAC-seq
 
-o_t1_1 &lt;- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep6signal, name = &quot;Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#31218C&quot;)
-o_t1_2 &lt;- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep7signal, name = &quot;Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#31218C&quot;)
-o_t1_3 &lt;- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep6signal, signal2 = orer_1to15_peaks$rep7signal, name = &quot;Orer 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#31218C&quot;)
+o_t1_1 &lt;- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep6signal, name = &quot;Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#6F4ECC&quot;)
+o_t1_2 &lt;- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep4signal, signal2 = orer_1to15_peaks$rep7signal, name = &quot;Orer 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#6F4ECC&quot;)
+o_t1_3 &lt;- plot_cor(orer_1to15_peaks, signal1 = orer_1to15_peaks$rep6signal, signal2 = orer_1to15_peaks$rep7signal, name = &quot;Orer 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#6F4ECC&quot;)
 o_t1.plot &lt;- o_t1_1 + o_t1_2 + o_t1_3 +
   plot_layout(ncol=3)
 ggsave(&quot;orer_1to15_atac_corr_plots.pdf&quot;, plot = o_t1.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;orer_1to15_atac_corr_plots.png&quot;, plot = o_t1.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-o_t2_1 &lt;- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep6signal, name = &quot;Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#232996&quot;)
-o_t2_2 &lt;- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep7signal, name = &quot;Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#232996&quot;)
-o_t2_3 &lt;- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep6signal, signal2 = orer_15to2_peaks$rep7signal, name = &quot;Orer 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#232996&quot;)
+o_t2_1 &lt;- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep6signal, name = &quot;Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#4952CE&quot;)
+o_t2_2 &lt;- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep4signal, signal2 = orer_15to2_peaks$rep7signal, name = &quot;Orer 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#4952CE&quot;)
+o_t2_3 &lt;- plot_cor(orer_15to2_peaks, signal1 = orer_15to2_peaks$rep6signal, signal2 = orer_15to2_peaks$rep7signal, name = &quot;Orer 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#4952CE&quot;)
 o_t2.plot &lt;- o_t2_1 + o_t2_2 + o_t2_3 +
   plot_layout(ncol=3)
 ggsave(&quot;orer_15to2_atac_corr_plots.pdf&quot;, plot = o_t2.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;orer_15to2_atac_corr_plots.png&quot;, plot = o_t2.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-o_t3_1 &lt;- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep6signal, name = &quot;Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#236E96&quot;)
-o_t3_2 &lt;- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep7signal, name = &quot;Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#236E96&quot;)
-o_t3_3 &lt;- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep6signal, signal2 = orer_2to25_peaks$rep7signal, name = &quot;Orer 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#236E96&quot;)
+o_t3_1 &lt;- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep6signal, name = &quot;Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#39A7D8&quot;)
+o_t3_2 &lt;- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep4signal, signal2 = orer_2to25_peaks$rep7signal, name = &quot;Orer 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#39A7D8&quot;)
+o_t3_3 &lt;- plot_cor(orer_2to25_peaks, signal1 = orer_2to25_peaks$rep6signal, signal2 = orer_2to25_peaks$rep7signal, name = &quot;Orer 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#39A7D8&quot;)
 o_t3.plot &lt;- o_t3_1 + o_t3_2 + o_t3_3 +
   plot_layout(ncol=3)
 ggsave(&quot;orer_2to25_atac_corr_plots.pdf&quot;, plot = o_t3.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;orer_2to25_atac_corr_plots.png&quot;, plot = o_t3.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-o_t4_1 &lt;- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep6signal, name = &quot;Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#218C89&quot;)
-o_t4_2 &lt;- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep7signal, name = &quot;Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#218C89&quot;)
-o_t4_3 &lt;- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep6signal, signal2 = orer_25to3_peaks$rep7signal, name = &quot;Orer 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#218C89&quot;)
+o_t4_1 &lt;- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep6signal, name = &quot;Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#36CCC4&quot;)
+o_t4_2 &lt;- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep4signal, signal2 = orer_25to3_peaks$rep7signal, name = &quot;Orer 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#36CCC4&quot;)
+o_t4_3 &lt;- plot_cor(orer_25to3_peaks, signal1 = orer_25to3_peaks$rep6signal, signal2 = orer_25to3_peaks$rep7signal, name = &quot;Orer 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#36CCC4&quot;)
 o_t4.plot &lt;- o_t4_1 + o_t4_2 + o_t4_3 +
   plot_layout(ncol=3)
 ggsave(&quot;orer_25to3_atac_corr_plots.pdf&quot;, plot = o_t4.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;orer_25to3_atac_corr_plots.png&quot;, plot = o_t4.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-g_t1_1 &lt;- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep5signal, name = &quot;Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#31218C&quot;)
-g_t1_2 &lt;- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep6signal, name = &quot;Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#31218C&quot;)
-g_t1_3 &lt;- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep5signal, signal2 = gd7_1to15_peaks$rep6signal, name = &quot;Gd7 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#31218C&quot;)
+g_t1_1 &lt;- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep5signal, name = &quot;Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#6F4ECC&quot;)
+g_t1_2 &lt;- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep3signal, signal2 = gd7_1to15_peaks$rep6signal, name = &quot;Gd7 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#6F4ECC&quot;)
+g_t1_3 &lt;- plot_cor(gd7_1to15_peaks, signal1 = gd7_1to15_peaks$rep5signal, signal2 = gd7_1to15_peaks$rep6signal, name = &quot;Gd7 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#6F4ECC&quot;)
 g_t1.plot &lt;- g_t1_1 + g_t1_2 + g_t1_3 +
   plot_layout(ncol=3)
 ggsave(&quot;gd7_1to15_atac_corr_plots.pdf&quot;, plot = g_t1.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;gd7_1to15_atac_corr_plots.png&quot;, plot = g_t1.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-g_t2_1 &lt;- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep5signal, name = &quot;Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#232996&quot;)
-g_t2_2 &lt;- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep6signal, name = &quot;Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#232996&quot;)
-g_t2_3 &lt;- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep5signal, signal2 = gd7_15to2_peaks$rep6signal, name = &quot;Gd7 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#232996&quot;)
+g_t2_1 &lt;- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep5signal, name = &quot;Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#4952CE&quot;)
+g_t2_2 &lt;- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep3signal, signal2 = gd7_15to2_peaks$rep6signal, name = &quot;Gd7 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#4952CE&quot;)
+g_t2_3 &lt;- plot_cor(gd7_15to2_peaks, signal1 = gd7_15to2_peaks$rep5signal, signal2 = gd7_15to2_peaks$rep6signal, name = &quot;Gd7 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#4952CE&quot;)
 g_t2.plot &lt;- g_t2_1 + g_t2_2 + g_t2_3 +
   plot_layout(ncol=3)
 ggsave(&quot;gd7_15to2_atac_corr_plots.pdf&quot;, plot = g_t2.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;gd7_15to2_atac_corr_plots.png&quot;, plot = g_t2.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-g_t3_1 &lt;- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep5signal, name = &quot;Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#236E96&quot;)
-g_t3_2 &lt;- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep6signal, name = &quot;Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#236E96&quot;)
-g_t3_3 &lt;- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep5signal, signal2 = gd7_2to25_peaks$rep6signal, name = &quot;Gd7 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#236E96&quot;)
+g_t3_1 &lt;- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep5signal, name = &quot;Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#39A7D8&quot;)
+g_t3_2 &lt;- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep3signal, signal2 = gd7_2to25_peaks$rep6signal, name = &quot;Gd7 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#39A7D8&quot;)
+g_t3_3 &lt;- plot_cor(gd7_2to25_peaks, signal1 = gd7_2to25_peaks$rep5signal, signal2 = gd7_2to25_peaks$rep6signal, name = &quot;Gd7 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#39A7D8&quot;)
 g_t3.plot &lt;- g_t3_1 + g_t3_2 + g_t3_3 +
   plot_layout(ncol=3)
 ggsave(&quot;gd7_2to25_atac_corr_plots.pdf&quot;, plot = g_t3.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;gd7_2to25_atac_corr_plots.png&quot;, plot = g_t3.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-g_t4_1 &lt;- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep5signal, name = &quot;Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#218C89&quot;)
-g_t4_2 &lt;- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep6signal, name = &quot;Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#218C89&quot;)
-g_t4_3 &lt;- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep5signal, signal2 = gd7_25to3_peaks$rep6signal, name = &quot;Gd7 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#218C89&quot;)
+g_t4_1 &lt;- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep5signal, name = &quot;Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#36CCC4&quot;)
+g_t4_2 &lt;- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep3signal, signal2 = gd7_25to3_peaks$rep6signal, name = &quot;Gd7 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#36CCC4&quot;)
+g_t4_3 &lt;- plot_cor(gd7_25to3_peaks, signal1 = gd7_25to3_peaks$rep5signal, signal2 = gd7_25to3_peaks$rep6signal, name = &quot;Gd7 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#36CCC4&quot;)
 g_t4.plot &lt;- g_t4_1 + g_t4_2 + g_t4_3 +
   plot_layout(ncol=3)
 ggsave(&quot;gd7_25to3_atac_corr_plots.pdf&quot;, plot = g_t4.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;gd7_25to3_atac_corr_plots.png&quot;, plot = g_t4.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-z_t1_1 &lt;- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep2signal, name = &quot;Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#31218C&quot;)
-z_t1_2 &lt;- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = &quot;Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#31218C&quot;)
-z_t1_3 &lt;- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep2signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = &quot;Zld- 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#31218C&quot;)
+z_t1_1 &lt;- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep2signal, name = &quot;Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#6F4ECC&quot;)
+z_t1_2 &lt;- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep1signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = &quot;Zld- 1-1.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#6F4ECC&quot;)
+z_t1_3 &lt;- plot_cor(zldrnai_1to15_peaks, signal1 = zldrnai_1to15_peaks$rep2signal, signal2 = zldrnai_1to15_peaks$rep3signal, name = &quot;Zld- 1-1.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#6F4ECC&quot;)
 z_t1.plot &lt;- z_t1_1 + z_t1_2 + z_t1_3 +
   plot_layout(ncol=3)
 ggsave(&quot;zldrnai_1to15_atac_corr_plots.pdf&quot;, plot = z_t1.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;zldrnai_1to15_atac_corr_plots.png&quot;, plot = z_t1.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-z_t2_1 &lt;- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep2signal, name = &quot;Zld- 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#232996&quot;)
-z_t2_2 &lt;- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = &quot;Zld-i 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#232996&quot;)
-z_t2_3 &lt;- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep2signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = &quot;Zld- 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#232996&quot;)
+z_t2_1 &lt;- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep2signal, name = &quot;Zld- 1.5-2 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#4952CE&quot;)
+z_t2_2 &lt;- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep1signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = &quot;Zld-i 1.5-2 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#4952CE&quot;)
+z_t2_3 &lt;- plot_cor(zldrnai_15to2_peaks, signal1 = zldrnai_15to2_peaks$rep2signal, signal2 = zldrnai_15to2_peaks$rep3signal, name = &quot;Zld- 1.5-2 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#4952CE&quot;)
 z_t2.plot &lt;- z_t2_1 + z_t2_2 + z_t2_3 +
   plot_layout(ncol=3)
 ggsave(&quot;zldrnai_15to2_atac_corr_plots.pdf&quot;, plot = z_t2.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;zldrnai_15to2_atac_corr_plots.png&quot;, plot = z_t2.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-z_t3_1 &lt;- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep2signal, name = &quot;Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#236E96&quot;)
-z_t3_2 &lt;- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = &quot;Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#236E96&quot;)
-z_t3_3 &lt;- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep2signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = &quot;Zld- 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#236E96&quot;)
+z_t3_1 &lt;- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep2signal, name = &quot;Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#39A7D8&quot;)
+z_t3_2 &lt;- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep1signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = &quot;Zld- 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#39A7D8&quot;)
+z_t3_3 &lt;- plot_cor(zldrnai_2to25_peaks, signal1 = zldrnai_2to25_peaks$rep2signal, signal2 = zldrnai_2to25_peaks$rep3signal, name = &quot;Zld- 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#39A7D8&quot;)
 z_t3.plot &lt;- z_t3_1 + z_t3_2 + z_t3_3 +
   plot_layout(ncol=3)
 ggsave(&quot;zldrnai_2to25_atac_corr_plots.pdf&quot;, plot = z_t3.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;zldrnai_2to25_atac_corr_plots.png&quot;, plot = z_t3.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-z_t4_1 &lt;- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep2signal, name = &quot;Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#218C89&quot;)
-z_t4_2 &lt;- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = &quot;Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#218C89&quot;)
-z_t4_3 &lt;- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep2signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = &quot;Zld- 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#218C89&quot;)
+z_t4_1 &lt;- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep2signal, name = &quot;Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#36CCC4&quot;)
+z_t4_2 &lt;- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep1signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = &quot;Zld- 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#36CCC4&quot;)
+z_t4_3 &lt;- plot_cor(zldrnai_25to3_peaks, signal1 = zldrnai_25to3_peaks$rep2signal, signal2 = zldrnai_25to3_peaks$rep3signal, name = &quot;Zld- 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#36CCC4&quot;)
 z_t4.plot &lt;- z_t4_1 + z_t4_2 + z_t4_3 +
   plot_layout(ncol=3)
 ggsave(&quot;zldrnai_25to3_atac_corr_plots.pdf&quot;, plot = z_t4.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;zldrnai_25to3_atac_corr_plots.png&quot;, plot = z_t4.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-c_t3_1 &lt;- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep2signal, name = &quot;Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#236E96&quot;)
-c_t3_2 &lt;- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep3signal, name = &quot;Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#236E96&quot;)
-c_t3_3 &lt;- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep2signal, signal2 = cic6_2to25_peaks$rep3signal, name = &quot;Cic6 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#236E96&quot;)
+c_t3_1 &lt;- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep2signal, name = &quot;Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#39A7D8&quot;)
+c_t3_2 &lt;- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep1signal, signal2 = cic6_2to25_peaks$rep3signal, name = &quot;Cic6 2-2.5 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#39A7D8&quot;)
+c_t3_3 &lt;- plot_cor(cic6_2to25_peaks, signal1 = cic6_2to25_peaks$rep2signal, signal2 = cic6_2to25_peaks$rep3signal, name = &quot;Cic6 2-2.5 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#39A7D8&quot;)
 c_t3.plot &lt;- c_t3_1 + c_t3_2 + c_t3_3 +
   plot_layout(ncol=3)
 ggsave(&quot;cic6_2to25_atac_corr_plots.pdf&quot;, plot = c_t3.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;cic6_2to25_atac_corr_plots.png&quot;, plot = c_t3.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 
-c_t4_1 &lt;- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep2signal, name = &quot;Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#218C89&quot;)
-c_t4_2 &lt;- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep3signal, name = &quot;Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#218C89&quot;)
-c_t4_3 &lt;- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep2signal, signal2 = cic6_25to3_peaks$rep3signal, name = &quot;Cic6 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#218C89&quot;)
+c_t4_1 &lt;- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep2signal, name = &quot;Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#36CCC4&quot;)
+c_t4_2 &lt;- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep1signal, signal2 = cic6_25to3_peaks$rep3signal, name = &quot;Cic6 2.5-3 h ATAC Replicate Correlation: rep 1 vs 3&quot;, colour = &quot;#36CCC4&quot;)
+c_t4_3 &lt;- plot_cor(cic6_25to3_peaks, signal1 = cic6_25to3_peaks$rep2signal, signal2 = cic6_25to3_peaks$rep3signal, name = &quot;Cic6 2.5-3 h ATAC Replicate Correlation: rep 2 vs 3&quot;, colour = &quot;#36CCC4&quot;)
 c_t4.plot &lt;- c_t4_1 + c_t4_2 + c_t4_3 +
   plot_layout(ncol=3)
 ggsave(&quot;cic6_25to3_atac_corr_plots.pdf&quot;, plot = c_t4.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
 ggsave(&quot;cic6_25to3_atac_corr_plots.png&quot;, plot = c_t4.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
-
-g_2to4 &lt;- plot_cor(gd7_2to4_peaks, signal1 = gd7_2to4_peaks$rep1signal, signal2 = gd7_2to4_peaks$rep2signal, name = &quot;Gd7 2-4 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#FCB13C&quot;)
-ggsave(&quot;gd7_atac_2to4_corr_plots.pdf&quot;, plot = g_2to4, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 16, height = 25, units = &quot;cm&quot;)
-ggsave(&quot;dl_corr_plots.png&quot;, plot = g_2to4, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 16, height = 25, units = &quot;cm&quot;)
-
-t_2to4 &lt;- plot_cor(toll10b_2to4_peaks, signal1 = toll10b_2to4_peaks$rep1signal, signal2 = toll10b_2to4_peaks$rep2signal, name = &quot;Toll10b 2-4 h ATAC Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#3535A8&quot;)
-ggsave(&quot;toll10b_atac_2to4_corr_plots.pdf&quot;, plot = t_2to4, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 16, height = 25, units = &quot;cm&quot;)
-ggsave(&quot;toll10b_atac_2to4_corr_plots.png&quot;, plot = t_2to4, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 16, height = 25, units = &quot;cm&quot;)
 
 ## ChIP-seq
 
@@ -2304,14 +2263,7 @@ o_mnase_3 &lt;- plot_cor(tss.gr, signal1 = tss.gr$orer_rep2signal, signal2 = tss
 o_mnase.plot &lt;- o_mnase_1 + o_mnase_2 + o_mnase_3 +
   plot_layout(ncol=3)
 ggsave(&quot;orer_mnase_corr_plots.pdf&quot;, plot = o_mnase.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
-ggsave(&quot;orer_mnase_corr_plots.png&quot;, plot = o_mnase.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)
-
-g_mnase &lt;- plot_cor(tss.gr, signal1 = tss.gr$gd7_rep1signal, signal2 = tss.gr$gd7_rep2signal, name = &quot;Gd7 MNase Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#FCB13C&quot;)
-ggsave(&quot;gd7_mnase_corr_plots.pdf&quot;, plot = g_mnase, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 16, height = 25, units = &quot;cm&quot;)
-ggsave(&quot;gd7_mnase_corr_plots.png&quot;, plot = g_mnase, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 16, height = 25, units = &quot;cm&quot;)
-t_mnase &lt;- plot_cor(tss.gr, signal1 = tss.gr$toll_rep1signal, signal2 = tss.gr$toll_rep2signal, name = &quot;Toll10b MNase Replicate Correlation: rep 1 vs 2&quot;, colour = &quot;#3535A8&quot;)
-ggsave(&quot;toll10b_mnase_corr_plots.pdf&quot;, plot = t_mnase, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 16, height = 25, units = &quot;cm&quot;)
-ggsave(&quot;toll10b_mnase_corr_plots.png&quot;, plot = t_mnase, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 16, height = 25, units = &quot;cm&quot;)</code></pre>
+ggsave(&quot;orer_mnase_corr_plots.png&quot;, plot = o_mnase.plot, path = &quot;figures/1a_plot_rep_corr/&quot;, width = 50, height = 25, units = &quot;cm&quot;)</code></pre>
 </div>
 </div>
 <div id="conclusions" class="section level1">
@@ -2348,7 +2300,7 @@ information is printed below:</p>
 ##  [1] ggrastr_1.0.1                             
 ##  [2] seqinr_4.2-16                             
 ##  [3] TxDb.Dmelanogaster.UCSC.dm6.ensGene_3.12.0
-##  [4] GenomicFeatures_1.48.3                    
+##  [4] GenomicFeatures_1.48.4                    
 ##  [5] AnnotationDbi_1.58.0                      
 ##  [6] Biobase_2.56.0                            
 ##  [7] rhdf5_2.40.0                              
@@ -2356,7 +2308,7 @@ information is printed below:</p>
 ##  [9] BSgenome_1.64.0                           
 ## [10] ggseqlogo_0.1                             
 ## [11] DECIPHER_2.24.0                           
-## [12] RSQLite_2.2.16                            
+## [12] RSQLite_2.2.18                            
 ## [13] viridis_0.6.2                             
 ## [14] viridisLite_0.4.1                         
 ## [15] digest_0.6.29                             
@@ -2364,10 +2316,10 @@ information is printed below:</p>
 ## [17] lattice_0.20-45                           
 ## [18] cowplot_1.1.1                             
 ## [19] testit_0.13                               
-## [20] readr_2.1.2                               
+## [20] readr_2.1.3                               
 ## [21] patchwork_1.1.2                           
 ## [22] data.table_1.14.2                         
-## [23] dplyr_1.0.9                               
+## [23] dplyr_1.0.10                              
 ## [24] ggpubr_0.4.0                              
 ## [25] Rsamtools_2.12.0                          
 ## [26] plyranges_1.16.0                          
@@ -2378,7 +2330,7 @@ information is printed below:</p>
 ## [31] magrittr_2.0.3                            
 ## [32] rtracklayer_1.56.1                        
 ## [33] GenomicRanges_1.48.0                      
-## [34] GenomeInfoDb_1.32.3                       
+## [34] GenomeInfoDb_1.32.4                       
 ## [35] IRanges_2.30.1                            
 ## [36] S4Vectors_0.34.0                          
 ## [37] BiocGenerics_0.42.0                       
@@ -2391,37 +2343,37 @@ information is printed below:</p>
 ##  [9] tzdb_0.3.0                  matrixStats_0.62.0         
 ## [11] prettyunits_1.1.1           colorspace_2.0-3           
 ## [13] blob_1.2.3                  rappdirs_0.3.3             
-## [15] textshaping_0.3.6           xfun_0.32                  
-## [17] crayon_1.5.1                RCurl_1.98-1.8             
-## [19] jsonlite_1.8.0              glue_1.6.2                 
-## [21] gtable_0.3.0                zlibbioc_1.42.0            
+## [15] textshaping_0.3.6           xfun_0.33                  
+## [17] crayon_1.5.2                RCurl_1.98-1.9             
+## [19] jsonlite_1.8.2              glue_1.6.2                 
+## [21] gtable_0.3.1                zlibbioc_1.42.0            
 ## [23] DelayedArray_0.22.0         car_3.1-0                  
 ## [25] Rhdf5lib_1.18.2             abind_1.4-5                
 ## [27] scales_1.2.1                DBI_1.1.3                  
 ## [29] rstatix_0.7.0               Rcpp_1.0.9                 
 ## [31] progress_1.2.2              bit_4.0.4                  
 ## [33] httr_1.4.4                  ellipsis_0.3.2             
-## [35] pkgconfig_2.0.3             XML_3.99-0.10              
+## [35] pkgconfig_2.0.3             XML_3.99-0.11              
 ## [37] farver_2.1.1                sass_0.4.2                 
 ## [39] dbplyr_2.2.1                utf8_1.2.2                 
 ## [41] tidyselect_1.1.2            labeling_0.4.2             
-## [43] rlang_1.0.4                 munsell_0.5.0              
+## [43] rlang_1.0.6                 munsell_0.5.0              
 ## [45] tools_4.2.0                 cachem_1.0.6               
-## [47] cli_3.3.0                   generics_0.1.3             
+## [47] cli_3.4.1                   generics_0.1.3             
 ## [49] ade4_1.7-19                 broom_1.0.1                
 ## [51] evaluate_0.16               stringr_1.4.1              
 ## [53] fastmap_1.1.0               yaml_2.3.5                 
-## [55] ragg_1.2.2                  knitr_1.40                 
-## [57] bit64_4.0.5                 purrr_0.3.4                
+## [55] ragg_1.2.3                  knitr_1.40                 
+## [57] bit64_4.0.5                 purrr_0.3.5                
 ## [59] KEGGREST_1.36.3             xml2_1.3.3                 
 ## [61] biomaRt_2.52.0              compiler_4.2.0             
 ## [63] rstudioapi_0.14             beeswarm_0.4.0             
-## [65] filelock_1.0.2              curl_4.3.2                 
+## [65] filelock_1.0.2              curl_4.3.3                 
 ## [67] png_0.1-7                   ggsignif_0.6.3             
 ## [69] tibble_3.1.8                bslib_0.4.0                
-## [71] stringi_1.7.8               Matrix_1.4-1               
-## [73] vctrs_0.4.1                 pillar_1.8.1               
-## [75] lifecycle_1.0.1             rhdf5filters_1.8.0         
+## [71] stringi_1.7.8               Matrix_1.5-1               
+## [73] vctrs_0.4.2                 pillar_1.8.1               
+## [75] lifecycle_1.0.3             rhdf5filters_1.8.0         
 ## [77] jquerylib_0.1.4             bitops_1.0-7               
 ## [79] R6_2.5.1                    BiocIO_1.6.0               
 ## [81] gridExtra_2.3               vipor_0.4.5                
@@ -2430,7 +2382,7 @@ information is printed below:</p>
 ## [87] rjson_0.2.21                withr_2.5.0                
 ## [89] GenomicAlignments_1.32.1    GenomeInfoDbData_1.2.8     
 ## [91] hms_1.1.2                   grid_4.2.0                 
-## [93] tidyr_1.2.0                 rmarkdown_2.16             
+## [93] tidyr_1.2.1                 rmarkdown_2.16             
 ## [95] MatrixGenerics_1.8.1        carData_3.0-5              
 ## [97] Cairo_1.6-0                 ggbeeswarm_0.6.0           
 ## [99] restfulr_0.0.15</code></pre>
