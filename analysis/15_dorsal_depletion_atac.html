@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kaelan (1028-02098-001-001)" />
 
-<meta name="date" content="2022-10-21" />
+<meta name="date" content="2022-11-02" />
 
 <title>Anaylsis of ATAC-seq in embryos depleted for Dorsal</title>
 
@@ -1525,7 +1525,7 @@ div.tocify {
 <h1 class="title toc-ignore">Anaylsis of ATAC-seq in embryos depleted
 for Dorsal</h1>
 <h4 class="author">Kaelan (1028-02098-001-001)</h4>
-<h4 class="date">October 21, 2022</h4>
+<h4 class="date">November 02, 2022</h4>
 
 </div>
 
@@ -1793,10 +1793,25 @@ peaks_w_de_t4.gr &lt;- peaks_w_de_t4.df %&gt;%
                             &#39;gd7_15to2/wt_15to2&#39; = peaks_w_de_t2.gr,
                             &#39;gd7_2to25/wt_2to25&#39; = peaks_w_de_t3.gr,
                             &#39;gd7_25to3/wt_25to3&#39; = peaks_w_de_t4.gr)
-saveRDS(deseq_at_peaks.list, &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/gd7/deseq_timepoints_at_orer_1to3_atac_peaks.RData&#39;)</code></pre>
+saveRDS(deseq_at_peaks.list, &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/gd7/gd7_deseq_timepoints_at_orer_1to3_atac_peaks.RData&#39;)</code></pre>
+</div>
+<div id="export-deseq2-results-as-.txt-file-for-geo" class="section level2">
+<h2>4.7. Export DESeq2 results as .txt file for GEO</h2>
+<pre class="r"><code>peaks_w_de_t1.df &lt;- as.data.frame(peaks_w_de_t1.gr) 
+peaks_w_de_t1.df$deseq &lt;- &quot;gd7_1to15/wt_1to15&quot;
+peaks_w_de_t2.df &lt;- as.data.frame(peaks_w_de_t2.gr)
+peaks_w_de_t2.df$deseq &lt;- &quot;gd7_15to2/wt_15to2&quot;
+peaks_w_de_t3.df &lt;- as.data.frame(peaks_w_de_t3.gr)
+peaks_w_de_t3.df$deseq &lt;- &quot;gd7_2to25/wt_2to25&quot;
+peaks_w_de_t4.df &lt;- as.data.frame(peaks_w_de_t4.gr)
+peaks_w_de_t4.df$deseq &lt;- &quot;gd7_25to3/wt_25to3&quot;
+
+all_dl_deseq.df &lt;- rbind(peaks_w_de_t1.df,peaks_w_de_t2.df,peaks_w_de_t3.df,peaks_w_de_t4.df)
+
+write.table(all_dl_deseq.df,&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/gd7/gd7_deseq_timepoints_at_orer_1to3_atac_peaks.txt&#39;, row.names=FALSE)</code></pre>
 </div>
 <div id="map-log2fc-values-onto-motifs" class="section level2">
-<h2>4.7. Map log2FC values onto motifs</h2>
+<h2>4.8. Map log2FC values onto motifs</h2>
 <pre class="r"><code># Summarize from all time points into one total de onject
 
 peaks_w_de_t1.df$t1_log2FC &lt;- peaks_w_de_t1.df$log2FoldChange

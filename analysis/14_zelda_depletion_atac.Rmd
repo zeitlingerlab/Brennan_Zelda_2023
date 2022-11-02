@@ -268,13 +268,32 @@ peaks_w_de_t4.gr <- peaks_w_de_t4.df %>%
 
 ## 4.6. Save DESeq2 results
 
-```{r save}
+```{r save, eval=FALSE}
 
 deseq_at_peaks.list <- list('zldrnai_1to15/wt_1to15' = peaks_w_de_t1.gr,
                             'zldrnai_15to2/wt_15to2' = peaks_w_de_t2.gr,
                             'zldrnai_2to25/wt_2to25' = peaks_w_de_t3.gr,
                             'zldrnai_25to3/wt_25to3' = peaks_w_de_t4.gr)
-saveRDS(deseq_at_peaks.list, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/deseq_timepoints_at_orer_1to3_atac_peaks.RData')
+saveRDS(deseq_at_peaks.list, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/zld_depletion_deseq_timepoints_at_orer_1to3_atac_peaks.RData')
+
+```
+
+## 4.7. Export DESeq2 results as .txt file for GEO
+
+```{r, eval=FALSE}
+
+peaks_w_de_t1.df <- as.data.frame(peaks_w_de_t1.gr) 
+peaks_w_de_t1.df$deseq <- "zldrnai_1to15/wt_1to15"
+peaks_w_de_t2.df <- as.data.frame(peaks_w_de_t2.gr)
+peaks_w_de_t2.df$deseq <- "zldrnai_15to2/wt_15to2"
+peaks_w_de_t3.df <- as.data.frame(peaks_w_de_t3.gr)
+peaks_w_de_t3.df$deseq <- "zldrnai_2to25/wt_2to25"
+peaks_w_de_t4.df <- as.data.frame(peaks_w_de_t4.gr)
+peaks_w_de_t4.df$deseq <- "zldrnai_25to3/wt_25to3"
+
+all_zld_deseq.df <- rbind(peaks_w_de_t1.df,peaks_w_de_t2.df,peaks_w_de_t3.df,peaks_w_de_t4.df)
+
+write.table(all_zld_deseq.df,'/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/zld_depletion_deseq_timepoints_at_orer_1to3_atac_peaks.txt', row.names=FALSE)
 
 ```
 
@@ -324,7 +343,7 @@ ave_log2fc <- rowMeans(as.matrix(peaks_w_all_time_de_med.df[,c(8:11)]))
 peaks_w_all_time_de_med.df$med_log2fc <- med_log2fc
 peaks_w_all_time_de_med.df$ave_log2fc <- ave_log2fc
 
-saveRDS(peaks_w_all_time_de_med.df, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/deseq_timepoints_at_orer_1to3_atac_peaks_consolidated_single_df_w_med.RData')
+saveRDS(peaks_w_all_time_de_med.df, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/zld_depletion_deseq_timepoints_at_orer_1to3_atac_peaks_consolidated_single_df_w_med.RData')
 
 # get motif information for the peaks
 

@@ -289,11 +289,30 @@ deseq_at_peaks.list <- list('gd7_1to15/wt_1to15' = peaks_w_de_t1.gr,
                             'gd7_15to2/wt_15to2' = peaks_w_de_t2.gr,
                             'gd7_2to25/wt_2to25' = peaks_w_de_t3.gr,
                             'gd7_25to3/wt_25to3' = peaks_w_de_t4.gr)
-saveRDS(deseq_at_peaks.list, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/gd7/deseq_timepoints_at_orer_1to3_atac_peaks.RData')
+saveRDS(deseq_at_peaks.list, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/gd7/gd7_deseq_timepoints_at_orer_1to3_atac_peaks.RData')
 
 ```
 
-## 4.7. Map log2FC values onto motifs
+## 4.7. Export DESeq2 results as .txt file for GEO
+
+```{r, eval=FALSE}
+
+peaks_w_de_t1.df <- as.data.frame(peaks_w_de_t1.gr) 
+peaks_w_de_t1.df$deseq <- "gd7_1to15/wt_1to15"
+peaks_w_de_t2.df <- as.data.frame(peaks_w_de_t2.gr)
+peaks_w_de_t2.df$deseq <- "gd7_15to2/wt_15to2"
+peaks_w_de_t3.df <- as.data.frame(peaks_w_de_t3.gr)
+peaks_w_de_t3.df$deseq <- "gd7_2to25/wt_2to25"
+peaks_w_de_t4.df <- as.data.frame(peaks_w_de_t4.gr)
+peaks_w_de_t4.df$deseq <- "gd7_25to3/wt_25to3"
+
+all_dl_deseq.df <- rbind(peaks_w_de_t1.df,peaks_w_de_t2.df,peaks_w_de_t3.df,peaks_w_de_t4.df)
+
+write.table(all_dl_deseq.df,'/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/gd7/gd7_deseq_timepoints_at_orer_1to3_atac_peaks.txt', row.names=FALSE)
+
+```
+
+## 4.8. Map log2FC values onto motifs
 
 ```{r motifs}
 

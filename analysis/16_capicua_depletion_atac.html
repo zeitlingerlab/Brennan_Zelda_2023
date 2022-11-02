@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kaelan (1028-02098-001-001)" />
 
-<meta name="date" content="2022-10-06" />
+<meta name="date" content="2022-11-02" />
 
 <title>Anaylsis of ATAC-seq in embryos depleted for Capicua</title>
 
@@ -1525,7 +1525,7 @@ div.tocify {
 <h1 class="title toc-ignore">Anaylsis of ATAC-seq in embryos depleted
 for Capicua</h1>
 <h4 class="author">Kaelan (1028-02098-001-001)</h4>
-<h4 class="date">October 06, 2022</h4>
+<h4 class="date">November 02, 2022</h4>
 
 </div>
 
@@ -1750,6 +1750,17 @@ peaks_w_de_t4.gr &lt;- peaks_w_de_t4.df %&gt;%
 <pre class="r"><code>deseq_at_peaks.list &lt;- list(&#39;cic6_2to25/wt_2to25&#39; = peaks_w_de_t3.gr,
                             &#39;cic6_25to3/wt_25to3&#39; = peaks_w_de_t4.gr)
 saveRDS(deseq_at_peaks.list, &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/cic6/deseq_timepoints_at_orer_2to3_atac_peaks.RData&#39;)</code></pre>
+</div>
+<div id="export-deseq2-results-as-.txt-file-for-geo" class="section level2">
+<h2>4.7. Export DESeq2 results as .txt file for GEO</h2>
+<pre class="r"><code>peaks_w_de_t3.df &lt;- as.data.frame(peaks_w_de_t3.gr)
+peaks_w_de_t3.df$deseq &lt;- &quot;cic6_2to25/wt_2to25&quot;
+peaks_w_de_t4.df &lt;- as.data.frame(peaks_w_de_t4.gr)
+peaks_w_de_t4.df$deseq &lt;- &quot;cic6_25to3/wt_25to3&quot;
+
+all_cic_deseq.df &lt;- rbind(peaks_w_de_t3.df,peaks_w_de_t4.df)
+
+write.table(all_cic_deseq.df,&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/cic6/cic6_deseq_timepoints_at_orer_2to3_atac_peaks.txt&#39;, row.names=FALSE)</code></pre>
 </div>
 </div>
 <div id="plot-wt-zld--gd7-and-cic6-data-at-individual-enhancers-from-both-ap-and-dv-axes-to-compare-individual-well-studied-enhancers" class="section level1">
@@ -2007,18 +2018,18 @@ information is printed below:</p>
 ##  [5] MatrixGenerics_1.8.1                  matrixStats_0.62.0                   
 ##  [7] rhdf5_2.40.0                          BSgenome.Dmelanogaster.UCSC.dm6_1.4.1
 ##  [9] BSgenome_1.64.0                       ggseqlogo_0.1                        
-## [11] DECIPHER_2.24.0                       RSQLite_2.2.16                       
+## [11] DECIPHER_2.24.0                       RSQLite_2.2.18                       
 ## [13] viridis_0.6.2                         viridisLite_0.4.1                    
 ## [15] digest_0.6.29                         pander_0.6.5                         
 ## [17] lattice_0.20-45                       cowplot_1.1.1                        
-## [19] testit_0.13                           readr_2.1.2                          
+## [19] testit_0.13                           readr_2.1.3                          
 ## [21] patchwork_1.1.2                       data.table_1.14.2                    
-## [23] dplyr_1.0.9                           ggpubr_0.4.0                         
+## [23] dplyr_1.0.10                          ggpubr_0.4.0                         
 ## [25] Rsamtools_2.12.0                      plyranges_1.16.0                     
 ## [27] reshape2_1.4.4                        ggplot2_3.3.6                        
 ## [29] Biostrings_2.64.1                     XVector_0.36.0                       
 ## [31] magrittr_2.0.3                        rtracklayer_1.56.1                   
-## [33] GenomicRanges_1.48.0                  GenomeInfoDb_1.32.3                  
+## [33] GenomicRanges_1.48.0                  GenomeInfoDb_1.32.4                  
 ## [35] IRanges_2.30.1                        S4Vectors_0.34.0                     
 ## [37] BiocGenerics_0.42.0                  
 ## 
@@ -2027,32 +2038,32 @@ information is printed below:</p>
 ##  [4] ellipsis_0.3.2           rstudioapi_0.14          farver_2.1.1            
 ##  [7] bit64_4.0.5              AnnotationDbi_1.58.0     fansi_1.0.3             
 ## [10] splines_4.2.0            codetools_0.2-18         cachem_1.0.6            
-## [13] geneplotter_1.74.0       knitr_1.40               jsonlite_1.8.0          
+## [13] geneplotter_1.74.0       knitr_1.40               jsonlite_1.8.2          
 ## [16] broom_1.0.1              annotate_1.74.0          png_0.1-7               
 ## [19] httr_1.4.4               compiler_4.2.0           backports_1.4.1         
-## [22] assertthat_0.2.1         Matrix_1.4-1             fastmap_1.1.0           
-## [25] cli_3.3.0                htmltools_0.5.3          tools_4.2.0             
-## [28] gtable_0.3.0             glue_1.6.2               GenomeInfoDbData_1.2.8  
+## [22] assertthat_0.2.1         Matrix_1.5-1             fastmap_1.1.0           
+## [25] cli_3.4.1                htmltools_0.5.3          tools_4.2.0             
+## [28] gtable_0.3.1             glue_1.6.2               GenomeInfoDbData_1.2.8  
 ## [31] Rcpp_1.0.9               carData_3.0-5            jquerylib_0.1.4         
-## [34] vctrs_0.4.1              rhdf5filters_1.8.0       xfun_0.32               
-## [37] stringr_1.4.1            lifecycle_1.0.1          restfulr_0.0.15         
-## [40] rstatix_0.7.0            XML_3.99-0.10            zlibbioc_1.42.0         
-## [43] scales_1.2.1             vroom_1.5.7              ragg_1.2.2              
+## [34] vctrs_0.4.2              rhdf5filters_1.8.0       xfun_0.33               
+## [37] stringr_1.4.1            lifecycle_1.0.3          restfulr_0.0.15         
+## [40] rstatix_0.7.0            XML_3.99-0.11            zlibbioc_1.42.0         
+## [43] scales_1.2.1             vroom_1.6.0              ragg_1.2.3              
 ## [46] hms_1.1.2                yaml_2.3.5               memoise_2.0.1           
 ## [49] gridExtra_2.3            sass_0.4.2               stringi_1.7.8           
 ## [52] highr_0.9                genefilter_1.78.0        BiocIO_1.6.0            
-## [55] BiocParallel_1.30.3      systemfonts_1.0.4        rlang_1.0.4             
+## [55] BiocParallel_1.30.3      systemfonts_1.0.4        rlang_1.0.6             
 ## [58] pkgconfig_2.0.3          bitops_1.0-7             evaluate_0.16           
-## [61] purrr_0.3.4              Rhdf5lib_1.18.2          labeling_0.4.2          
+## [61] purrr_0.3.5              Rhdf5lib_1.18.2          labeling_0.4.2          
 ## [64] GenomicAlignments_1.32.1 bit_4.0.4                tidyselect_1.1.2        
 ## [67] plyr_1.8.7               R6_2.5.1                 generics_0.1.3          
 ## [70] DelayedArray_0.22.0      DBI_1.1.3                pillar_1.8.1            
 ## [73] withr_2.5.0              survival_3.4-0           KEGGREST_1.36.3         
-## [76] abind_1.4-5              RCurl_1.98-1.8           tibble_3.1.8            
-## [79] crayon_1.5.1             car_3.1-0                utf8_1.2.2              
+## [76] abind_1.4-5              RCurl_1.98-1.9           tibble_3.1.8            
+## [79] crayon_1.5.2             car_3.1-0                utf8_1.2.2              
 ## [82] tzdb_0.3.0               rmarkdown_2.16           locfit_1.5-9.6          
 ## [85] grid_4.2.0               blob_1.2.3               xtable_1.8-4            
-## [88] tidyr_1.2.0              textshaping_0.3.6        munsell_0.5.0           
+## [88] tidyr_1.2.1              textshaping_0.3.6        munsell_0.5.0           
 ## [91] bslib_0.4.0</code></pre>
 </div>
 

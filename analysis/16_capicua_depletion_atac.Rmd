@@ -242,6 +242,21 @@ saveRDS(deseq_at_peaks.list, '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_
 
 ```
 
+## 4.7. Export DESeq2 results as .txt file for GEO
+
+```{r, eval=FALSE}
+
+peaks_w_de_t3.df <- as.data.frame(peaks_w_de_t3.gr)
+peaks_w_de_t3.df$deseq <- "cic6_2to25/wt_2to25"
+peaks_w_de_t4.df <- as.data.frame(peaks_w_de_t4.gr)
+peaks_w_de_t4.df$deseq <- "cic6_25to3/wt_25to3"
+
+all_cic_deseq.df <- rbind(peaks_w_de_t3.df,peaks_w_de_t4.df)
+
+write.table(all_cic_deseq.df,'/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/cic6/cic6_deseq_timepoints_at_orer_2to3_atac_peaks.txt', row.names=FALSE)
+
+```
+
 # 5. Plot Wt, Zld-, gd7, and cic6 data at individual enhancers from both AP and DV axes to compare individual well-studied enhancers
 
 ```{r individual}
