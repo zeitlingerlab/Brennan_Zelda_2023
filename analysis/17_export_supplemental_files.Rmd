@@ -1,0 +1,110 @@
+---
+title: 'Export supplemental data files'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to simply export motifs and islands as reader-friendly tables that can be used as supplemental data files for the publication associated with this analysis. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/17_export_supplemental_files/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+modisco_dir <- 'bpnet/modisco/fold1/'
+tasks <- c('Zld','Dl','Twi','Bcd','Cad','GAF')
+threads <- 5
+bsgenome<-BSgenome.Dmelanogaster.UCSC.dm6
+
+```
+
+# 3. Import relevant data for this analysis
+
+```{r import}
+
+# BPNet-mapped motifs for all TFs
+
+motifs.df <- readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>% 
+  as.data.frame()
+
+# Islands
+
+# Note: I am using the filtered islands here. This means that island types with fewer than 30 instances have been removed as in 13_island_analysis.Rmd. 
+
+filtered_islands.gr <- readRDS("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData")
+
+```
+
+# 4. Format and export
+
+```{r format}
+
+library(xlsx)
+
+# motifs
+
+motifs_parsed.df <- motifs.df[,c(1:5,31,44)]
+colnames(motifs_parsed.df) <- c("chr", "start", "end", "width", "strand", "pattern_name", "motif_id")
+write.xlsx(motifs_parsed.df, file = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Documents/supplemental_file_1_motifs.xlsx")
+
+# islands
+
+filtered_islands.df <- as.data.frame(filtered_islands.gr)
+colnames(filtered_islands.df) <- c("chr", "start", "end", "width", "strand", "island_id", "island_content", "island_content_ordered", "island_content_unique", "number_motifs_in_island")
+write.xlsx(filtered_islands.df, file = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Documents/supplemental_file_2_islands.xlsx")
+
+```
+
+# 5. Conclusions
+
+Motifs and Island coordinates are successfully exported into Excel tables for supplemental information. 
+
+# 6. Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```
