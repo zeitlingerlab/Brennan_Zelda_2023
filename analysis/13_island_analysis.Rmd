@@ -25,7 +25,7 @@ editor_options:
 
 # 1. Introduction
 
-The goal of this analysis is to use island analysis to look at how chromatin accessibility, as well as MNase and histone modifications, vary across different genomic loci. Here, we define islands based on motifs that are proximal to one another (in this case, 200 bp, for nucleosome-range distances). We do this is order to see what combinations of motifs generate the highest and lowest levels of acessibility, nucleosome occupancy, and active histone modifications. We are using BPNet-mapped TF binding motifs in this analysis. Note that this analysis will encompass Figure 4 b-d. 
+The goal of this analysis is to use island analysis to look at how chromatin accessibility, as well as MNase and histone modifications, vary across different genomic loci. Here, we define islands based on motifs that are proximal to one another (in this case, 200 bp, for nucleosome-range distances). We do this is order to see what combinations of motifs generate the highest and lowest levels of acessibility, nucleosome occupancy, and active histone modifications. We are using BPNet-mapped TF binding motifs in this analysis. Note that this analysis will encompass Figure 4 and its supplemental. 
 
 # 2. Computational Setup
 
@@ -227,7 +227,11 @@ islands_with_all_info.gr$island_content_unique %>% table %>% sort(decreasing = T
 
 islands_with_all_info_filtered.gr <- as.data.frame(islands_with_all_info.gr) %>% group_by(island_content_unique) %>% filter(n()>= 30) %>% ungroup() %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
 
-# Save these islands for use in other analyses
+```
+
+## Save these islands for use in other analyses
+
+```{r save, eval=FALSE}
 
 saveRDS(islands_with_all_info_filtered.gr, file = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData")
 
@@ -436,6 +440,148 @@ ggsave("islands_w_genomics.png", plot = summary.plot, path = "figures/13_island_
 
 ```
 
+## 5.7. Generate summary plot ordered by histone marks
+
+### 5.7.1. K27ac
+
+```{r order_histone}
+
+island_order_k27<-islands_w_k27.df %>%
+  dplyr::arrange(median_h3k27ac_signal) %>%
+  .$island_content_unique %>% .[1:35]
+
+islands_w_orer_atac.df$island_content_unique<-factor(islands_w_orer_atac.df$island_content_unique, levels = island_order_k27)
+islands_w_mnase.df$island_content_unique<-factor(islands_w_mnase.df$island_content_unique, levels = island_order_k27)
+islands_w_k27.df$island_content_unique<-factor(islands_w_k27.df$island_content_unique, levels = island_order_k27) 
+islands_w_k4me1.df$island_content_unique<-factor(islands_w_k4me1.df$island_content_unique, levels = island_order_k27)
+islands_sumamrized.df$island_content_unique<-factor(islands_sumamrized.df$island_content_unique, levels = island_order_k27)
+
+acc_k27.plot <- ggplot(islands_w_orer_atac.df, aes(x = timepoint, y = island_content_unique, fill = `median_ATAC_signal`))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "Timepoint (AEL)", labels = c("1-1.5 hr", "1.5-2 hr", "2-2.5 hr", "2.5-3 hr"))+
+    ylab("Island composition")+
+    ggtitle("Timecourse ATAC-seq across motif islands (250 bp window)")+
+    #scale_fill_gradient2(low = "black", mid = "black", high = "steelblue1")+
+    #scale_fill_gradientn(colors = atac_colors, name = 'Median\nATAC-seq', space = "Lab")
+    scale_fill_gradientn(colors = c("white", "#055072"), name = 'Median\nATAC-seq', space = "Lab")
+    #scale_fill_gradientn(colors = viridis(n=50), name = 'Median\nATAC-seq')
+
+mnase_k27.plot <- ggplot(islands_w_mnase.df, aes(x = timepoint, y = island_content_unique, fill = median_mnase_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "MNase")+
+    ylab("Island composition")+
+    ggtitle("MNase-seq across motif islands (250 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#703554"), name = 'Median\nMNase-seq')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nMNase-seq')
+
+k27_k27.plot <- ggplot(islands_w_k27.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k27ac_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "2-3 hr")+
+    ylab("Island composition")+
+    ggtitle("H3K27ac across motif islands (1500 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#EA3628"), name = 'Median\nH3K27ac')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nH3K27ac')
+
+k4_k27.plot <- ggplot(islands_w_k4me1.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k4me1_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "2-3 hr")+
+    ylab("Island composition")+
+    ggtitle("H3K4me1 across motif islands (1000 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#E2911B"), name = 'Median\nH3K4me1')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nH3K4me1')
+
+cus_k27.plot <- ggplot(islands_sumamrized.df, aes(x=1, y=island_content_unique)) +
+  geom_tile(aes(fill=enhancer_percent), color = 'black', size = 1)+
+  scale_fill_gradient(low = 'white', high = '#336600', name = 'Enhancer overlap')+
+  scale_y_discrete('Island composition')+
+  theme_classic()
+
+k27_summary <- k27_k27.plot + k4_k27.plot + acc_k27.plot + mnase_k27.plot + cus_k27.plot +
+  plot_layout(widths = c(.5, .5, 2, .5, .5),nrow = 1)
+
+ggsave("islands_w_genomics_k27_order.pdf", plot = k27_summary, path = "figures/13_island_analysis", height = 16, width = 20)
+ggsave("islands_w_genomics_k27_order.png", plot = k27_summary, path = "figures/13_island_analysis", height = 16, width = 20)
+
+```
+
+### 5.7.2. K4me1
+
+```{r order_k4me1}
+
+island_order_k4 <- islands_w_k4me1.df %>%
+  dplyr::arrange(median_h3k4me1_signal) %>%
+  .$island_content_unique %>% .[1:35]
+
+islands_w_orer_atac.df$island_content_unique<-factor(islands_w_orer_atac.df$island_content_unique, levels = island_order_k4)
+islands_w_mnase.df$island_content_unique<-factor(islands_w_mnase.df$island_content_unique, levels = island_order_k4)
+islands_w_k27.df$island_content_unique<-factor(islands_w_k27.df$island_content_unique, levels = island_order_k4) 
+islands_w_k4me1.df$island_content_unique<-factor(islands_w_k4me1.df$island_content_unique, levels = island_order_k4)
+islands_sumamrized.df$island_content_unique<-factor(islands_sumamrized.df$island_content_unique, levels = island_order_k4)
+
+acc_k4.plot <- ggplot(islands_w_orer_atac.df, aes(x = timepoint, y = island_content_unique, fill = `median_ATAC_signal`))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "Timepoint (AEL)", labels = c("1-1.5 hr", "1.5-2 hr", "2-2.5 hr", "2.5-3 hr"))+
+    ylab("Island composition")+
+    ggtitle("Timecourse ATAC-seq across motif islands (250 bp window)")+
+    #scale_fill_gradient2(low = "black", mid = "black", high = "steelblue1")+
+    #scale_fill_gradientn(colors = atac_colors, name = 'Median\nATAC-seq', space = "Lab")
+    scale_fill_gradientn(colors = c("white", "#055072"), name = 'Median\nATAC-seq', space = "Lab")
+    #scale_fill_gradientn(colors = viridis(n=50), name = 'Median\nATAC-seq')
+
+mnase_k4.plot <- ggplot(islands_w_mnase.df, aes(x = timepoint, y = island_content_unique, fill = median_mnase_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "MNase")+
+    ylab("Island composition")+
+    ggtitle("MNase-seq across motif islands (250 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#703554"), name = 'Median\nMNase-seq')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nMNase-seq')
+
+k27_k4.plot <- ggplot(islands_w_k27.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k27ac_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "2-3 hr")+
+    ylab("Island composition")+
+    ggtitle("H3K27ac across motif islands (1500 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#EA3628"), name = 'Median\nH3K27ac')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nH3K27ac')
+
+k4_k4.plot <- ggplot(islands_w_k4me1.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k4me1_signal))+
+    geom_tile(color = 'black', size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = "2-3 hr")+
+    ylab("Island composition")+
+    ggtitle("H3K4me1 across motif islands (1000 bp window)")+
+    scale_fill_gradientn(colors = c("white", "#E2911B"), name = 'Median\nH3K4me1')
+    #scale_fill_gradientn(colors = magma(50), name = 'Median\nH3K4me1')
+
+cus_k4.plot <- ggplot(islands_sumamrized.df, aes(x=1, y=island_content_unique)) +
+  geom_tile(aes(fill=enhancer_percent), color = 'black', size = 1)+
+  scale_fill_gradient(low = 'white', high = '#336600', name = 'Enhancer overlap')+
+  scale_y_discrete('Island composition')+
+  theme_classic()
+
+k4_summary <- k4_k4.plot + k27_k4.plot + acc_k4.plot + mnase_k4.plot + cus_k4.plot +
+  plot_layout(widths = c(.5, .5, 2, .5, .5),nrow = 1)
+
+ggsave("islands_w_genomics_k4_order.pdf", plot = k4_summary, path = "figures/13_island_analysis", height = 16, width = 20)
+ggsave("islands_w_genomics_k4_order.png", plot = k4_summary, path = "figures/13_island_analysis", height = 16, width = 20)
+
+```
+
 # 6. Plot individual examples of islands with all aforementioned genomics data
 
 ## 6.1. Select individual examples
@@ -456,7 +602,7 @@ Here, we will use the log2 fold change values for Zld-/wt embryos generated by c
 
 ```{r deseq}
 
-peaks_w_all_time_de_med.df <- readRDS('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/deseq_timepoints_at_orer_1to3_atac_peaks_consolidated_single_df_w_med.RData')
+peaks_w_all_time_de_med.df <- readRDS('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/zld_depletion_deseq_timepoints_at_orer_1to3_atac_peaks_consolidated_single_df_w_med.RData')
 
 peaks_w_all_time_de_med.gr <- peaks_w_all_time_de_med.df %>% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
 

@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kaelan (1028-02098-001-001)" />
 
-<meta name="date" content="2022-09-21" />
+<meta name="date" content="2022-12-07" />
 
 <title>Island analysis using various genomics datasets</title>
 
@@ -1525,7 +1525,7 @@ div.tocify {
 <h1 class="title toc-ignore">Island analysis using various genomics
 datasets</h1>
 <h4 class="author">Kaelan (1028-02098-001-001)</h4>
-<h4 class="date">September 21, 2022</h4>
+<h4 class="date">December 07, 2022</h4>
 
 </div>
 
@@ -1540,7 +1540,7 @@ nucleosome-range distances). We do this is order to see what
 combinations of motifs generate the highest and lowest levels of
 acessibility, nucleosome occupancy, and active histone modifications. We
 are using BPNet-mapped TF binding motifs in this analysis. Note that
-this analysis will encompass Figure 4 b-d. </p>
+this analysis will encompass Figure 4 and its supplemental.</p>
 </div>
 <div id="computational-setup" class="section level1">
 <h1>2. Computational Setup</h1>
@@ -1848,11 +1848,11 @@ ggsave(&quot;islands_width_hist.png&quot;, plot = island.length.histogram, path 
 ##         268         244         235         214         161         141 
 ## Bcd_Cad_Twi Bcd_Cad_Zld 
 ##         135         107</code></pre>
-<pre class="r"><code>islands_with_all_info_filtered.gr &lt;- as.data.frame(islands_with_all_info.gr) %&gt;% group_by(island_content_unique) %&gt;% filter(n()&gt;= 30) %&gt;% ungroup() %&gt;% makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-
-# Save these islands for use in other analyses
-
-saveRDS(islands_with_all_info_filtered.gr, file = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData&quot;)</code></pre>
+<pre class="r"><code>islands_with_all_info_filtered.gr &lt;- as.data.frame(islands_with_all_info.gr) %&gt;% group_by(island_content_unique) %&gt;% filter(n()&gt;= 30) %&gt;% ungroup() %&gt;% makeGRangesFromDataFrame(keep.extra.columns = TRUE)</code></pre>
+</div>
+<div id="save-these-islands-for-use-in-other-analyses" class="section level2">
+<h2>Save these islands for use in other analyses</h2>
+<pre class="r"><code>saveRDS(islands_with_all_info_filtered.gr, file = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData&quot;)</code></pre>
 </div>
 </div>
 <div id="calculate-chromatin-accessibility-nucleosome-occupancy-and-histone-modifications-across-islands" class="section level1">
@@ -2039,6 +2039,141 @@ summary.plot</code></pre>
 <pre class="r"><code>ggsave(&quot;islands_w_genomics.pdf&quot;, plot = summary.plot, path = &quot;figures/13_island_analysis&quot;, height = 16, width = 20)
 ggsave(&quot;islands_w_genomics.png&quot;, plot = summary.plot, path = &quot;figures/13_island_analysis&quot;, height = 16, width = 20)</code></pre>
 </div>
+<div id="generate-summary-plot-ordered-by-histone-marks" class="section level2">
+<h2>5.7. Generate summary plot ordered by histone marks</h2>
+<div id="k27ac" class="section level3">
+<h3>5.7.1. K27ac</h3>
+<pre class="r"><code>island_order_k27&lt;-islands_w_k27.df %&gt;%
+  dplyr::arrange(median_h3k27ac_signal) %&gt;%
+  .$island_content_unique %&gt;% .[1:35]
+
+islands_w_orer_atac.df$island_content_unique&lt;-factor(islands_w_orer_atac.df$island_content_unique, levels = island_order_k27)
+islands_w_mnase.df$island_content_unique&lt;-factor(islands_w_mnase.df$island_content_unique, levels = island_order_k27)
+islands_w_k27.df$island_content_unique&lt;-factor(islands_w_k27.df$island_content_unique, levels = island_order_k27) 
+islands_w_k4me1.df$island_content_unique&lt;-factor(islands_w_k4me1.df$island_content_unique, levels = island_order_k27)
+islands_sumamrized.df$island_content_unique&lt;-factor(islands_sumamrized.df$island_content_unique, levels = island_order_k27)
+
+acc_k27.plot &lt;- ggplot(islands_w_orer_atac.df, aes(x = timepoint, y = island_content_unique, fill = `median_ATAC_signal`))+
+    geom_tile(color = &#39;black&#39;, size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = &quot;Timepoint (AEL)&quot;, labels = c(&quot;1-1.5 hr&quot;, &quot;1.5-2 hr&quot;, &quot;2-2.5 hr&quot;, &quot;2.5-3 hr&quot;))+
+    ylab(&quot;Island composition&quot;)+
+    ggtitle(&quot;Timecourse ATAC-seq across motif islands (250 bp window)&quot;)+
+    #scale_fill_gradient2(low = &quot;black&quot;, mid = &quot;black&quot;, high = &quot;steelblue1&quot;)+
+    #scale_fill_gradientn(colors = atac_colors, name = &#39;Median\nATAC-seq&#39;, space = &quot;Lab&quot;)
+    scale_fill_gradientn(colors = c(&quot;white&quot;, &quot;#055072&quot;), name = &#39;Median\nATAC-seq&#39;, space = &quot;Lab&quot;)
+    #scale_fill_gradientn(colors = viridis(n=50), name = &#39;Median\nATAC-seq&#39;)
+
+mnase_k27.plot &lt;- ggplot(islands_w_mnase.df, aes(x = timepoint, y = island_content_unique, fill = median_mnase_signal))+
+    geom_tile(color = &#39;black&#39;, size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = &quot;MNase&quot;)+
+    ylab(&quot;Island composition&quot;)+
+    ggtitle(&quot;MNase-seq across motif islands (250 bp window)&quot;)+
+    scale_fill_gradientn(colors = c(&quot;white&quot;, &quot;#703554&quot;), name = &#39;Median\nMNase-seq&#39;)
+    #scale_fill_gradientn(colors = magma(50), name = &#39;Median\nMNase-seq&#39;)
+
+k27_k27.plot &lt;- ggplot(islands_w_k27.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k27ac_signal))+
+    geom_tile(color = &#39;black&#39;, size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = &quot;2-3 hr&quot;)+
+    ylab(&quot;Island composition&quot;)+
+    ggtitle(&quot;H3K27ac across motif islands (1500 bp window)&quot;)+
+    scale_fill_gradientn(colors = c(&quot;white&quot;, &quot;#EA3628&quot;), name = &#39;Median\nH3K27ac&#39;)
+    #scale_fill_gradientn(colors = magma(50), name = &#39;Median\nH3K27ac&#39;)
+
+k4_k27.plot &lt;- ggplot(islands_w_k4me1.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k4me1_signal))+
+    geom_tile(color = &#39;black&#39;, size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = &quot;2-3 hr&quot;)+
+    ylab(&quot;Island composition&quot;)+
+    ggtitle(&quot;H3K4me1 across motif islands (1000 bp window)&quot;)+
+    scale_fill_gradientn(colors = c(&quot;white&quot;, &quot;#E2911B&quot;), name = &#39;Median\nH3K4me1&#39;)
+    #scale_fill_gradientn(colors = magma(50), name = &#39;Median\nH3K4me1&#39;)
+
+cus_k27.plot &lt;- ggplot(islands_sumamrized.df, aes(x=1, y=island_content_unique)) +
+  geom_tile(aes(fill=enhancer_percent), color = &#39;black&#39;, size = 1)+
+  scale_fill_gradient(low = &#39;white&#39;, high = &#39;#336600&#39;, name = &#39;Enhancer overlap&#39;)+
+  scale_y_discrete(&#39;Island composition&#39;)+
+  theme_classic()
+
+k27_summary &lt;- k27_k27.plot + k4_k27.plot + acc_k27.plot + mnase_k27.plot + cus_k27.plot +
+  plot_layout(widths = c(.5, .5, 2, .5, .5),nrow = 1)
+
+ggsave(&quot;islands_w_genomics_k27_order.pdf&quot;, plot = k27_summary, path = &quot;figures/13_island_analysis&quot;, height = 16, width = 20)
+ggsave(&quot;islands_w_genomics_k27_order.png&quot;, plot = k27_summary, path = &quot;figures/13_island_analysis&quot;, height = 16, width = 20)</code></pre>
+</div>
+<div id="k4me1" class="section level3">
+<h3>5.7.2. K4me1</h3>
+<pre class="r"><code>island_order_k4 &lt;- islands_w_k4me1.df %&gt;%
+  dplyr::arrange(median_h3k4me1_signal) %&gt;%
+  .$island_content_unique %&gt;% .[1:35]
+
+islands_w_orer_atac.df$island_content_unique&lt;-factor(islands_w_orer_atac.df$island_content_unique, levels = island_order_k4)
+islands_w_mnase.df$island_content_unique&lt;-factor(islands_w_mnase.df$island_content_unique, levels = island_order_k4)
+islands_w_k27.df$island_content_unique&lt;-factor(islands_w_k27.df$island_content_unique, levels = island_order_k4) 
+islands_w_k4me1.df$island_content_unique&lt;-factor(islands_w_k4me1.df$island_content_unique, levels = island_order_k4)
+islands_sumamrized.df$island_content_unique&lt;-factor(islands_sumamrized.df$island_content_unique, levels = island_order_k4)
+
+acc_k4.plot &lt;- ggplot(islands_w_orer_atac.df, aes(x = timepoint, y = island_content_unique, fill = `median_ATAC_signal`))+
+    geom_tile(color = &#39;black&#39;, size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = &quot;Timepoint (AEL)&quot;, labels = c(&quot;1-1.5 hr&quot;, &quot;1.5-2 hr&quot;, &quot;2-2.5 hr&quot;, &quot;2.5-3 hr&quot;))+
+    ylab(&quot;Island composition&quot;)+
+    ggtitle(&quot;Timecourse ATAC-seq across motif islands (250 bp window)&quot;)+
+    #scale_fill_gradient2(low = &quot;black&quot;, mid = &quot;black&quot;, high = &quot;steelblue1&quot;)+
+    #scale_fill_gradientn(colors = atac_colors, name = &#39;Median\nATAC-seq&#39;, space = &quot;Lab&quot;)
+    scale_fill_gradientn(colors = c(&quot;white&quot;, &quot;#055072&quot;), name = &#39;Median\nATAC-seq&#39;, space = &quot;Lab&quot;)
+    #scale_fill_gradientn(colors = viridis(n=50), name = &#39;Median\nATAC-seq&#39;)
+
+mnase_k4.plot &lt;- ggplot(islands_w_mnase.df, aes(x = timepoint, y = island_content_unique, fill = median_mnase_signal))+
+    geom_tile(color = &#39;black&#39;, size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = &quot;MNase&quot;)+
+    ylab(&quot;Island composition&quot;)+
+    ggtitle(&quot;MNase-seq across motif islands (250 bp window)&quot;)+
+    scale_fill_gradientn(colors = c(&quot;white&quot;, &quot;#703554&quot;), name = &#39;Median\nMNase-seq&#39;)
+    #scale_fill_gradientn(colors = magma(50), name = &#39;Median\nMNase-seq&#39;)
+
+k27_k4.plot &lt;- ggplot(islands_w_k27.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k27ac_signal))+
+    geom_tile(color = &#39;black&#39;, size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = &quot;2-3 hr&quot;)+
+    ylab(&quot;Island composition&quot;)+
+    ggtitle(&quot;H3K27ac across motif islands (1500 bp window)&quot;)+
+    scale_fill_gradientn(colors = c(&quot;white&quot;, &quot;#EA3628&quot;), name = &#39;Median\nH3K27ac&#39;)
+    #scale_fill_gradientn(colors = magma(50), name = &#39;Median\nH3K27ac&#39;)
+
+k4_k4.plot &lt;- ggplot(islands_w_k4me1.df, aes(x = timepoint, y = island_content_unique, fill = median_h3k4me1_signal))+
+    geom_tile(color = &#39;black&#39;, size = 1)+
+    #scale_fill_gradientn(colors =  viridis(100))+
+    theme_classic()+
+    scale_x_discrete(name = &quot;2-3 hr&quot;)+
+    ylab(&quot;Island composition&quot;)+
+    ggtitle(&quot;H3K4me1 across motif islands (1000 bp window)&quot;)+
+    scale_fill_gradientn(colors = c(&quot;white&quot;, &quot;#E2911B&quot;), name = &#39;Median\nH3K4me1&#39;)
+    #scale_fill_gradientn(colors = magma(50), name = &#39;Median\nH3K4me1&#39;)
+
+cus_k4.plot &lt;- ggplot(islands_sumamrized.df, aes(x=1, y=island_content_unique)) +
+  geom_tile(aes(fill=enhancer_percent), color = &#39;black&#39;, size = 1)+
+  scale_fill_gradient(low = &#39;white&#39;, high = &#39;#336600&#39;, name = &#39;Enhancer overlap&#39;)+
+  scale_y_discrete(&#39;Island composition&#39;)+
+  theme_classic()
+
+k4_summary &lt;- k4_k4.plot + k27_k4.plot + acc_k4.plot + mnase_k4.plot + cus_k4.plot +
+  plot_layout(widths = c(.5, .5, 2, .5, .5),nrow = 1)
+
+ggsave(&quot;islands_w_genomics_k4_order.pdf&quot;, plot = k4_summary, path = &quot;figures/13_island_analysis&quot;, height = 16, width = 20)
+ggsave(&quot;islands_w_genomics_k4_order.png&quot;, plot = k4_summary, path = &quot;figures/13_island_analysis&quot;, height = 16, width = 20)</code></pre>
+</div>
+</div>
 </div>
 <div id="plot-individual-examples-of-islands-with-all-aforementioned-genomics-data" class="section level1">
 <h1>6. Plot individual examples of islands with all aforementioned
@@ -2064,7 +2199,7 @@ loss of Zelda</p>
 <div id="import-deseq2-results-from-14_zelda_depletion.rmd-and-format" class="section level2">
 <h2>7.1. Import DESeq2 results from 14_zelda_depletion.Rmd and
 format</h2>
-<pre class="r"><code>peaks_w_all_time_de_med.df &lt;- readRDS(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/deseq_timepoints_at_orer_1to3_atac_peaks_consolidated_single_df_w_med.RData&#39;)
+<pre class="r"><code>peaks_w_all_time_de_med.df &lt;- readRDS(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/deseq2/zldrnai/zld_depletion_deseq_timepoints_at_orer_1to3_atac_peaks_consolidated_single_df_w_med.RData&#39;)
 
 peaks_w_all_time_de_med.gr &lt;- peaks_w_all_time_de_med.df %&gt;% makeGRangesFromDataFrame(keep.extra.columns = TRUE)</code></pre>
 </div>
@@ -2160,66 +2295,66 @@ information is printed below:</p>
 ## [8] methods   base     
 ## 
 ## other attached packages:
-##  [1] ggbreak_0.1.0                         rhdf5_2.40.0                         
+##  [1] ggbreak_0.1.1                         rhdf5_2.40.0                         
 ##  [3] BSgenome.Dmelanogaster.UCSC.dm6_1.4.1 BSgenome_1.64.0                      
 ##  [5] ggseqlogo_0.1                         DECIPHER_2.24.0                      
-##  [7] RSQLite_2.2.16                        viridis_0.6.2                        
+##  [7] RSQLite_2.2.18                        viridis_0.6.2                        
 ##  [9] viridisLite_0.4.1                     digest_0.6.29                        
 ## [11] pander_0.6.5                          lattice_0.20-45                      
 ## [13] cowplot_1.1.1                         testit_0.13                          
-## [15] readr_2.1.2                           patchwork_1.1.2                      
-## [17] data.table_1.14.2                     dplyr_1.0.9                          
+## [15] readr_2.1.3                           patchwork_1.1.2                      
+## [17] data.table_1.14.2                     dplyr_1.0.10                         
 ## [19] ggpubr_0.4.0                          Rsamtools_2.12.0                     
 ## [21] plyranges_1.16.0                      reshape2_1.4.4                       
 ## [23] ggplot2_3.3.6                         Biostrings_2.64.1                    
 ## [25] XVector_0.36.0                        magrittr_2.0.3                       
 ## [27] rtracklayer_1.56.1                    GenomicRanges_1.48.0                 
-## [29] GenomeInfoDb_1.32.3                   IRanges_2.30.1                       
+## [29] GenomeInfoDb_1.32.4                   IRanges_2.30.1                       
 ## [31] S4Vectors_0.34.0                      BiocGenerics_0.42.0                  
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] colorspace_2.0-3            ggsignif_0.6.3             
 ##  [3] rjson_0.2.21                ellipsis_0.3.2             
-##  [5] aplot_0.1.6                 rstudioapi_0.14            
+##  [5] aplot_0.1.7                 rstudioapi_0.14            
 ##  [7] farver_2.1.1                bit64_4.0.5                
 ##  [9] fansi_1.0.3                 codetools_0.2-18           
 ## [11] cachem_1.0.6                knitr_1.40                 
-## [13] jsonlite_1.8.0              broom_1.0.1                
+## [13] jsonlite_1.8.2              broom_1.0.1                
 ## [15] compiler_4.2.0              backports_1.4.1            
-## [17] assertthat_0.2.1            Matrix_1.4-1               
-## [19] fastmap_1.1.0               cli_3.3.0                  
+## [17] assertthat_0.2.1            Matrix_1.5-1               
+## [19] fastmap_1.1.0               cli_3.4.1                  
 ## [21] htmltools_0.5.3             tools_4.2.0                
-## [23] gtable_0.3.0                glue_1.6.2                 
+## [23] gtable_0.3.1                glue_1.6.2                 
 ## [25] GenomeInfoDbData_1.2.8      Rcpp_1.0.9                 
 ## [27] carData_3.0-5               Biobase_2.56.0             
-## [29] jquerylib_0.1.4             vctrs_0.4.1                
-## [31] rhdf5filters_1.8.0          xfun_0.32                  
-## [33] stringr_1.4.1               lifecycle_1.0.1            
+## [29] jquerylib_0.1.4             vctrs_0.4.2                
+## [31] rhdf5filters_1.8.0          xfun_0.33                  
+## [33] stringr_1.4.1               lifecycle_1.0.3            
 ## [35] restfulr_0.0.15             rstatix_0.7.0              
-## [37] XML_3.99-0.10               zlibbioc_1.42.0            
-## [39] scales_1.2.1                vroom_1.5.7                
-## [41] ragg_1.2.2                  hms_1.1.2                  
+## [37] XML_3.99-0.11               zlibbioc_1.42.0            
+## [39] scales_1.2.1                vroom_1.6.0                
+## [41] ragg_1.2.3                  hms_1.1.2                  
 ## [43] MatrixGenerics_1.8.1        SummarizedExperiment_1.26.1
 ## [45] yaml_2.3.5                  memoise_2.0.1              
 ## [47] gridExtra_2.3               ggfun_0.0.7                
 ## [49] yulab.utils_0.0.5           sass_0.4.2                 
 ## [51] stringi_1.7.8               highr_0.9                  
 ## [53] BiocIO_1.6.0                BiocParallel_1.30.3        
-## [55] systemfonts_1.0.4           rlang_1.0.4                
+## [55] systemfonts_1.0.4           rlang_1.0.6                
 ## [57] pkgconfig_2.0.3             matrixStats_0.62.0         
 ## [59] bitops_1.0-7                evaluate_0.16              
-## [61] purrr_0.3.4                 Rhdf5lib_1.18.2            
+## [61] purrr_0.3.5                 Rhdf5lib_1.18.2            
 ## [63] labeling_0.4.2              GenomicAlignments_1.32.1   
 ## [65] bit_4.0.4                   tidyselect_1.1.2           
 ## [67] plyr_1.8.7                  R6_2.5.1                   
 ## [69] generics_0.1.3              DelayedArray_0.22.0        
 ## [71] DBI_1.1.3                   pillar_1.8.1               
 ## [73] withr_2.5.0                 abind_1.4-5                
-## [75] RCurl_1.98-1.8              tibble_3.1.8               
-## [77] crayon_1.5.1                car_3.1-0                  
+## [75] RCurl_1.98-1.9              tibble_3.1.8               
+## [77] crayon_1.5.2                car_3.1-0                  
 ## [79] utf8_1.2.2                  tzdb_0.3.0                 
 ## [81] rmarkdown_2.16              grid_4.2.0                 
-## [83] blob_1.2.3                  tidyr_1.2.0                
+## [83] blob_1.2.3                  tidyr_1.2.1                
 ## [85] textshaping_0.3.6           gridGraphics_0.5-1         
 ## [87] munsell_0.5.0               ggplotify_0.1.0            
 ## [89] bslib_0.4.0</code></pre>
