@@ -229,11 +229,69 @@ islands_with_all_info_filtered.gr <- as.data.frame(islands_with_all_info.gr) %>%
 
 ```
 
-## Save these islands for use in other analyses
+## 4.4. Save these islands for use in other analyses
 
 ```{r save, eval=FALSE}
 
 saveRDS(islands_with_all_info_filtered.gr, file = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData")
+
+```
+
+## 4.5. UPSET plot for island counts
+
+```{r upset}
+
+library(UpSetR)
+
+input <- c(Bcd = 7036,
+  "Bcd&Cad" = 404,
+  "Bcd&Cad&Dl&Zld" = 31,
+  "Bcd&Cad&Twi" = 135,
+  "Bcd&Cad&Twi&Zld" = 43,
+  "Bcd&Cad&Zld" = 107,
+  "Bcd&Dl" = 75,
+  "Bcd&Dl&Twi" = 69,
+  "Bcd&Dl&Twi&Zld" = 32,
+  "Bcd&Dl&Zld" = 43,
+  "Bcd&GAF" = 214,
+  "Bcd&GAF&Twi" = 78,
+  "Bcd&Twi" = 981,
+  "Bcd&Twi&Zld" = 161,
+  "Bcd&Zld" = 393,
+  Cad = 6405,
+  "Cad&Dl" = 64,
+  "Cad&Dl&Twi" = 59,
+  "Cad&GAF" = 244,
+  "Cad&GAF&Twi" = 107,
+  "Cad&Twi" = 867,
+  "Cad&Twi&Zld" = 72,
+  "Cad&Zld" = 268,
+  Dl = 449,
+  "Dl&GAF" = 33,
+  "Dl&Twi" = 235,
+  "Dl&Twi&Zld" = 75,
+  "Dl&Zld" = 70,
+  GAF = 4136,
+  "GAF&Twi" = 681,
+  "GAF&Twi&Zld" = 46,
+  "GAF&Zld" = 141,
+  Twi = 11763,
+  "Twi&Zld" = 366,
+  Zld = 1673
+)
+
+# Plot
+upset(fromExpression(input), 
+      nintersects = 40, 
+      nsets = 6, 
+      order.by = "freq", 
+      decreasing = T, 
+      mb.ratio = c(0.6, 0.4),
+      number.angles = 0, 
+      text.scale = 2, 
+      point.size = 3.5, 
+      line.size = 1.5
+      )
 
 ```
 
