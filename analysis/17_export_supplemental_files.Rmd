@@ -77,7 +77,58 @@ filtered_islands.gr <- readRDS("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_an
 
 ```
 
-# 4. Format and export
+# 4. Calculate enhancer overlaps for islands
+
+```{r enhancer}
+
+# Import enhancers: We are using the Cusanovich 2018 paper from Eileen Furlong.
+
+cus_enhancers.gr <- rtracklayer::import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/published/enhancers/cusanovich/cusanovich_dm6_enhancers.bed')
+
+# Which islands have enhancers?
+
+filtered_islands.gr$enhancer_name <- NA
+ov <- findOverlaps(filtered_islands.gr, cus_enhancers.gr, ignore.strand = T)
+filtered_islands.gr$enhancer_name[ov@from]<- cus_enhancers.gr$name[ov@to]
+filtered_islands.gr$has_enhancer <- ifelse(is.na(filtered_islands.gr$enhancer_name), FALSE,TRUE)
+
+```
+
+# 5. Calculate ATAC-seq signals across islands
+
+```{r signals}
+
+# Bring in ATAC signals
+
+atac.list <- list(orer_1to15 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_1to15_atac_combined_normalized.bw',
+                  orer_15to2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_15to2_atac_combined_normalized.bw',
+                  orer_2to25 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined_normalized.bw',
+                  orer_25to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_normalized.bw',
+                  gd7_1to15 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_1to15_atac_combined_normalized.bw',
+                  gd7_15to2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_15to2_atac_combined_normalized.bw',
+                  gd7_2to25 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_2to25_atac_combined_normalized.bw',
+                  gd7_25to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_25to3_atac_combined_normalized.bw',
+                  zldrnai_1to15 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_1to15_atac_combined_normalized.bw',
+                  zldrnai_15to2 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_15to2_atac_combined_normalized.bw',
+                  zldrnai_2to25 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_2to25_atac_combined_normalized.bw',
+                  zldrnai_25to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_25to3_atac_combined_normalized.bw',
+                  cic6_2to25 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/cic6_2to25_atac_combined_normalized.bw',
+                  cic6_25to3 = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/cic6_25to3_atac_combined_normalized.bw')
+
+# Calculate
+
+atac_across_islands.df<-mclapply(names(atac.list), function(x){
+  regionSums(filtered_islands.gr %>% resize(250, 'center'), atac.list[[x]])
+}, mc.cores = 4) %>% as.data.frame()
+names(atac_across_islands.df)<-names(atac.list)
+
+# Merge with islands as additional columns
+
+filtered_islands.df <- cbind(filtered_islands.gr %>% as.data.frame, atac_across_islands.df)
+
+```
+
+# 6. Format and export
 
 ```{r format}
 
@@ -91,8 +142,10 @@ write.xlsx(motifs_parsed.df, file = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zel
 
 # islands
 
-filtered_islands.df <- as.data.frame(filtered_islands.gr)
-colnames(filtered_islands.df) <- c("chr", "start", "end", "width", "strand", "island_id", "island_content", "island_content_ordered", "island_content_unique", "number_motifs_in_island")
+filtered_islands.df <- filtered_islands.df[,c(1:10,12,11,13:26)]
+colnames(filtered_islands.df) <- c("chr", "start", "end", "width", "strand", "island_id", "island_content", "island_content_ordered", "island_content_unique", "number_motifs_in_island", "had_enhancer?", 
+                                   "overlapping_enhancer", "atac_wt_1to15", "atac_wt_15to2", "atac_wt_2to25", "atac_wt_25to3", "atac_gd7_1to15", "atac_gd7_15to2", "atac_gd7_2to25", "atac_gd7_25to3", 
+                                   "atac_zld_1to15", "atac_zld_15to2", "atac_zld_2to25", "atac_zld_25to3", "atac_cic6_2to25", "atac_cic6_25to3")
 write.xlsx(filtered_islands.df, file = "/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Documents/supplemental_file_2_islands.xlsx")
 
 ```

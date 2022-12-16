@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kaelan (1028-02098-001-001)" />
 
-<meta name="date" content="2022-11-03" />
+<meta name="date" content="2022-12-15" />
 
 <title>Export supplemental data files</title>
 
@@ -1524,7 +1524,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Export supplemental data files</h1>
 <h4 class="author">Kaelan (1028-02098-001-001)</h4>
-<h4 class="date">November 03, 2022</h4>
+<h4 class="date">December 15, 2022</h4>
 
 </div>
 
@@ -1578,8 +1578,51 @@ motifs.df &lt;- readr::read_tsv(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zel
 
 filtered_islands.gr &lt;- readRDS(&quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/islands/zdtbcg_islands_w_all_info.RData&quot;)</code></pre>
 </div>
+<div id="calculate-enhancer-overlaps-for-islands" class="section level1">
+<h1>4. Calculate enhancer overlaps for islands</h1>
+<pre class="r"><code># Import enhancers: We are using the Cusanovich 2018 paper from Eileen Furlong.
+
+cus_enhancers.gr &lt;- rtracklayer::import(&#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/published/enhancers/cusanovich/cusanovich_dm6_enhancers.bed&#39;)
+
+# Which islands have enhancers?
+
+filtered_islands.gr$enhancer_name &lt;- NA
+ov &lt;- findOverlaps(filtered_islands.gr, cus_enhancers.gr, ignore.strand = T)
+filtered_islands.gr$enhancer_name[ov@from]&lt;- cus_enhancers.gr$name[ov@to]
+filtered_islands.gr$has_enhancer &lt;- ifelse(is.na(filtered_islands.gr$enhancer_name), FALSE,TRUE)</code></pre>
+</div>
+<div id="calculate-atac-seq-signals-across-islands" class="section level1">
+<h1>5. Calculate ATAC-seq signals across islands</h1>
+<pre class="r"><code># Bring in ATAC signals
+
+atac.list &lt;- list(orer_1to15 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_1to15_atac_combined_normalized.bw&#39;,
+                  orer_15to2 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_15to2_atac_combined_normalized.bw&#39;,
+                  orer_2to25 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_2to25_atac_combined_normalized.bw&#39;,
+                  orer_25to3 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_normalized.bw&#39;,
+                  gd7_1to15 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_1to15_atac_combined_normalized.bw&#39;,
+                  gd7_15to2 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_15to2_atac_combined_normalized.bw&#39;,
+                  gd7_2to25 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_2to25_atac_combined_normalized.bw&#39;,
+                  gd7_25to3 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/gd7_25to3_atac_combined_normalized.bw&#39;,
+                  zldrnai_1to15 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_1to15_atac_combined_normalized.bw&#39;,
+                  zldrnai_15to2 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_15to2_atac_combined_normalized.bw&#39;,
+                  zldrnai_2to25 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_2to25_atac_combined_normalized.bw&#39;,
+                  zldrnai_25to3 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/zldrnai_25to3_atac_combined_normalized.bw&#39;,
+                  cic6_2to25 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/cic6_2to25_atac_combined_normalized.bw&#39;,
+                  cic6_25to3 = &#39;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/cic6_25to3_atac_combined_normalized.bw&#39;)
+
+# Calculate
+
+atac_across_islands.df&lt;-mclapply(names(atac.list), function(x){
+  regionSums(filtered_islands.gr %&gt;% resize(250, &#39;center&#39;), atac.list[[x]])
+}, mc.cores = 4) %&gt;% as.data.frame()
+names(atac_across_islands.df)&lt;-names(atac.list)
+
+# Merge with islands as additional columns
+
+filtered_islands.df &lt;- cbind(filtered_islands.gr %&gt;% as.data.frame, atac_across_islands.df)</code></pre>
+</div>
 <div id="format-and-export" class="section level1">
-<h1>4. Format and export</h1>
+<h1>6. Format and export</h1>
 <pre class="r"><code>library(xlsx)
 
 # motifs
@@ -1590,8 +1633,10 @@ write.xlsx(motifs_parsed.df, file = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscript
 
 # islands
 
-filtered_islands.df &lt;- as.data.frame(filtered_islands.gr)
-colnames(filtered_islands.df) &lt;- c(&quot;chr&quot;, &quot;start&quot;, &quot;end&quot;, &quot;width&quot;, &quot;strand&quot;, &quot;island_id&quot;, &quot;island_content&quot;, &quot;island_content_ordered&quot;, &quot;island_content_unique&quot;, &quot;number_motifs_in_island&quot;)
+filtered_islands.df &lt;- filtered_islands.df[,c(1:10,12,11,13:26)]
+colnames(filtered_islands.df) &lt;- c(&quot;chr&quot;, &quot;start&quot;, &quot;end&quot;, &quot;width&quot;, &quot;strand&quot;, &quot;island_id&quot;, &quot;island_content&quot;, &quot;island_content_ordered&quot;, &quot;island_content_unique&quot;, &quot;number_motifs_in_island&quot;, &quot;had_enhancer?&quot;, 
+                                   &quot;overlapping_enhancer&quot;, &quot;atac_wt_1to15&quot;, &quot;atac_wt_15to2&quot;, &quot;atac_wt_2to25&quot;, &quot;atac_wt_25to3&quot;, &quot;atac_gd7_1to15&quot;, &quot;atac_gd7_15to2&quot;, &quot;atac_gd7_2to25&quot;, &quot;atac_gd7_25to3&quot;, 
+                                   &quot;atac_zld_1to15&quot;, &quot;atac_zld_15to2&quot;, &quot;atac_zld_2to25&quot;, &quot;atac_zld_25to3&quot;, &quot;atac_cic6_2to25&quot;, &quot;atac_cic6_25to3&quot;)
 write.xlsx(filtered_islands.df, file = &quot;/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Documents/supplemental_file_2_islands.xlsx&quot;)</code></pre>
 </div>
 <div id="conclusions" class="section level1">
