@@ -668,7 +668,32 @@ ggsave("orer_mnase_corr_plots.png", plot = o_mnase.plot, path = "figures/1a_plot
 
 ```
 
-# 5. Conclusions
+# 5. Plot correlation heatmaps for ease of viewing
+
+```{r heatmap}
+
+# Read in Excel table that contains a copy of the correlation values calculated above
+
+library(readxl)
+
+rep_corr_r.df <- readxl::read_xlsx(path="/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/xlsx/rep_corr_df.xlsx", ) %>% 
+  as.data.frame()
+
+rep_corr_summary.plot <- ggplot(rep_corr_r.df, aes(x=comparison)) +
+  geom_tile(aes(y=state, fill=r)) +
+  geom_text(aes(y=state, label=r)) +
+  facet_wrap(exp_type ~ condition, scales = "free_y") +
+  scale_fill_viridis(limits = c(0,1), breaks = c(0, .2, 0.4, 0.6, 0.8, 1), begin = 0, end = .92) +
+  theme_cowplot()
+
+rep_corr_summary.plot
+
+ggsave("rep_corr_summary.pdf", plot = rep_corr_summary.plot, path = "figures/1a_plot_rep_corr/", width = 30, height = 35, units = "cm")
+ggsave("rep_corr_summary.png", plot = rep_corr_summary.plot, path = "figures/1a_plot_rep_corr/", width = 30, height = 35, units = "cm")
+
+```
+
+# 6. Conclusions
 
 Here we can see that replicates for all data types correlate very nicely. 
 

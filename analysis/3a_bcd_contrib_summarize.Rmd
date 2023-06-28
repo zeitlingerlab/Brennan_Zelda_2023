@@ -1,0 +1,423 @@
+---
+title: 'Investigate Bicoid motif contribution'
+author: "Kaelan (1028-02098-001-001)"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    depth: 3
+    theme: sandstone
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyfoot[CO,CE]{1028-02098-001-001}
+- \fancyfoot[LE,RO]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+editor_options:
+  chunk_output_type: console
+---
+
+# 1. Introduction
+
+The goal of this analysis is to study how the Bicoid motif contributes to chromatin accessibility as predicted by the trained ChromBPNet models. We will give specific attention to genomic regions that were previously characterized as depending on Bicoid for accessibility (Bicoid-dependent; Hannon et al., 2017) as compared to Biocid motifs that don't depend on Bicoid for accessibility. We will further visualize Bicoid motif contribution at known AP patterning enhancers. These results are expected to be part of the supplemental material in Brennan et al. 
+
+# 2. Computational Setup
+
+```{r, warning=F, message=F}
+#Standard packages
+library(rtracklayer) ; library(GenomicRanges); library(magrittr) ; library(Biostrings)
+library(ggplot2) ; library(reshape2); library(plyranges); library(Rsamtools); library(ggpubr)
+library(dplyr); library(data.table); library(patchwork); library(readr); library(testit); library(cowplot)
+
+#KNITR Options
+setwd("/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/")
+options(knitr.figure_dir="figures/1a_plot_rep_corr/", java.parameters = "- Xmx6g")
+
+#Lab sources
+source("scripts/r/granges_common.r")
+source("scripts/r/metapeak_common.r")
+source("scripts/r/knitr_common.r")
+source("scripts/r/caching.r")
+source("scripts/r/metapeak_functions.r")
+
+#Specific sources
+library(ggseqlogo)
+library(BSgenome.Dmelanogaster.UCSC.dm6)
+library(rhdf5)
+source("scripts/r/motif_functions.r")
+
+#Pre-existing variables
+library(GenomicFeatures)
+library(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+library(seqinr)
+bsgenome = BSgenome.Dmelanogaster.UCSC.dm6
+txdb<-TxDb.Dmelanogaster.UCSC.dm6.ensGene
+
+```
+
+# 3. Load relevant data
+
+```{r import}
+
+# Bcd motifs
+
+bcd_motifs.gr<-'/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/atac_overlapping_instances_curated_w_metadata_1based.tsv.gz' %>%
+  readr::read_tsv(.) %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F) %>%
+  plyranges::filter(pattern_name == "Bcd")
+
+# Bcd binding
+
+bcd.bw.list<-list(pos = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_normalized_positive.bw',
+                  neg = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_normalized_negative.bw')
+
+# Hannon et al., 2017 Bcd-dependent regions
+
+hannon_regions_bcd_dep.gr<-readRDS('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/published/hannon/bcd_dependent_regions_hannon2017_dm6.rds')
+
+# Cusanovich 2018 enhancers: known active enhancers from blastoderm embryos compiled by the Furlong lab
+
+cus_enhancers.gr <- rtracklayer::import('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/published/enhancers/cusanovich/cusanovich_dm6_enhancers.bed')
+
+```
+
+# 4. Do Bcd-dependent motifs overlap more with active enhancers than Bcd-independent
+
+## 4.1. Filter Hannon regions for overlapping a Bcd motif
+
+```{r filter}
+
+# Determine which Bcd motifs overlap with the "Bcd-dependent for accessibility regions" from Hannon et al., 2017
+
+bcd_motifs.gr$overlaps_w_hannon<-overlapsAny(bcd_motifs.gr, hannon_regions_bcd_dep.gr, ignore.strand = T)
+
+```
+
+## 4.2. Do Bcd-dependent motifs overlap more with active enhancers than motifs that don't depend on Bcd for accessibility?
+
+```{r overlap}
+
+bcd_motifs.gr$overlaps_w_cusanovich<-overlapsAny(bcd_motifs.gr, cus_enhancers.gr, ignore.strand = T)
+
+bcd_motifs_slim.gr <- bcd_motifs.gr[,62:63]
+
+bcd_motifs_slim.gr %>%
+  as.data.frame %>%
+  dplyr::group_by(overlaps_w_hannon, overlaps_w_cusanovich) %>%
+  dplyr::summarize(count = dplyr::n())
+
+# Create dataframe for Chi-square test
+
+bcd.df <- data.frame(non_active  = c(5110, 94),
+                  active = c(533, 68)
+                  )
+rownames(bcd.df) <- c("bcd_independent", "bcd_dependent")
+
+# Perform Chi-square test: https://www.r-bloggers.com/2020/01/chi-square-test-of-independence-in-r-3/
+chisq.test(bcd.df)
+
+## double-check with Fishers exact test
+
+fisher.test(bcd.df)
+
+# plot
+
+overlap_bar.plot <- ggplot(as.data.frame(bcd_motifs_slim.gr), aes(x=overlaps_w_hannon, fill = overlaps_w_cusanovich)) +
+  geom_bar() +
+  theme_cowplot()
+overlap_bar.plot
+
+# Plot mosaic plot
+
+library(vcd)
+mosaic(~ overlaps_w_hannon + overlaps_w_cusanovich,
+       direction = c("v", "h"),
+       data = as.data.frame(bcd_motifs_slim.gr),
+       shade = TRUE)
+
+```
+
+# 5. Examine active enhacner histone markers and Bcd binding around Bcd motifs
+
+## 5.1. Calculate H3K27ac, H3K4me1, and Bcd binding around Bcd motifs
+
+```{r calculate}
+
+h3k27ac.bw <- '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/seq/combined/orer_h3k27ac_mbt_seq_combined.bw'
+h3k4me1.bw <-'/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/seq/combined/orer_h3k4me1_mbt_seq_combined.bw'
+
+bcd_motifs.gr$h3k27ac <- regionSums(bcd_motifs.gr %>% resize(500, 'center'), h3k27ac.bw)
+bcd_motifs.gr$h3k4me1 <- regionSums(bcd_motifs.gr %>% resize(500, 'center'), h3k4me1.bw)
+bcd_motifs.gr$bcd_binding <-regionSums(bcd_motifs.gr %>% resize(100, 'center'), bcd.bw.list$pos) + abs(regionSums(bcd_motifs.gr %>% resize(100, 'center'), bcd.bw.list$neg))
+
+```
+
+## 5.2. Plot histone modifications
+
+```{r plot}
+
+bcd_motifs.df <- as.data.frame(bcd_motifs.gr)
+bcd.table <- bcd_motifs.df %>% 
+  as.data.table %>%
+  melt.data.table(id.vars = c('overlaps_w_hannon'), measure.vars = c("h3k27ac", "h3k4me1"), variable.name = 'modification', value.name = 'signal')
+
+
+histones.plot <- ggplot(data = bcd.table, aes(x=modification, y=log2(signal), fill=overlaps_w_hannon)) +
+  geom_boxplot() +
+  stat_compare_means(aes(group = overlaps_w_hannon), method = "wilcox.test", label = "p.format", paired = FALSE) +
+  stat_compare_means(aes(group = overlaps_w_hannon), method = "wilcox.test", label = "p.signif", paired = FALSE) +
+  theme_cowplot() +
+  guides(fill=guide_legend(title="Dependent on Bcd for accessibility?"))
+histones.plot
+
+ggsave("histones_at_hannon_motifs.pdf", plot = histones.plot, path = "figures/3a_bcd_contrib_summarize/", width = 14, height = 10)
+ggsave("histones_at_hannon_motifs.png", plot = histones.plot, path = "figures/3a_bcd_contrib_summarize/", width = 14, height = 10)
+```
+
+## 5.3. Plot Bcd binding
+
+```{r binding}
+
+binding.plot <-ggplot(as.data.frame(bcd_motifs.gr), aes(x=overlaps_w_hannon, y=log2(bcd_binding))) + 
+  geom_boxplot() +
+  xlab("Dependent on Bcd for accessibility?") +
+  stat_compare_means(method = "wilcox.test", label = "p.signif", paired = FALSE) +
+  stat_compare_means(method = "wilcox.test", label = "p.format", paired = FALSE) +
+  theme_cowplot()
+binding.plot
+
+ggsave("bcd_binding_at_hannon_motifs.pdf", plot = binding.plot, path = "figures/3a_bcd_contrib_summarize/", width = 14, height = 10)
+ggsave("bcd_binding_at_hannon_motifs.png", plot = binding.plot, path = "figures/3a_bcd_contrib_summarize/", width = 14, height = 10)
+
+```
+
+# 6. Plot Bcd at known enhancers
+
+```{r known}
+
+# Define enhancers
+
+enhancers.gr<-c(
+  GRanges('chr3R', IRanges(start = 13893450, end = 13893950), strand = '*', name = 'ems'), 
+  GRanges('chr3R', IRanges(start = 23195601, end = 23196100), strand = '*', name = 'cnc'),
+  GRanges('chrX', IRanges(start = 2438491, end = 2438990), strand = '*', name = 'gt'),
+  GRanges('chr2R', IRanges(start = 9986051, end = 9986550), strand = '*', name = 'eve'),
+  GRanges('chrX', IRanges(start = 8654466, end = 8654966), strand = '*', name = 'oc'))
+
+# Make bw coverage list with all strains
+
+bw.list<-list(`bcd_pos` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_normalized_positive.bw',
+              `bcd_neg` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/nexus/combined/orer_bcd_mbt_nexus_combined_normalized_negative.bw',
+              `wt_atac_t4` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/data/bw/dm6/atac/combined/orer_25to3_atac_combined_normalized.bw',
+              `binding_contrib` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/bpnet/preds/fold1/bw/Bcd.contrib.counts.bw',
+              `atac_contrib_t1` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_1to15.counts_scores_norm_99.95.bw',
+              `atac_contrib_t2` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_15to2.counts_scores_norm_99.95.bw',
+              `atac_contrib_t3` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_2to25.counts_scores_norm_99.95.bw',
+              `atac_contrib_t4` = '/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/chrombpnet/preds/preds_fold1_25to3.counts_scores_norm_99.95.bw')
+
+# Process motifs
+
+motifs.gr<-readr::read_tsv('/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/all_instances_curated_1based.tsv.gz') %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F) %>%
+  plyranges::mutate(motif = pattern_name,
+                    name = pattern_name) %>%
+  GenomicRanges::sort(ignore.strand = T)
+
+#Specific variables
+library(RColorBrewer)
+n_motifs<-motifs.gr$name %>% unique %>% length
+colors <- colorRampPalette(brewer.pal(n_motifs, "Accent"))(n_motifs)
+# getPalette(colourCount)
+# getPalette = colorRampPalette(brewer.pal(n_motifs, "Set1"))
+# 
+# many_colors <- grDevices::colors()[grep('gr(a|e)y|white', grDevices::colors(), invert = T)]
+# many_colors <- many_colors[20:(length(many_colors)-20)]
+# step<-floor(length(many_colors) / n_motifs)
+# colors <- many_colors[seq(1, n_motifs*step, step)]
+names(colors)<-motifs.gr$name %>% unique
+motif.colors.list<-as.list(colors)
+
+# Function
+
+plot_coverage_and_enhancer<-function(enhancer.gr, motifs.gr, bw.list, motif.colors.list, title, region_width = 1000, 
+                                     cores = 6, scales = 'fixed', rounding_margin = 50, label_margin = 200){
+  
+  #Assertion requirements to make the function run correctly.
+  testit::assert("Input enhancer GRanges needs to contain only 1 region.", length(enhancer.gr)==1)
+  testit::assert("Motifs need to be a GRanges object", is(motifs.gr, "GRanges"))
+  testit::assert("Enhancers need to be a GRanges object", is(enhancer.gr, "GRanges"))
+  testit::assert("Region width should be larger than enhancer width.", width(enhancer.gr)<=region_width)
+  testit::assert("Bigwig object needs to be a list of samples. If samples are ChIP-nexus/double-stranded samples, they need to be in a nested list.", 
+                 is(bw.list, "list") & all(!(names(bw.list) %in% c("pos", "neg"))))
+  testit::assert("Motif object needs a column titled pattern_name, motif_name, or name to distinguish motifs apart.", 
+                 any(grepl("pattern_name|name|motif_name", colnames(motifs.gr@elementMetadata))))
+  
+  #Find overlaps between motif set and enhancer
+  motifs_in_enhancer.gr<-subsetByOverlaps(motifs.gr, resize(enhancer.gr, region_width, "center"), ignore.strand = T)
+  if("pattern_name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$pattern_name
+  }
+  if("name" %in% colnames(motifs_in_enhancer.gr@elementMetadata)){
+    motifs_in_enhancer.gr$motif_name<-motifs_in_enhancer.gr$name
+  }
+  
+  #Extract colors for enhancer
+  fills_in_order<-lapply(motifs_in_enhancer.gr$motif_name, function(x) motif.colors.list[[x]]) %>% unlist %>% unique %>% as.character
+  motifs_in_order<-motifs_in_enhancer.gr$motif_name %>% unique %>% as.character
+  motifs_in_enhancer.df<-motifs_in_enhancer.gr %>% as.data.frame
+  motifs_in_enhancer.df$motif_name<-factor(motifs_in_enhancer.df$motif_name, levels = motifs_in_order)
+  
+  #Convert enhancer coordinates to df
+  enhancer.df<-enhancer.gr %>% as.data.frame
+  
+  #Get half of the enhancer
+  enh_half<-floor(width(enhancer.gr)/2)
+  lower_bounds<-plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor)
+  upper_bounds<-plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling)
+  
+  enhancer.plot<-ggplot()+
+    geom_hline(yintercept = .5, color = "gray 85")+
+    geom_rect(data = enhancer.df, aes(xmin = start, xmax = end, ymin = 0, ymax = 1), fill = "gray 85")+
+    geom_text(data = enhancer.df, aes(x = ((start - end)/2 + start), y = .5, label = paste0(seqnames, ":", start, "-", end)), 
+              color = "black")
+  if(nrow(motifs_in_enhancer.df)>0){
+    enhancer.plot<-enhancer.plot + geom_rect(data = motifs_in_enhancer.df, 
+                                             aes(xmin = start, xmax = end, ymin = 1.1, ymax = 2, fill = motif_name), color = 'black', size = .1)
+  }
+  enhancer.plot<-enhancer.plot+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    scale_y_continuous(breaks = c(.5, 1.75), labels = c("Enhancer", "Motif(s)"), position = "right")+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line = element_blank(), axis.ticks.y = element_blank(),
+          legend.position = "none")
+  
+  # Get coverage across bigwig list
+  coverage.df<-parallel::mclapply(names(bw.list), function(x){
+    if(length(bw.list[[x]])==1){
+      df<-standard_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = floor(region_width/2) + rounding_margin, downstream = floor(region_width/2)+300) %>% 
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(resize(enhancer.gr, 1, "center")), sample_name = x)
+    }
+    if(length(bw.list[[x]])==2){
+      df<-exo_metapeak(resize(enhancer.gr, 1, "center"), bw.list[[x]], upstream = region_width/2 + rounding_margin, downstream = region_width/2+rounding_margin) %>%
+        dplyr::rename(window_distance = tss_distance) %>% 
+        dplyr::mutate(position = window_distance + start(enhancer.gr), sample_name = x)
+    }
+    return(df)
+  }, mc.cores = cores) %>% rbindlist() %>%
+    dplyr::filter(position >= lower_bounds, position <= upper_bounds) %>%
+    dplyr::mutate(sample_name = factor(sample_name, levels = names(bw.list)))
+  
+  #Check for strand if there are no 2-channeled samples.
+  if(!("strand" %in% colnames(coverage.df))){
+    coverage.df$strand<-NA
+  }
+  
+  #Plot the enhancer coverage.
+  coverage.plot<-ggplot(coverage.df)
+  if(nrow(motifs_in_enhancer.df)>0){
+    coverage.plot<-coverage.plot + geom_rect(data = motifs_in_enhancer.df, aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = motif_name), alpha = .2)
+  }
+  coverage.plot<-coverage.plot +
+    geom_area(aes(x = position, y = reads, group = strand), fill = "black")+
+    geom_text(aes(x = Inf, y = Inf, label = sample_name), hjust = -.01)+
+    scale_fill_manual(values = fills_in_order)+
+    scale_x_continuous(breaks = seq(plyr::round_any(enhancer.df$start - (region_width/2 - enh_half), rounding_margin, f = floor), 
+                                    plyr::round_any(enhancer.df$end + (region_width/2 - enh_half), rounding_margin, f = ceiling), label_margin), 
+                       limits = c(lower_bounds,upper_bounds))+
+    facet_grid(sample_name ~ ., scales = scales)+
+    ggtitle(title)+
+    theme_classic()+
+    theme(axis.title = element_blank(), axis.line.x = element_blank(), strip.background = element_blank())  
+  
+  g<-coverage.plot + enhancer.plot + plot_layout(ncol = 1, heights = c(5, 1))
+  return(g)
+}
+
+# Plot regions
+
+parallel::mclapply(1:length(enhancers.gr), function(x){
+  enhancer.gr = enhancers.gr[x]
+  g<-plot_coverage_and_enhancer(enhancer.gr = enhancer.gr, motifs.gr = motifs.gr, bw.list = bw.list, 
+                                motif.colors.list = motif.colors.list, title = enhancer.gr$name, 
+                                region_width = width(enhancer.gr), cores = 6, scales = 'free')
+  ggsave(paste0("figures/3a_bcd_contrib_summarize/", enhancer.gr$name,"_single_example.pdf"), g, height = 15, width = 20)
+  ggsave(paste0("figures/3a_bcd_contrib_summarize/", enhancer.gr$name,"_single_example.png"), g, height = 15, width = 20)
+  return(g)
+}, mc.cores = 4)
+
+
+```
+
+# 7. Do Bicoid-dependent motifs have higher ChromBPNet ATAC-seq contribution?
+
+```{r density}
+
+# format
+
+tasks<-c('Bcd','Dl','Zld')
+
+motifs.gr<-'/l/Zeitlinger/ZeitlingerLab/Manuscripts/Zelda_and_Nucleosomes/Analysis/analysis/tsv/mapped_motifs/atac_overlapping_instances_curated_w_metadata_1based.tsv.gz' %>%
+  readr::read_tsv(.) %>%
+  makeGRangesFromDataFrame(keep.extra.columns = T, starts.in.df.are.0based = F) 
+
+motifs.gr.list<-lapply(tasks, function(x){
+  motifs.gr %>%
+  plyranges::filter(pattern_name == x)
+})
+names(motifs.gr.list)<-tasks
+
+# calculate signal and overlaps
+
+bcd.gr<-motifs.gr.list$Bcd %>% 
+  resize(width = 1, fix = 'center') %>%
+  plyranges::arrange(desc(`25to3`)) %>%
+  plyranges::mutate(bcd_signal = regionSums(resize(., width = 200, fix = 'center'), bcd.bw.list$pos) + 
+                      abs(regionSums(resize(., width = 200, fix = 'center'), bcd.bw.list$neg)))
+
+bcd.gr$overlaps_w_hannon<-overlapsAny(bcd.gr, hannon_regions_bcd_dep.gr, ignore.strand = T)
+
+# plot density distribution
+
+bcd_density.plot<-bcd.gr %>%
+  as.data.frame %>%
+  ggplot(., aes(x = X25to3, fill = overlaps_w_hannon))+
+  geom_vline(xintercept = 0, linetype = 'dotted')+
+  geom_density(alpha = .5)+
+  scale_x_continuous(name = 'Contribution (2.5-3hr)')+
+  scale_y_continuous(name = 'Density distribution')+
+  theme_classic()
+
+ggsave("Bcd_density_via_Hannon.pdf", plot = binding.plot, path = "figures/3a_bcd_contrib_summarize/", width = 4, height = 10)
+ggsave("Bcd_density_via_Hannon.png", plot = binding.plot, path = "figures/3a_bcd_contrib_summarize/", width = 4, height = 10)
+
+bcd_density.plot
+
+# is it significant?
+
+ks.test(x = bcd.gr %>% plyranges::filter(overlaps_w_hannon) %>% .$X25to3, 
+        y = bcd.gr %>% plyranges::filter(!overlaps_w_hannon) %>% .$X25to3)
+
+```
+
+# 8. Conclusions
+
+We can see that the Bcd motifs that Hannon reports depend on Bcd for accessibility are more associated with known active enhancers. Statistical testing shows that dependence on Bcd for accessibiliy is linked to enhancer activation, and we find that these Bcd-dependent motifs are more enriched in active enhancer characteristics including H3K27ac and H3K4me1.
+
+# Session Information
+
+For the purposes of reproducibility, the R/Bioconductor session information is printed below:
+
+```{r sessioninfo}
+sessionInfo()
+```
+
