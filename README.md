@@ -18,7 +18,7 @@ Because BPNet and ChromBPNet use TensorFlow1 and TensorFlow2, respectively, we n
 
 ## Setup for BPNet environment
 
-The BPNet conda environment can be installed using the instructions found here: https://github.com/mlweilert/bpnet. There are 2 environments: 1 with and 1 without a GPU capability. If you choose to install the GPU-compatible BPNet environment on an Nvidia GPU (we trained on a NVIDIA® TITAN RTX GPU), then you will need the appropriate drivers:
+The BPNet conda environment can be installed using the instructions found here: [https://github.com/kundajelab/chrombpnet/tree/pre-release]. There are 2 environments: 1 with and 1 without a GPU capability. If you choose to install the GPU-compatible BPNet environment on an Nvidia GPU (we trained on a NVIDIA® TITAN RTX GPU), then you will need the appropriate drivers:
 
 + CUDA v9.0
 + cuDNN v7.0.5
