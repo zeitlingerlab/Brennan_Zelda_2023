@@ -25,7 +25,7 @@ The BPNet conda environment can be installed using the instructions found here: 
 
 ## Setup for ChromBPNet environment
 
-The ChromBPNet conda environment can be installed using the instructions found here: https://github.com/mlweilert/chrombpnet-lite. If you choose to install the GPU-compatible ChromBPNet environment on an Nvidia GPU (we trained on a NVIDIA® TITAN RTX GPU), then you will need the appropriate drivers:
+The ChromBPNet conda environment can be installed using the instructions found here: [https://github.com/mlweilert/chrombpnet-lite](https://github.com/kundajelab/chrombpnet/tree/pre-release). If you choose to install the GPU-compatible ChromBPNet environment on an Nvidia GPU (we trained on a NVIDIA® TITAN RTX GPU), then you will need the appropriate drivers:
 
 + CUDA v11.0
 + cuDNN v8.3.0
